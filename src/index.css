@@ -1,0 +1,21 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  /* Valores por defecto: tema Elegante Dorado.
+     Se sobreescriben en tiempo de ejecución con los datos
+     de la tabla `clinicas` (ver lib/aplicarTema.js) */
+  --color-primary: #C9A24B;
+  --color-secondary: #FFFFFF;
+  --color-accent: #F5EFE6;
+  --color-ink: #2B2620;
+  --font-display: 'Playfair Display', serif;
+  --font-body: 'Inter', sans-serif;
+}
+
+body {
+  font-family: var(--font-body);
+  color: var(--color-ink);
+  background-color: #FFFFFF;
+}
