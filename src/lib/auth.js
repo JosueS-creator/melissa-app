@@ -1,10 +1,12 @@
 import { supabase } from './supabaseClient'
 
 /**
- * Registra un paciente nuevo:
- * 1. Crea el usuario en Supabase Auth.
- * 2. Crea su fila en `perfiles` (ligada a la clínica).
- * 3. Crea su fila en `pacientes` (donde vive su historial, citas, etc.)
+ * Registra un paciente nuevo. La creación de sus filas en `perfiles` y
+ * `pacientes` NO se hace aquí: la maneja un trigger en la base de datos
+ * (`crear_perfil_y_paciente`) que se dispara al crearse el usuario en
+ * Supabase Auth. Esto evita el problema de RLS cuando la confirmación
+ * de correo está activada (sin sesión activa, el navegador no puede
+ * insertar directamente, pero el trigger corre con privilegios de sistema).
  *
  * NOTA: por ahora asume una sola clínica (slug 'demo'). Cuando haya más
  * clínicas, el slug debe resolverse por subdominio y pasarse como parámetro.
@@ -23,33 +25,14 @@ export async function registrarPaciente({ email, password, nombre, telefono }) {
   const { data: authData, error: errorAuth } = await supabase.auth.signUp({
     email,
     password,
+    options: {
+      data: { nombre, telefono, clinica_id: clinica.id },
+    },
   })
   if (errorAuth) throw errorAuth
 
-  const usuario = authData.user
-  if (!usuario) {
-    // Puede pasar si Supabase requiere confirmación de correo antes de crear sesión.
-    return { requiereConfirmacion: true }
-  }
-
-  const { error: errorPerfil } = await supabase.from('perfiles').insert({
-    id: usuario.id,
-    clinica_id: clinica.id,
-    nombre,
-    telefono,
-    rol: 'paciente',
-  })
-  if (errorPerfil) throw errorPerfil
-
-  const { error: errorPaciente } = await supabase.from('pacientes').insert({
-    clinica_id: clinica.id,
-    perfil_id: usuario.id,
-    nombre,
-    telefono,
-  })
-  if (errorPaciente) throw errorPaciente
-
-  return { requiereConfirmacion: false, usuario }
+  const requiereConfirmacion = !authData.session
+  return { requiereConfirmacion, usuario: authData.user }
 }
 
 export async function iniciarSesion({ email, password }) {
