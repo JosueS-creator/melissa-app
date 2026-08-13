@@ -3,10 +3,11 @@ import Home from './pages/Home'
 import Agenda from './pages/Agenda'
 import Tienda from './pages/Tienda'
 import TarjetaVIP from './pages/TarjetaVIP'
+import Personalizacion from './pages/Personalizacion'
 import Login from './pages/Login'
 import Registro from './pages/Registro'
 import { aplicarTemaDeClinica } from './lib/aplicarTema'
-import { obtenerSesionActual, cerrarSesion } from './lib/auth'
+import { obtenerSesionActual, obtenerPerfilActual, cerrarSesion } from './lib/auth'
 import { supabase } from './lib/supabaseClient'
 
 const SLUG_CLINICA_DEMO = 'demo'
@@ -14,7 +15,8 @@ const SLUG_CLINICA_DEMO = 'demo'
 export default function App() {
   const [cargando, setCargando] = useState(true)
   const [sesion, setSesion] = useState(null)
-  const [pantalla, setPantalla] = useState('inicio') // 'inicio' | 'agenda' | 'tienda' | 'tarjeta' | 'login' | 'registro'
+  const [perfil, setPerfil] = useState(null)
+  const [pantalla, setPantalla] = useState('inicio') // 'inicio' | 'agenda' | 'tienda' | 'tarjeta' | 'personalizacion' | 'login' | 'registro'
 
   useEffect(() => {
     aplicarTemaDeClinica(SLUG_CLINICA_DEMO)
@@ -31,6 +33,14 @@ export default function App() {
     return () => listener.subscription.unsubscribe()
   }, [])
 
+  useEffect(() => {
+    if (sesion) {
+      obtenerPerfilActual().then(setPerfil)
+    } else {
+      setPerfil(null)
+    }
+  }, [sesion])
+
   if (cargando) return null
 
   if (!sesion) {
@@ -46,13 +56,17 @@ export default function App() {
       {pantalla === 'agenda' && <Agenda />}
       {pantalla === 'tienda' && <Tienda />}
       {pantalla === 'tarjeta' && <TarjetaVIP />}
+      {pantalla === 'personalizacion' && <Personalizacion />}
       {pantalla === 'inicio' && <Home nombrePaciente={sesion.user.email} />}
 
-      <div className="max-w-sm mx-auto flex justify-around py-3 border-t border-ink/10 bg-white">
+      <div className="max-w-sm mx-auto flex justify-around py-3 border-t border-ink/10 bg-white flex-wrap gap-y-2">
         <button onClick={() => setPantalla('inicio')} className={`text-xs ${pantalla === 'inicio' ? 'text-ink font-medium' : 'text-ink/40'}`}>Inicio</button>
         <button onClick={() => setPantalla('agenda')} className={`text-xs ${pantalla === 'agenda' ? 'text-ink font-medium' : 'text-ink/40'}`}>Agenda</button>
         <button onClick={() => setPantalla('tienda')} className={`text-xs ${pantalla === 'tienda' ? 'text-ink font-medium' : 'text-ink/40'}`}>Tienda</button>
         <button onClick={() => setPantalla('tarjeta')} className={`text-xs ${pantalla === 'tarjeta' ? 'text-ink font-medium' : 'text-ink/40'}`}>Mi tarjeta</button>
+        {perfil?.rol === 'admin' && (
+          <button onClick={() => setPantalla('personalizacion')} className={`text-xs ${pantalla === 'personalizacion' ? 'text-ink font-medium' : 'text-ink/40'}`}>Marca</button>
+        )}
         <button onClick={() => cerrarSesion()} className="text-xs text-ink/40">Salir</button>
       </div>
     </div>

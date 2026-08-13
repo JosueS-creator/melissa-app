@@ -52,6 +52,25 @@ export async function obtenerSesionActual() {
 }
 
 /**
+ * Obtiene la fila de `perfiles` del usuario autenticado (incluye rol y
+ * clinica_id) — necesaria para saber si puede acceder al panel de admin.
+ */
+export async function obtenerPerfilActual() {
+  const { data: sesion } = await supabase.auth.getSession()
+  const usuario = sesion.session?.user
+  if (!usuario) return null
+
+  const { data, error } = await supabase
+    .from('perfiles')
+    .select('*')
+    .eq('id', usuario.id)
+    .single()
+
+  if (error) return null
+  return data
+}
+
+/**
  * Obtiene la fila de `pacientes` correspondiente al usuario autenticado
  * (necesaria para reservar citas, ver historial, etc.)
  */
