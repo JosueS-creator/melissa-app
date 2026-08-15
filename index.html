@@ -2,10 +2,53 @@
 <html lang="es">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Melissa</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+
+    <!-- SEO básico -->
+    <title>Enerpetrol — Descuentos en Combustible Honduras</title>
+    <meta name="description" content="Ahorra en combustible en más de 35 gasolineras afiliadas en 7 ciudades de Honduras. Regístrate gratis y empieza a ahorrar hoy." />
+    <meta name="keywords" content="descuentos gasolina Honduras, app combustible Honduras, Enerpetrol, gasolineras Honduras, ahorro combustible" />
+    <meta name="author" content="Enerpetrol" />
+    <meta name="robots" content="index, follow" />
+
+    <!-- PWA -->
+    <link rel="manifest" href="/manifest.json" />
+    <meta name="theme-color" content="#0F2A4A" />
+
+    <!-- iOS PWA -->
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="Enerpetrol" />
+    <link rel="apple-touch-icon" href="/icon-192.png" />
+
+    <!-- Favicon -->
+    <link rel="icon" type="image/png" sizes="192x192" href="/icon-192.png" />
+    <link rel="icon" type="image/png" sizes="512x512" href="/icon-512.png" />
+
+    <!-- Open Graph — compartir en WhatsApp, Facebook, etc -->
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content="https://enerpetrol-app.vercel.app/" />
+    <meta property="og:title" content="Enerpetrol — Descuentos en Combustible Honduras" />
+    <meta property="og:description" content="Ahorra en combustible en más de 35 gasolineras afiliadas en 7 ciudades de Honduras. Regístrate gratis." />
+    <meta property="og:image" content="https://enerpetrol-app.vercel.app/icon-512.png" />
+    <meta property="og:image:width" content="512" />
+    <meta property="og:image:height" content="512" />
+    <meta property="og:locale" content="es_HN" />
+    <meta property="og:site_name" content="Enerpetrol" />
+
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary" />
+    <meta name="twitter:title" content="Enerpetrol — Descuentos en Combustible Honduras" />
+    <meta name="twitter:description" content="Ahorra en combustible en más de 35 gasolineras afiliadas en Honduras." />
+    <meta name="twitter:image" content="https://enerpetrol-app.vercel.app/icon-512.png" />
+
+    <!-- Fuentes — en <link> en vez de @import para no bloquear render -->
     <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;600&family=Inter:wght@400;500;600&display=swap" rel="stylesheet" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Nunito:wght@700;800;900&display=swap" rel="stylesheet" />
+
+    <!-- Preload del ícono principal -->
+    <link rel="preload" href="/icon-192.png" as="image" />
   </head>
   <body>
     <div id="root"></div>
