@@ -4,6 +4,8 @@ import Agenda from './pages/Agenda'
 import Tienda from './pages/Tienda'
 import TarjetaVIP from './pages/TarjetaVIP'
 import Historial from './pages/Historial'
+import Referidos from './pages/Referidos'
+import Perfil from './pages/Perfil'
 import AdminPanel from './pages/AdminPanel'
 import Login from './pages/Login'
 import Registro from './pages/Registro'
@@ -58,15 +60,19 @@ export default function App() {
       {pantalla === 'tienda' && <Tienda />}
       {pantalla === 'tarjeta' && <TarjetaVIP />}
       {pantalla === 'historial' && <Historial />}
+      {pantalla === 'referidos' && <Referidos />}
+      {pantalla === 'perfil' && <Perfil />}
       {pantalla === 'admin' && <AdminPanel />}
-      {pantalla === 'inicio' && <Home nombrePaciente={sesion.user.email} />}
+      {pantalla === 'inicio' && <Home nombrePaciente={perfil?.nombre || sesion.user.email} />}
 
-      <div className="max-w-sm mx-auto flex justify-around py-3 border-t border-ink/10 bg-white flex-wrap gap-y-2">
+      <div className="max-w-sm mx-auto flex justify-around flex-wrap gap-y-2 py-3 border-t border-ink/10 bg-white">
         <button onClick={() => setPantalla('inicio')} className={`text-xs ${pantalla === 'inicio' ? 'text-ink font-medium' : 'text-ink/40'}`}>Inicio</button>
         <button onClick={() => setPantalla('agenda')} className={`text-xs ${pantalla === 'agenda' ? 'text-ink font-medium' : 'text-ink/40'}`}>Agenda</button>
         <button onClick={() => setPantalla('historial')} className={`text-xs ${pantalla === 'historial' ? 'text-ink font-medium' : 'text-ink/40'}`}>Historial</button>
         <button onClick={() => setPantalla('tienda')} className={`text-xs ${pantalla === 'tienda' ? 'text-ink font-medium' : 'text-ink/40'}`}>Tienda</button>
         <button onClick={() => setPantalla('tarjeta')} className={`text-xs ${pantalla === 'tarjeta' ? 'text-ink font-medium' : 'text-ink/40'}`}>Mi tarjeta</button>
+        <button onClick={() => setPantalla('referidos')} className={`text-xs ${pantalla === 'referidos' ? 'text-ink font-medium' : 'text-ink/40'}`}>Referidos</button>
+        <button onClick={() => setPantalla('perfil')} className={`text-xs ${pantalla === 'perfil' ? 'text-ink font-medium' : 'text-ink/40'}`}>Perfil</button>
         {perfil?.rol === 'admin' && (
           <button onClick={() => setPantalla('admin')} className={`text-xs ${pantalla === 'admin' ? 'text-ink font-medium' : 'text-ink/40'}`}>Panel</button>
         )}

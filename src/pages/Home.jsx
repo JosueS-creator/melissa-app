@@ -1,6 +1,19 @@
+import { useEffect, useState } from 'react'
 import BeautyScore from '../components/BeautyScore'
+import { obtenerPacienteActual } from '../lib/auth'
+import { calcularBeautyScore } from '../lib/beautyScore'
 
 export default function Home({ nombrePaciente = 'Paciente' }) {
+  const [score, setScore] = useState(null)
+
+  useEffect(() => {
+    obtenerPacienteActual().then(async (paciente) => {
+      if (!paciente) return
+      const s = await calcularBeautyScore(paciente.id)
+      setScore(s)
+    })
+  }, [])
+
   return (
     <div className="max-w-sm mx-auto bg-white min-h-screen font-body">
       <div className="px-5 pt-5 pb-6" style={{ background: 'var(--color-accent)' }}>
@@ -9,7 +22,7 @@ export default function Home({ nombrePaciente = 'Paciente' }) {
             <p className="text-xs text-ink/60">Buenas tardes</p>
             <p className="font-display text-lg text-ink">{nombrePaciente}</p>
           </div>
-          <BeautyScore valor={76} />
+          <BeautyScore valor={score ?? 0} />
         </div>
         <p className="mt-3 text-[11px] tracking-wide uppercase" style={{ color: 'var(--color-primary)' }}>
           Beauty score

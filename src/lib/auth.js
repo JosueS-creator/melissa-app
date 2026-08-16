@@ -11,7 +11,7 @@ import { supabase } from './supabaseClient'
  * NOTA: por ahora asume una sola clínica (slug 'demo'). Cuando haya más
  * clínicas, el slug debe resolverse por subdominio y pasarse como parámetro.
  */
-export async function registrarPaciente({ email, password, nombre, telefono }) {
+export async function registrarPaciente({ email, password, nombre, telefono, pais }) {
   const { data: clinica, error: errorClinica } = await supabase
     .from('clinicas')
     .select('id')
@@ -26,7 +26,7 @@ export async function registrarPaciente({ email, password, nombre, telefono }) {
     email,
     password,
     options: {
-      data: { nombre, telefono, clinica_id: clinica.id },
+      data: { nombre, telefono, pais, clinica_id: clinica.id },
     },
   })
   if (errorAuth) throw errorAuth

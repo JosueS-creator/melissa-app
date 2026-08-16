@@ -1,21 +1,33 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { registrarPaciente } from '../lib/auth'
+import { detectarPaisPorIP, PAISES } from '../lib/geolocalizacion'
 
 export default function Registro({ onRegistroExitoso, irALogin }) {
   const [nombre, setNombre] = useState('')
   const [telefono, setTelefono] = useState('')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
+  const [pais, setPais] = useState('')
+  const [detectandoPais, setDetectandoPais] = useState(true)
   const [cargando, setCargando] = useState(false)
   const [error, setError] = useState('')
   const [mensajeConfirmacion, setMensajeConfirmacion] = useState('')
+
+  useEffect(() => {
+    detectarPaisPorIP().then((codigo) => {
+      if (codigo && PAISES.some((p) => p.codigo === codigo)) {
+        setPais(codigo)
+      }
+      setDetectandoPais(false)
+    })
+  }, [])
 
   async function manejarSubmit(e) {
     e.preventDefault()
     setError('')
     setCargando(true)
     try {
-      const resultado = await registrarPaciente({ email, password, nombre, telefono })
+      const resultado = await registrarPaciente({ email, password, nombre, telefono, pais })
       if (resultado.requiereConfirmacion) {
         setMensajeConfirmacion('Revisa tu correo para confirmar tu cuenta antes de iniciar sesión.')
       } else {
@@ -47,8 +59,10 @@ export default function Registro({ onRegistroExitoso, irALogin }) {
           <input
             className="border border-ink/15 rounded-xl px-4 py-3 text-sm"
             placeholder="Teléfono"
+            type="tel"
             value={telefono}
             onChange={(e) => setTelefono(e.target.value)}
+            required
           />
           <input
             className="border border-ink/15 rounded-xl px-4 py-3 text-sm"
@@ -67,6 +81,22 @@ export default function Registro({ onRegistroExitoso, irALogin }) {
             minLength={6}
             required
           />
+
+          <select
+            className="border border-ink/15 rounded-xl px-4 py-3 text-sm bg-white"
+            value={pais}
+            onChange={(e) => setPais(e.target.value)}
+            required
+          >
+            <option value="" disabled>
+              {detectandoPais ? 'Detectando tu país...' : 'Selecciona tu país'}
+            </option>
+            {PAISES.map((p) => (
+              <option key={p.codigo} value={p.codigo}>
+                {p.nombre}
+              </option>
+            ))}
+          </select>
 
           {error && <p className="text-sm text-red-600">{error}</p>}
 
