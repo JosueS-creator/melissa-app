@@ -9,20 +9,26 @@ import Perfil from './pages/Perfil'
 import AdminPanel from './pages/AdminPanel'
 import Login from './pages/Login'
 import Registro from './pages/Registro'
+import TabBar from './components/TabBar'
 import { aplicarTemaDeClinica } from './lib/aplicarTema'
 import { obtenerSesionActual, obtenerPerfilActual, cerrarSesion } from './lib/auth'
 import { supabase } from './lib/supabaseClient'
 
 const SLUG_CLINICA_DEMO = 'demo'
 
+// Pantallas visibles en el tab bar principal. Historial y Referidos se
+// alcanzan desde Perfil (ver Perfil.jsx), no ocupan un ícono propio.
+const PANTALLAS_CON_TABBAR = ['inicio', 'agenda', 'tarjeta', 'tienda', 'perfil', 'admin']
+
 export default function App() {
   const [cargando, setCargando] = useState(true)
   const [sesion, setSesion] = useState(null)
   const [perfil, setPerfil] = useState(null)
-  const [pantalla, setPantalla] = useState('inicio') // 'inicio' | 'agenda' | 'tienda' | 'tarjeta' | 'personalizacion' | 'login' | 'registro'
+  const [clinica, setClinica] = useState(null)
+  const [pantalla, setPantalla] = useState('inicio')
 
   useEffect(() => {
-    aplicarTemaDeClinica(SLUG_CLINICA_DEMO)
+    aplicarTemaDeClinica(SLUG_CLINICA_DEMO).then((c) => setClinica(c))
     obtenerSesionActual().then((s) => {
       setSesion(s)
       setCargando(false)
@@ -54,30 +60,26 @@ export default function App() {
     )
   }
 
-  return (
-    <div>
-      {pantalla === 'agenda' && <Agenda />}
-      {pantalla === 'tienda' && <Tienda />}
-      {pantalla === 'tarjeta' && <TarjetaVIP />}
-      {pantalla === 'historial' && <Historial />}
-      {pantalla === 'referidos' && <Referidos />}
-      {pantalla === 'perfil' && <Perfil />}
-      {pantalla === 'admin' && <AdminPanel />}
-      {pantalla === 'inicio' && <Home nombrePaciente={perfil?.nombre || sesion.user.email} />}
+  const mostrarTabBar = PANTALLAS_CON_TABBAR.includes(pantalla)
 
-      <div className="max-w-sm mx-auto flex justify-around flex-wrap gap-y-2 py-3 border-t border-ink/10 bg-white">
-        <button onClick={() => setPantalla('inicio')} className={`text-xs ${pantalla === 'inicio' ? 'text-ink font-medium' : 'text-ink/40'}`}>Inicio</button>
-        <button onClick={() => setPantalla('agenda')} className={`text-xs ${pantalla === 'agenda' ? 'text-ink font-medium' : 'text-ink/40'}`}>Agenda</button>
-        <button onClick={() => setPantalla('historial')} className={`text-xs ${pantalla === 'historial' ? 'text-ink font-medium' : 'text-ink/40'}`}>Historial</button>
-        <button onClick={() => setPantalla('tienda')} className={`text-xs ${pantalla === 'tienda' ? 'text-ink font-medium' : 'text-ink/40'}`}>Tienda</button>
-        <button onClick={() => setPantalla('tarjeta')} className={`text-xs ${pantalla === 'tarjeta' ? 'text-ink font-medium' : 'text-ink/40'}`}>Mi tarjeta</button>
-        <button onClick={() => setPantalla('referidos')} className={`text-xs ${pantalla === 'referidos' ? 'text-ink font-medium' : 'text-ink/40'}`}>Referidos</button>
-        <button onClick={() => setPantalla('perfil')} className={`text-xs ${pantalla === 'perfil' ? 'text-ink font-medium' : 'text-ink/40'}`}>Perfil</button>
-        {perfil?.rol === 'admin' && (
-          <button onClick={() => setPantalla('admin')} className={`text-xs ${pantalla === 'admin' ? 'text-ink font-medium' : 'text-ink/40'}`}>Panel</button>
+  return (
+    <div className="max-w-sm mx-auto min-h-screen flex flex-col" style={{ background: 'var(--color-fondo-app)' }}>
+      <div className="flex-1">
+        {pantalla === 'inicio' && (
+          <Home nombrePaciente={perfil?.nombre || sesion.user.email} clinica={clinica} onNavigate={setPantalla} />
         )}
-        <button onClick={() => cerrarSesion()} className="text-xs text-ink/40">Salir</button>
+        {pantalla === 'agenda' && <Agenda />}
+        {pantalla === 'tienda' && <Tienda />}
+        {pantalla === 'tarjeta' && <TarjetaVIP onNavigate={setPantalla} />}
+        {pantalla === 'historial' && <Historial onVolver={() => setPantalla('perfil')} />}
+        {pantalla === 'referidos' && <Referidos onVolver={() => setPantalla('perfil')} />}
+        {pantalla === 'perfil' && <Perfil onNavigate={setPantalla} onCerrarSesion={cerrarSesion} />}
+        {pantalla === 'admin' && <AdminPanel />}
       </div>
+
+      {mostrarTabBar && (
+        <TabBar activo={pantalla} onNavigate={setPantalla} mostrarAdmin={perfil?.rol === 'admin'} />
+      )}
     </div>
   )
 }

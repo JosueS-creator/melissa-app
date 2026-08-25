@@ -3,6 +3,7 @@ import { supabase } from '../lib/supabaseClient'
 import { obtenerPerfilActual } from '../lib/auth'
 
 const TEMAS = [
+  { id: 'rosa_oro', nombre: 'Rosa y Oro', primario: '#C93B79', secundario: '#FFFFFF', acento: '#F6C2D6' },
   { id: 'elegante_dorado', nombre: 'Elegante Dorado', primario: '#C9A24B', secundario: '#FFFFFF', acento: '#F5EFE6' },
   { id: 'clinico_minimal', nombre: 'Clínico Minimal', primario: '#2D6E8E', secundario: '#FFFFFF', acento: '#EAF2F5' },
   { id: 'spa_natural', nombre: 'Spa Natural', primario: '#6B8E5A', secundario: '#FFFFFF', acento: '#EFF3E8' },

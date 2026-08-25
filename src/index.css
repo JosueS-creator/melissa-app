@@ -12,10 +12,32 @@
   --color-ink: #2B2620;
   --font-display: 'Playfair Display', serif;
   --font-body: 'Inter', sans-serif;
+
+  /* Tokens extendidos (opcionales) — solo los usan temas ricos como
+     "Rosa y Oro". Defaults neutros para que los temas simples no se rompan. */
+  --color-fondo-app: #FFFFFF;
+  --color-fondo-oscuro: var(--color-ink);
+  --gradiente-fondo-oscuro: var(--color-ink);
+  --gradiente-primario: var(--color-primary);
+  --color-dorado: var(--color-primary);
+  --color-dorado-claro: var(--color-accent);
+  --gradiente-dorado: var(--color-primary);
+  --color-texto-secundario: #8A7E6A;
+  --color-texto-terciario: #A88096;
+  --color-borde-tarjeta: var(--color-accent);
 }
 
 body {
   font-family: var(--font-body);
   color: var(--color-ink);
-  background-color: #FFFFFF;
+  background-color: var(--color-fondo-app);
+  -webkit-font-smoothing: antialiased;
+  overscroll-behavior-y: none;
+}
+
+/* iOS hace zoom automático al enfocar un input con letra menor a 16px.
+   Se fuerza 16px en todos los campos sin importar el tamaño visual del
+   texto alrededor — es un mínimo técnico, no una preferencia de diseño. */
+input, select, textarea {
+  font-size: 16px;
 }
