@@ -63,7 +63,7 @@ export default function App() {
   const mostrarTabBar = PANTALLAS_CON_TABBAR.includes(pantalla)
 
   return (
-    <div className="max-w-sm mx-auto min-h-screen flex flex-col" style={{ background: 'var(--color-fondo-app)' }}>
+    <div className="max-w-sm mx-auto flex flex-col" style={{ background: 'var(--color-fondo-app)', minHeight: '100dvh' }}>
       <div className="flex-1">
         {pantalla === 'inicio' && (
           <Home nombrePaciente={perfil?.nombre || sesion.user.email} clinica={clinica} onNavigate={setPantalla} />

@@ -100,7 +100,7 @@ export default function Tienda() {
   if (cargando) return <p className="text-center pt-16 text-sm text-ink/60">Cargando tienda...</p>
 
   return (
-    <div className="min-h-screen font-body pb-28" style={{ background: 'var(--color-fondo-app)' }}>
+    <div className="font-body pb-28" style={{ background: 'var(--color-fondo-app)' }}>
       <div className="px-5 flex items-center justify-between" style={{ paddingTop: 'calc(env(safe-area-inset-top) + 32px)' }}>
         <p style={{ fontFamily: 'var(--font-display)', fontSize: 26, color: 'var(--color-ink)' }}>Tienda</p>
         {items > 0 && (

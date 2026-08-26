@@ -3,6 +3,7 @@ import { supabase } from '../lib/supabaseClient'
 import { obtenerPacienteActual } from '../lib/auth'
 import { calcularNivelYProgreso } from '../lib/fidelidad'
 import logoMelissa from '../assets/melissa-logo-64.png'
+import logoMelissaMarcaAgua from '../assets/melissa-logo-256.png'
 
 export default function Home({ nombrePaciente = 'Paciente', clinica, onNavigate }) {
   const [paciente, setPaciente] = useState(null)
@@ -44,7 +45,7 @@ export default function Home({ nombrePaciente = 'Paciente', clinica, onNavigate 
   const { nivelActual, siguienteNivel, progreso, puntosParaSiguiente } = calcularNivelYProgreso(puntos)
 
   return (
-    <div className="min-h-screen" style={{ background: 'var(--color-fondo-app)' }}>
+    <div className="" style={{ background: 'var(--color-fondo-app)' }}>
       {/* Header */}
       <div
         className="flex items-center justify-between px-5"
@@ -70,6 +71,13 @@ export default function Home({ nombrePaciente = 'Paciente', clinica, onNavigate 
           className="rounded-2xl p-5 relative overflow-hidden shadow-tarjeta-oscura"
           style={{ background: 'var(--gradiente-fondo-oscuro)' }}
         >
+          <img
+            src={logoMelissaMarcaAgua}
+            alt=""
+            aria-hidden="true"
+            className="absolute pointer-events-none"
+            style={{ top: -20, right: -30, width: 180, height: 180, opacity: 0.13, objectFit: 'contain' }}
+          />
           <div className="flex justify-between items-start">
             <p style={{ font: "500 10px/1 var(--font-body)", letterSpacing: '0.2em', textTransform: 'uppercase', color: 'var(--color-dorado-claro)' }}>
               Beauty Points

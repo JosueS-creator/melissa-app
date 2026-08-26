@@ -30,7 +30,7 @@ export default function AdminPanel() {
 
   return (
     <div
-      className="max-w-sm mx-auto min-h-screen px-5 pb-10 font-body"
+      className="max-w-sm mx-auto px-5 pb-10 font-body"
       style={{ paddingTop: 'calc(env(safe-area-inset-top) + 32px)' }}
     >
       <p className="font-display text-xl text-ink mb-1">Panel de la clínica</p>

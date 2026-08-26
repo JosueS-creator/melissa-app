@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { supabase } from '../lib/supabaseClient'
 import { obtenerPacienteActual } from '../lib/auth'
+import logoMelissaMarcaAgua from '../assets/melissa-logo-256.png'
 
 const HORAS_DISPONIBLES = ['09:00', '09:45', '10:30', '11:15', '14:00', '15:30']
 
@@ -76,12 +77,19 @@ export default function Agenda() {
   if (!paciente) return <p className="text-center pt-16 text-sm text-ink/60">Inicia sesión para reservar una cita.</p>
 
   return (
-    <div className="min-h-screen font-body" style={{ background: 'var(--color-fondo-app)' }}>
+    <div className="font-body" style={{ background: 'var(--color-fondo-app)' }}>
       {/* Header */}
       <div
         className="relative overflow-hidden px-5 pb-5"
         style={{ background: 'var(--gradiente-fondo-oscuro)', paddingTop: 'calc(env(safe-area-inset-top) + 20px)' }}
       >
+        <img
+          src={logoMelissaMarcaAgua}
+          alt=""
+          aria-hidden="true"
+          className="absolute pointer-events-none"
+          style={{ top: -20, right: -30, width: 180, height: 180, opacity: 0.13, objectFit: 'contain' }}
+        />
         <p style={{ font: "500 10px/1 var(--font-body)", letterSpacing: '0.2em', textTransform: 'uppercase', color: 'var(--color-dorado-claro)' }}>
           Reservar
         </p>

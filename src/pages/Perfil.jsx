@@ -99,7 +99,7 @@ export default function Perfil({ onNavigate, onCerrarSesion }) {
 
   return (
     <div
-      className="min-h-screen font-body px-5 pb-10"
+      className="font-body px-5 pb-10"
       style={{ background: 'var(--color-fondo-app)', paddingTop: 'calc(env(safe-area-inset-top) + 32px)' }}
     >
       <div className="flex items-center gap-3 mb-6">

@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { supabase } from '../lib/supabaseClient'
 import { obtenerPacienteActual } from '../lib/auth'
 import logoMelissa from '../assets/melissa-logo-64.png'
+import logoMelissaMarcaAgua from '../assets/melissa-logo-256.png'
 
 const META_MENSUAL = 5
 
@@ -77,11 +78,18 @@ export default function Referidos({ onVolver }) {
   const etiquetaEstado = { invitado: 'Invitado', registrado: 'Registrada · cita pendiente', recompensado: 'Primera cita completada' }
 
   return (
-    <div className="min-h-screen font-body pb-10" style={{ background: 'var(--color-fondo-app)' }}>
+    <div className="font-body pb-10" style={{ background: 'var(--color-fondo-app)' }}>
       <div
-        className="px-5 pb-6 flex flex-col items-center text-center"
+        className="px-5 pb-6 flex flex-col items-center text-center relative overflow-hidden"
         style={{ background: 'var(--gradiente-fondo-oscuro)', paddingTop: 'calc(env(safe-area-inset-top) + 20px)' }}
       >
+        <img
+          src={logoMelissaMarcaAgua}
+          alt=""
+          aria-hidden="true"
+          className="absolute pointer-events-none"
+          style={{ top: -20, right: -30, width: 180, height: 180, opacity: 0.13, objectFit: 'contain' }}
+        />
         {onVolver && (
           <button onClick={onVolver} className="text-xs self-start mb-3" style={{ color: 'var(--color-dorado-claro)' }}>‹ Volver</button>
         )}

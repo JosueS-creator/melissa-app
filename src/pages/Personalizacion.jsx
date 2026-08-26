@@ -110,7 +110,7 @@ export default function Personalizacion() {
   }
 
   return (
-    <div className="max-w-sm mx-auto min-h-screen px-5 pt-8 pb-10 font-body">
+    <div className="max-w-sm mx-auto px-5 pt-8 pb-10 font-body">
       <p className="font-display text-xl text-ink mb-1">Personaliza tu app</p>
       <p className="text-xs text-ink/50 mb-6">Así se verá la app para tus pacientes.</p>
 

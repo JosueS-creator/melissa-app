@@ -3,6 +3,7 @@ import { supabase } from '../lib/supabaseClient'
 import { obtenerPacienteActual } from '../lib/auth'
 import { calcularNivelYProgreso } from '../lib/fidelidad'
 import logoMelissa from '../assets/melissa-logo-64.png'
+import logoMelissaMarcaAgua from '../assets/melissa-logo-256.png'
 
 const RECOMPENSAS = [
   { id: 'descuento_100', nombre: 'L 100 de descuento', costo: 300 },
@@ -81,7 +82,7 @@ export default function TarjetaVIP({ onNavigate }) {
 
   return (
     <div
-      className="min-h-screen font-body px-5 pb-10"
+      className="font-body px-5 pb-10"
       style={{ background: 'var(--color-fondo-app)', paddingTop: 'calc(env(safe-area-inset-top) + 32px)' }}
     >
       <div className="flex flex-col items-center mb-5">
@@ -91,7 +92,14 @@ export default function TarjetaVIP({ onNavigate }) {
         </p>
       </div>
 
-      <div className="rounded-2xl p-5 shadow-tarjeta-oscura" style={{ background: 'var(--gradiente-fondo-oscuro)', border: '1px solid var(--color-dorado)' }}>
+      <div className="rounded-2xl p-5 shadow-tarjeta-oscura relative overflow-hidden" style={{ background: 'var(--gradiente-fondo-oscuro)', border: '1px solid var(--color-dorado)' }}>
+        <img
+          src={logoMelissaMarcaAgua}
+          alt=""
+          aria-hidden="true"
+          className="absolute pointer-events-none"
+          style={{ top: -20, right: -30, width: 180, height: 180, opacity: 0.13, objectFit: 'contain' }}
+        />
         <p style={{ fontFamily: 'var(--font-display)', fontSize: 18, color: '#FFFFFF' }}>{paciente.nombre}</p>
         <p className="text-[11px] mt-0.5" style={{ color: 'rgba(233,169,193,0.75)' }}>{codigoInterno}</p>
 

@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { supabase } from '../lib/supabaseClient'
 import { obtenerPacienteActual } from '../lib/auth'
+import logoMelissaMarcaAgua from '../assets/melissa-logo-256.png'
 
 export default function Historial({ onVolver }) {
   const [paciente, setPaciente] = useState(null)
@@ -77,11 +78,18 @@ export default function Historial({ onVolver }) {
   const totalInvertido = tratamientos.reduce((sum, t) => sum + Number(t.precio || 0), 0)
 
   return (
-    <div className="min-h-screen font-body pb-10" style={{ background: 'var(--color-fondo-app)' }}>
+    <div className="font-body pb-10" style={{ background: 'var(--color-fondo-app)' }}>
       <div
-        className="px-5 pb-5"
+        className="px-5 pb-5 relative overflow-hidden"
         style={{ background: 'var(--gradiente-fondo-oscuro)', paddingTop: 'calc(env(safe-area-inset-top) + 20px)' }}
       >
+        <img
+          src={logoMelissaMarcaAgua}
+          alt=""
+          aria-hidden="true"
+          className="absolute pointer-events-none"
+          style={{ top: -20, right: -30, width: 180, height: 180, opacity: 0.13, objectFit: 'contain' }}
+        />
         {onVolver && (
           <button onClick={onVolver} className="text-xs mb-3" style={{ color: 'var(--color-dorado-claro)' }}>‹ Volver</button>
         )}
