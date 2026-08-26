@@ -8,18 +8,18 @@ import { supabase } from './supabaseClient'
  * de correo está activada (sin sesión activa, el navegador no puede
  * insertar directamente, pero el trigger corre con privilegios de sistema).
  *
- * NOTA: por ahora asume una sola clínica (slug 'demo'). Cuando haya más
- * clínicas, el slug debe resolverse por subdominio y pasarse como parámetro.
+ * `slugClinica` viene de la URL (?clinica=slug) que cada clínica comparte
+ * con sus pacientes. Si no viene ninguno, cae de vuelta a 'demo'.
  */
-export async function registrarPaciente({ email, password, nombre, telefono, pais }) {
+export async function registrarPaciente({ email, password, nombre, telefono, pais, slugClinica }) {
   const { data: clinica, error: errorClinica } = await supabase
     .from('clinicas')
     .select('id')
-    .eq('slug', 'demo')
+    .eq('slug', slugClinica || 'demo')
     .single()
 
   if (errorClinica || !clinica) {
-    throw new Error('No se pudo identificar la clínica. Intenta de nuevo.')
+    throw new Error('No se pudo identificar la clínica. Verifica el link que usaste para registrarte.')
   }
 
   const { data: authData, error: errorAuth } = await supabase.auth.signUp({

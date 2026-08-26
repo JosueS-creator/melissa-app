@@ -8,7 +8,7 @@ const PAISES_APP = [
   { codigo: 'ES', nombre: 'España', moneda: 'Euro · EUR' },
 ]
 
-export default function Perfil({ onNavigate, onCerrarSesion }) {
+export default function Perfil({ onNavigate, onCerrarSesion, esSuperAdmin }) {
   const [perfil, setPerfil] = useState(null)
   const [paciente, setPaciente] = useState(null)
   const [nombre, setNombre] = useState('')
@@ -191,6 +191,7 @@ export default function Perfil({ onNavigate, onCerrarSesion }) {
       <div className="flex flex-col gap-2 mb-6">
         <FilaNavegacion etiqueta="Mi historial" onClick={() => onNavigate?.('historial')} />
         <FilaNavegacion etiqueta="Referidos" onClick={() => onNavigate?.('referidos')} />
+        {esSuperAdmin && <FilaNavegacion etiqueta="Panel de Melissa" onClick={() => onNavigate?.('melissa')} />}
       </div>
 
       <p className="text-[11px] mb-2" style={{ color: 'var(--color-texto-terciario)', letterSpacing: '0.1em', textTransform: 'uppercase' }}>

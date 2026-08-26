@@ -52,7 +52,11 @@ export default function Home({ nombrePaciente = 'Paciente', clinica, onNavigate 
         style={{ paddingTop: 'calc(env(safe-area-inset-top) + 12px)' }}
       >
         <div className="flex items-center gap-2.5">
-          <img src={logoMelissa} alt="Melissa" className="w-11 h-11 rounded-xl" />
+          <img
+            src={clinica?.logo_url || logoMelissa}
+            alt={clinica?.nombre || 'Melissa'}
+            className="w-11 h-11 rounded-xl object-cover"
+          />
           <div>
             <p style={{ fontFamily: 'var(--font-display)', fontSize: 17, lineHeight: 1.2, color: 'var(--color-ink)' }}>
               Hola, {nombrePaciente}

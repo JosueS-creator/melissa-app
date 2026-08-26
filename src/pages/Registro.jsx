@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { registrarPaciente } from '../lib/auth'
 import { detectarPaisPorIP, PAISES } from '../lib/geolocalizacion'
 
-export default function Registro({ onRegistroExitoso, irALogin }) {
+export default function Registro({ onRegistroExitoso, irALogin, slugClinica }) {
   const [nombre, setNombre] = useState('')
   const [telefono, setTelefono] = useState('')
   const [email, setEmail] = useState('')
@@ -27,7 +27,7 @@ export default function Registro({ onRegistroExitoso, irALogin }) {
     setError('')
     setCargando(true)
     try {
-      const resultado = await registrarPaciente({ email, password, nombre, telefono, pais })
+      const resultado = await registrarPaciente({ email, password, nombre, telefono, pais, slugClinica })
       if (resultado.requiereConfirmacion) {
         setMensajeConfirmacion('Revisa tu correo para confirmar tu cuenta antes de iniciar sesión.')
       } else {

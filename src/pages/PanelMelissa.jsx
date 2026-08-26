@@ -1,0 +1,186 @@
+import { useEffect, useState } from 'react'
+import { supabase } from '../lib/supabaseClient'
+
+const TEMAS = [
+  { id: 'elegante_dorado', nombre: 'Elegante Dorado' },
+  { id: 'clinico_minimal', nombre: 'Clínico Minimal' },
+  { id: 'spa_natural', nombre: 'Spa Natural' },
+]
+
+function generarSlug(nombre) {
+  return nombre
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/(^-|-$)/g, '')
+}
+
+export default function PanelMelissa() {
+  const [clinicas, setClinicas] = useState([])
+  const [cargando, setCargando] = useState(true)
+  const [nombre, setNombre] = useState('')
+  const [ciudad, setCiudad] = useState('')
+  const [pais, setPais] = useState('HN')
+  const [temaBase, setTemaBase] = useState('elegante_dorado')
+  const [creando, setCreando] = useState(false)
+  const [linkGenerado, setLinkGenerado] = useState(null)
+  const [error, setError] = useState('')
+
+  useEffect(() => {
+    cargarClinicas()
+  }, [])
+
+  async function cargarClinicas() {
+    const { data } = await supabase.from('clinicas').select('*').order('fecha_creacion', { ascending: false })
+    setClinicas(data || [])
+    setCargando(false)
+  }
+
+  async function crearClinica(e) {
+    e.preventDefault()
+    setCreando(true)
+    setError('')
+    setLinkGenerado(null)
+
+    const slug = generarSlug(nombre) + '-' + Math.random().toString(36).slice(2, 6)
+
+    const { data: nuevaClinica, error: errorClinica } = await supabase
+      .from('clinicas')
+      .insert({
+        nombre,
+        ciudad,
+        pais,
+        slug,
+        moneda: pais === 'ES' ? 'EUR' : 'HNL',
+        plan: 'starter',
+        tema_base_id: temaBase,
+      })
+      .select()
+      .single()
+
+    if (errorClinica || !nuevaClinica) {
+      setError('No se pudo crear la clínica: ' + errorClinica?.message)
+      setCreando(false)
+      return
+    }
+
+    const { data: codigo, error: errorInvitacion } = await supabase.rpc('generar_invitacion_admin', {
+      p_clinica_id: nuevaClinica.id,
+    })
+
+    if (errorInvitacion) {
+      setError('Clínica creada, pero no se pudo generar la invitación: ' + errorInvitacion.message)
+    } else {
+      const link = `${window.location.origin}/?invitacion=${codigo}`
+      setLinkGenerado({ link, clinica: nuevaClinica.nombre })
+      setNombre('')
+      setCiudad('')
+    }
+
+    cargarClinicas()
+    setCreando(false)
+  }
+
+  async function generarNuevaInvitacion(clinicaId, clinicaNombre) {
+    const { data: codigo, error: errorInvitacion } = await supabase.rpc('generar_invitacion_admin', {
+      p_clinica_id: clinicaId,
+    })
+    if (!errorInvitacion) {
+      const link = `${window.location.origin}/?invitacion=${codigo}`
+      setLinkGenerado({ link, clinica: clinicaNombre })
+    }
+  }
+
+  function copiar(texto) {
+    navigator.clipboard?.writeText(texto)
+  }
+
+  return (
+    <div className="min-h-screen font-body px-5 pb-10" style={{ background: 'var(--color-fondo-app)', paddingTop: 'calc(env(safe-area-inset-top) + 32px)' }}>
+      <p style={{ fontFamily: 'var(--font-display)', fontSize: 22, color: 'var(--color-ink)' }}>Panel de Melissa</p>
+      <p className="text-xs mb-6" style={{ color: 'var(--color-texto-secundario)' }}>Solo visible para ti — crea clínicas y genera sus invitaciones.</p>
+
+      <form onSubmit={crearClinica} className="flex flex-col gap-3 mb-6">
+        <input
+          className="rounded-xl px-4 py-3 text-sm bg-white"
+          style={{ border: '1px solid var(--color-borde-tarjeta)' }}
+          placeholder="Nombre de la clínica"
+          value={nombre}
+          onChange={(e) => setNombre(e.target.value)}
+          required
+        />
+        <input
+          className="rounded-xl px-4 py-3 text-sm bg-white"
+          style={{ border: '1px solid var(--color-borde-tarjeta)' }}
+          placeholder="Ciudad"
+          value={ciudad}
+          onChange={(e) => setCiudad(e.target.value)}
+          required
+        />
+        <select
+          className="rounded-xl px-4 py-3 text-sm bg-white"
+          style={{ border: '1px solid var(--color-borde-tarjeta)' }}
+          value={pais}
+          onChange={(e) => setPais(e.target.value)}
+        >
+          <option value="HN">Honduras</option>
+          <option value="ES">España</option>
+        </select>
+        <select
+          className="rounded-xl px-4 py-3 text-sm bg-white"
+          style={{ border: '1px solid var(--color-borde-tarjeta)' }}
+          value={temaBase}
+          onChange={(e) => setTemaBase(e.target.value)}
+        >
+          {TEMAS.map((t) => (
+            <option key={t.id} value={t.id}>{t.nombre}</option>
+          ))}
+        </select>
+        <button
+          type="submit"
+          disabled={creando}
+          className="rounded-xl py-3 text-white text-sm font-medium disabled:opacity-60"
+          style={{ background: 'var(--gradiente-primario)' }}
+        >
+          {creando ? 'Creando...' : 'Crear clínica'}
+        </button>
+        {error && <p className="text-xs" style={{ color: '#B0524A' }}>{error}</p>}
+      </form>
+
+      {linkGenerado && (
+        <div className="rounded-xl p-4 mb-6" style={{ background: 'var(--gradiente-dorado)' }}>
+          <p className="text-xs" style={{ color: 'rgba(74,14,43,0.7)' }}>Link de invitación para el admin de "{linkGenerado.clinica}"</p>
+          <p className="text-xs mt-2 break-all font-mono" style={{ color: 'var(--color-ink)' }}>{linkGenerado.link}</p>
+          <button
+            onClick={() => copiar(linkGenerado.link)}
+            className="mt-2 px-4 py-2 rounded-lg text-white text-xs font-medium"
+            style={{ background: 'var(--gradiente-primario)' }}
+          >
+            Copiar link
+          </button>
+        </div>
+      )}
+
+      <p className="text-sm font-medium mb-2" style={{ color: 'var(--color-ink)' }}>Clínicas existentes</p>
+      {cargando && <p className="text-sm" style={{ color: 'var(--color-texto-secundario)' }}>Cargando...</p>}
+      <div className="flex flex-col gap-2">
+        {clinicas.map((c) => (
+          <div key={c.id} className="rounded-xl px-4 py-3 flex justify-between items-center" style={{ background: 'linear-gradient(160deg,#FFFFFF,#FDF7F9)', border: '1px solid var(--color-borde-tarjeta)' }}>
+            <div>
+              <p className="text-sm font-medium" style={{ color: 'var(--color-ink)' }}>{c.nombre}</p>
+              <p className="text-[11px]" style={{ color: 'var(--color-texto-secundario)' }}>{c.ciudad} · {c.pais} · {c.plan}</p>
+            </div>
+            <button
+              onClick={() => generarNuevaInvitacion(c.id, c.nombre)}
+              className="text-[11px] px-3 py-1.5 rounded-lg"
+              style={{ background: 'var(--color-accent)', color: 'var(--color-ink)' }}
+            >
+              Nueva invitación
+            </button>
+          </div>
+        ))}
+      </div>
+    </div>
+  )
+}

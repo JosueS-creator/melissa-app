@@ -10,18 +10,7 @@ import { supabase } from './supabaseClient'
  * inyectan variables adicionales; los temas que no las definen usan los
  * valores por defecto de index.css sin romperse.
  */
-export async function aplicarTemaDeClinica(slug) {
-  const { data: clinica, error } = await supabase
-    .from('clinicas')
-    .select('*, temas_base(*)')
-    .eq('slug', slug)
-    .single()
-
-  if (error || !clinica) {
-    console.warn('No se pudo cargar la clínica, usando tema por defecto:', error)
-    return null
-  }
-
+function inyectarTokens(clinica) {
   const tema = clinica.temas_base
   const tokens = tema?.tokens || {}
   const root = document.documentElement
@@ -30,8 +19,6 @@ export async function aplicarTemaDeClinica(slug) {
   root.style.setProperty('--color-secondary', clinica.color_secundario || tema?.color_secundario_default)
   root.style.setProperty('--color-accent', clinica.color_acento || tema?.color_acento_default)
 
-  // Tokens extendidos (opcionales): si el tema no los trae, no se tocan
-  // y quedan los defaults de index.css (look "Elegante Dorado" clásico).
   if (tokens.fondo_app) root.style.setProperty('--color-fondo-app', tokens.fondo_app)
   if (tokens.fondo_oscuro) root.style.setProperty('--color-fondo-oscuro', tokens.fondo_oscuro)
   if (tokens.fondo_oscuro_gradiente) root.style.setProperty('--gradiente-fondo-oscuro', tokens.fondo_oscuro_gradiente)
@@ -45,6 +32,41 @@ export async function aplicarTemaDeClinica(slug) {
   if (tokens.borde_tarjeta) root.style.setProperty('--color-borde-tarjeta', tokens.borde_tarjeta)
   if (tokens.fuente_titulo) root.style.setProperty('--font-display', `'${tokens.fuente_titulo}', serif`)
   if (tokens.fuente_cuerpo) root.style.setProperty('--font-body', `'${tokens.fuente_cuerpo}', sans-serif`)
+}
 
+export async function aplicarTemaDeClinica(slug) {
+  const { data: clinica, error } = await supabase
+    .from('clinicas')
+    .select('*, temas_base(*)')
+    .eq('slug', slug)
+    .single()
+
+  if (error || !clinica) {
+    console.warn('No se pudo cargar la clínica, usando tema por defecto:', error)
+    return null
+  }
+
+  inyectarTokens(clinica)
+  return clinica
+}
+
+/**
+ * Igual que aplicarTemaDeClinica, pero busca por ID en vez de slug —
+ * se usa después del login, cuando ya sabemos perfil.clinica_id y
+ * queremos aplicar el tema/marca real de esa clínica específica.
+ */
+export async function aplicarTemaDeClinicaPorId(clinicaId) {
+  const { data: clinica, error } = await supabase
+    .from('clinicas')
+    .select('*, temas_base(*)')
+    .eq('id', clinicaId)
+    .single()
+
+  if (error || !clinica) {
+    console.warn('No se pudo cargar la clínica por ID:', error)
+    return null
+  }
+
+  inyectarTokens(clinica)
   return clinica
 }

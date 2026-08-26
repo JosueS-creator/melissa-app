@@ -7,10 +7,12 @@ import Historial from './pages/Historial'
 import Referidos from './pages/Referidos'
 import Perfil from './pages/Perfil'
 import AdminPanel from './pages/AdminPanel'
+import PanelMelissa from './pages/PanelMelissa'
 import Login from './pages/Login'
 import Registro from './pages/Registro'
+import RegistroAdmin from './pages/RegistroAdmin'
 import TabBar from './components/TabBar'
-import { aplicarTemaDeClinica } from './lib/aplicarTema'
+import { aplicarTemaDeClinica, aplicarTemaDeClinicaPorId } from './lib/aplicarTema'
 import { obtenerSesionActual, obtenerPerfilActual, cerrarSesion } from './lib/auth'
 import { supabase } from './lib/supabaseClient'
 
@@ -18,7 +20,15 @@ const SLUG_CLINICA_DEMO = 'demo'
 
 // Pantallas visibles en el tab bar principal. Historial y Referidos se
 // alcanzan desde Perfil (ver Perfil.jsx), no ocupan un ícono propio.
-const PANTALLAS_CON_TABBAR = ['inicio', 'agenda', 'tarjeta', 'tienda', 'perfil', 'admin']
+const PANTALLAS_CON_TABBAR = ['inicio', 'agenda', 'tarjeta', 'tienda', 'perfil', 'admin', 'melissa']
+
+function leerParametrosURL() {
+  const params = new URLSearchParams(window.location.search)
+  return {
+    invitacion: params.get('invitacion'),
+    slugClinica: params.get('clinica'),
+  }
+}
 
 export default function App() {
   const [cargando, setCargando] = useState(true)
@@ -26,9 +36,14 @@ export default function App() {
   const [perfil, setPerfil] = useState(null)
   const [clinica, setClinica] = useState(null)
   const [pantalla, setPantalla] = useState('inicio')
+  const [parametrosURL] = useState(leerParametrosURL)
 
   useEffect(() => {
-    aplicarTemaDeClinica(SLUG_CLINICA_DEMO).then((c) => setClinica(c))
+    // Tema por defecto mientras no sabemos a qué clínica pertenece la
+    // sesión (antes de login). Si vienen de un link con ?clinica=slug,
+    // usamos ese; si no, el de demo.
+    aplicarTemaDeClinica(parametrosURL.slugClinica || SLUG_CLINICA_DEMO)
+
     obtenerSesionActual().then((s) => {
       setSesion(s)
       setCargando(false)
@@ -44,17 +59,38 @@ export default function App() {
 
   useEffect(() => {
     if (sesion) {
-      obtenerPerfilActual().then(setPerfil)
+      obtenerPerfilActual().then((p) => {
+        setPerfil(p)
+        if (p?.clinica_id) {
+          // Ya sabemos la clínica real del usuario logueado — aplicamos
+          // su tema/marca real (puede ser distinta a la de antes de login).
+          aplicarTemaDeClinicaPorId(p.clinica_id).then(setClinica)
+        }
+      })
     } else {
       setPerfil(null)
+      setClinica(null)
     }
   }, [sesion])
 
   if (cargando) return null
 
   if (!sesion) {
+    if (parametrosURL.invitacion) {
+      return (
+        <RegistroAdmin
+          codigo={parametrosURL.invitacion}
+          onRegistroExitoso={() => setPantalla('inicio')}
+        />
+      )
+    }
+
     return pantalla === 'registro' ? (
-      <Registro onRegistroExitoso={() => setPantalla('inicio')} irALogin={() => setPantalla('login')} />
+      <Registro
+        onRegistroExitoso={() => setPantalla('inicio')}
+        irALogin={() => setPantalla('login')}
+        slugClinica={parametrosURL.slugClinica}
+      />
     ) : (
       <Login onLoginExitoso={() => setPantalla('inicio')} irARegistro={() => setPantalla('registro')} />
     )
@@ -63,7 +99,7 @@ export default function App() {
   const mostrarTabBar = PANTALLAS_CON_TABBAR.includes(pantalla)
 
   return (
-    <div className="max-w-sm mx-auto flex flex-col" style={{ background: 'var(--color-fondo-app)', minHeight: '100dvh' }}>
+    <div className="max-w-sm mx-auto min-h-screen flex flex-col" style={{ background: 'var(--color-fondo-app)' }}>
       <div className="flex-1">
         {pantalla === 'inicio' && (
           <Home nombrePaciente={perfil?.nombre || sesion.user.email} clinica={clinica} onNavigate={setPantalla} />
@@ -73,8 +109,11 @@ export default function App() {
         {pantalla === 'tarjeta' && <TarjetaVIP onNavigate={setPantalla} />}
         {pantalla === 'historial' && <Historial onVolver={() => setPantalla('perfil')} />}
         {pantalla === 'referidos' && <Referidos onVolver={() => setPantalla('perfil')} />}
-        {pantalla === 'perfil' && <Perfil onNavigate={setPantalla} onCerrarSesion={cerrarSesion} />}
+        {pantalla === 'perfil' && (
+          <Perfil onNavigate={setPantalla} onCerrarSesion={cerrarSesion} esSuperAdmin={perfil?.es_super_admin} />
+        )}
         {pantalla === 'admin' && <AdminPanel />}
+        {pantalla === 'melissa' && <PanelMelissa />}
       </div>
 
       {mostrarTabBar && (
