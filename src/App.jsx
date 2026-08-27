@@ -11,6 +11,7 @@ import PanelMelissa from './pages/PanelMelissa'
 import Login from './pages/Login'
 import Registro from './pages/Registro'
 import RegistroAdmin from './pages/RegistroAdmin'
+import Bienvenida from './pages/Bienvenida'
 import TabBar from './components/TabBar'
 import { aplicarTemaDeClinica, aplicarTemaDeClinicaPorId } from './lib/aplicarTema'
 import { obtenerSesionActual, obtenerPerfilActual, cerrarSesion } from './lib/auth'
@@ -35,7 +36,8 @@ export default function App() {
   const [sesion, setSesion] = useState(null)
   const [perfil, setPerfil] = useState(null)
   const [clinica, setClinica] = useState(null)
-  const [pantalla, setPantalla] = useState('inicio')
+  const [pantalla, setPantalla] = useState('bienvenida')
+  const [modoEntrada, setModoEntrada] = useState('paciente')
   const [parametrosURL] = useState(leerParametrosURL)
 
   useEffect(() => {
@@ -85,14 +87,34 @@ export default function App() {
       )
     }
 
-    return pantalla === 'registro' ? (
-      <Registro
-        onRegistroExitoso={() => setPantalla('inicio')}
-        irALogin={() => setPantalla('login')}
-        slugClinica={parametrosURL.slugClinica}
+    if (pantalla === 'registro') {
+      return (
+        <Registro
+          onRegistroExitoso={() => setPantalla('inicio')}
+          irALogin={() => setPantalla('login')}
+          slugClinica={parametrosURL.slugClinica}
+        />
+      )
+    }
+
+    if (pantalla === 'login') {
+      return (
+        <Login
+          onLoginExitoso={() => setPantalla('inicio')}
+          irARegistro={() => setPantalla('registro')}
+          modo={modoEntrada}
+          onVolver={() => setPantalla('bienvenida')}
+        />
+      )
+    }
+
+    return (
+      <Bienvenida
+        onSeleccionar={(modo) => {
+          setModoEntrada(modo)
+          setPantalla('login')
+        }}
       />
-    ) : (
-      <Login onLoginExitoso={() => setPantalla('inicio')} irARegistro={() => setPantalla('registro')} />
     )
   }
 

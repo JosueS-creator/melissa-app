@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { iniciarSesion } from '../lib/auth'
 
-export default function Login({ onLoginExitoso, irARegistro }) {
+export default function Login({ onLoginExitoso, irARegistro, modo = 'paciente', onVolver }) {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [cargando, setCargando] = useState(false)
@@ -23,8 +23,17 @@ export default function Login({ onLoginExitoso, irARegistro }) {
 
   return (
     <div className="max-w-sm mx-auto min-h-screen px-6 pt-16 font-body">
-      <p className="font-display text-2xl text-ink mb-1">Bienvenida de vuelta</p>
-      <p className="text-sm text-ink/60 mb-6">Inicia sesión para continuar tu rutina.</p>
+      {onVolver && (
+        <button onClick={onVolver} className="text-xs mb-4" style={{ color: 'var(--color-primary)' }}>‹ Volver</button>
+      )}
+      <p className="font-display text-2xl text-ink mb-1">
+        {modo === 'clinica' ? 'Acceso administrativo' : 'Bienvenida de vuelta'}
+      </p>
+      <p className="text-sm text-ink/60 mb-6">
+        {modo === 'clinica'
+          ? 'Inicia sesión con la cuenta de tu clínica.'
+          : 'Inicia sesión para continuar tu rutina.'}
+      </p>
 
       <form onSubmit={manejarSubmit} className="flex flex-col gap-3">
         <input
@@ -56,12 +65,27 @@ export default function Login({ onLoginExitoso, irARegistro }) {
         </button>
       </form>
 
-      <p className="text-sm text-ink/60 mt-6 text-center">
-        ¿No tienes cuenta?{' '}
-        <button onClick={irARegistro} className="font-medium" style={{ color: 'var(--color-primary)' }}>
-          Regístrate
-        </button>
-      </p>
+      {modo === 'paciente' ? (
+        <p className="text-sm text-ink/60 mt-6 text-center">
+          ¿No tienes cuenta?{' '}
+          <button onClick={irARegistro} className="font-medium" style={{ color: 'var(--color-primary)' }}>
+            Regístrate
+          </button>
+        </p>
+      ) : (
+        <p className="text-sm text-ink/60 mt-6 text-center">
+          ¿Tu clínica aún no tiene cuenta?{' '}
+          <a
+            href="https://wa.me/50499990000"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="font-medium"
+            style={{ color: 'var(--color-primary)' }}
+          >
+            Contáctanos
+          </a>
+        </p>
+      )}
     </div>
   )
 }
