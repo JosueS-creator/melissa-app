@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { supabase } from '../lib/supabaseClient'
+import { TIPOS_NEGOCIO, sustantivoNegocio } from '../lib/tiposNegocio'
 
 const TEMAS = [
   { id: 'elegante_dorado', nombre: 'Elegante Dorado' },
@@ -22,6 +23,7 @@ export default function PanelMelissa() {
   const [nombre, setNombre] = useState('')
   const [ciudad, setCiudad] = useState('')
   const [pais, setPais] = useState('HN')
+  const [tipoNegocio, setTipoNegocio] = useState('clinica_estetica')
   const [temaBase, setTemaBase] = useState('elegante_dorado')
   const [creando, setCreando] = useState(false)
   const [linkGenerado, setLinkGenerado] = useState(null)
@@ -55,12 +57,13 @@ export default function PanelMelissa() {
         moneda: pais === 'ES' ? 'EUR' : 'HNL',
         plan: 'starter',
         tema_base_id: temaBase,
+        tipo_negocio: tipoNegocio,
       })
       .select()
       .single()
 
     if (errorClinica || !nuevaClinica) {
-      setError('No se pudo crear la clínica: ' + errorClinica?.message)
+      setError('No se pudo crear el negocio: ' + errorClinica?.message)
       setCreando(false)
       return
     }
@@ -70,7 +73,7 @@ export default function PanelMelissa() {
     })
 
     if (errorInvitacion) {
-      setError('Clínica creada, pero no se pudo generar la invitación: ' + errorInvitacion.message)
+      setError('Negocio creado, pero no se pudo generar la invitación: ' + errorInvitacion.message)
     } else {
       const link = `${window.location.origin}/?invitacion=${codigo}`
       setLinkGenerado({ link, clinica: nuevaClinica.nombre })
@@ -99,13 +102,13 @@ export default function PanelMelissa() {
   return (
     <div className="min-h-screen font-body px-5 pb-10" style={{ background: 'var(--color-fondo-app)', paddingTop: 'calc(env(safe-area-inset-top) + 32px)' }}>
       <p style={{ fontFamily: 'var(--font-display)', fontSize: 22, color: 'var(--color-ink)' }}>Panel de Melissa</p>
-      <p className="text-xs mb-6" style={{ color: 'var(--color-texto-secundario)' }}>Solo visible para ti — crea clínicas y genera sus invitaciones.</p>
+      <p className="text-xs mb-6" style={{ color: 'var(--color-texto-secundario)' }}>Solo visible para ti — crea negocios y genera sus invitaciones.</p>
 
       <form onSubmit={crearClinica} className="flex flex-col gap-3 mb-6">
         <input
           className="rounded-xl px-4 py-3 text-sm bg-white"
           style={{ border: '1px solid var(--color-borde-tarjeta)' }}
-          placeholder="Nombre de la clínica"
+          placeholder="Nombre del negocio"
           value={nombre}
           onChange={(e) => setNombre(e.target.value)}
           required
@@ -118,6 +121,16 @@ export default function PanelMelissa() {
           onChange={(e) => setCiudad(e.target.value)}
           required
         />
+        <select
+          className="rounded-xl px-4 py-3 text-sm bg-white"
+          style={{ border: '1px solid var(--color-borde-tarjeta)' }}
+          value={tipoNegocio}
+          onChange={(e) => setTipoNegocio(e.target.value)}
+        >
+          {TIPOS_NEGOCIO.map((t) => (
+            <option key={t.valor} value={t.valor}>{t.etiqueta}</option>
+          ))}
+        </select>
         <select
           className="rounded-xl px-4 py-3 text-sm bg-white"
           style={{ border: '1px solid var(--color-borde-tarjeta)' }}
@@ -143,7 +156,7 @@ export default function PanelMelissa() {
           className="rounded-xl py-3 text-white text-sm font-medium disabled:opacity-60"
           style={{ background: 'var(--gradiente-primario)' }}
         >
-          {creando ? 'Creando...' : 'Crear clínica'}
+          {creando ? 'Creando...' : 'Crear negocio'}
         </button>
         {error && <p className="text-xs" style={{ color: '#B0524A' }}>{error}</p>}
       </form>
@@ -162,14 +175,16 @@ export default function PanelMelissa() {
         </div>
       )}
 
-      <p className="text-sm font-medium mb-2" style={{ color: 'var(--color-ink)' }}>Clínicas existentes</p>
+      <p className="text-sm font-medium mb-2" style={{ color: 'var(--color-ink)' }}>Negocios existentes</p>
       {cargando && <p className="text-sm" style={{ color: 'var(--color-texto-secundario)' }}>Cargando...</p>}
       <div className="flex flex-col gap-2">
         {clinicas.map((c) => (
           <div key={c.id} className="rounded-xl px-4 py-3 flex justify-between items-center" style={{ background: 'linear-gradient(160deg,#FFFFFF,#FDF7F9)', border: '1px solid var(--color-borde-tarjeta)' }}>
             <div>
               <p className="text-sm font-medium" style={{ color: 'var(--color-ink)' }}>{c.nombre}</p>
-              <p className="text-[11px]" style={{ color: 'var(--color-texto-secundario)' }}>{c.ciudad} · {c.pais} · {c.plan}</p>
+              <p className="text-[11px]" style={{ color: 'var(--color-texto-secundario)' }}>
+                {c.ciudad} · {c.pais} · {sustantivoNegocio(c.tipo_negocio)} · {c.plan}
+              </p>
             </div>
             <button
               onClick={() => generarNuevaInvitacion(c.id, c.nombre)}

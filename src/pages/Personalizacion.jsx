@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { supabase } from '../lib/supabaseClient'
 import { obtenerPerfilActual } from '../lib/auth'
+import { sustantivoNegocio } from '../lib/tiposNegocio'
 
 const TEMAS = [
   { id: 'rosa_oro', nombre: 'Rosa y Oro', primario: '#C93B79', secundario: '#FFFFFF', acento: '#F6C2D6' },
@@ -104,7 +105,7 @@ export default function Personalizacion() {
   if (perfil.rol !== 'admin') {
     return (
       <p className="text-center pt-16 text-sm text-ink/60 px-8">
-        Esta sección es solo para administradores de la clínica.
+        Esta sección es solo para administradores del negocio.
       </p>
     )
   }
@@ -112,9 +113,9 @@ export default function Personalizacion() {
   return (
     <div className="max-w-sm mx-auto px-5 pt-8 pb-10 font-body">
       <p className="font-display text-xl text-ink mb-1">Personaliza tu app</p>
-      <p className="text-xs text-ink/50 mb-6">Así se verá la app para tus pacientes.</p>
+      <p className="text-xs text-ink/50 mb-6">Así se verá la app para tus clientes.</p>
 
-      <p className="text-sm font-medium text-ink mb-2">Logo de tu clínica</p>
+      <p className="text-sm font-medium text-ink mb-2">Logo de tu {sustantivoNegocio(clinica?.tipo_negocio)}</p>
       <div className="flex items-center gap-4 mb-6">
         <div className="w-16 h-16 rounded-xl bg-gray-100 flex items-center justify-center overflow-hidden flex-shrink-0">
           {logoPreview ? (
@@ -171,7 +172,7 @@ export default function Personalizacion() {
         <div className="p-4" style={{ background: previewAcento }}>
           <div className="flex items-center gap-2">
             {logoPreview && <img src={logoPreview} alt="" className="w-6 h-6 rounded-full object-cover" />}
-            <p className="text-xs text-ink/60">Bienvenida a tu clínica</p>
+            <p className="text-xs text-ink/60">Bienvenida a tu {sustantivoNegocio(clinica?.tipo_negocio)}</p>
           </div>
           <button className="mt-3 text-xs text-white px-4 py-2 rounded-lg" style={{ background: previewPrimario }}>
             Reservar cita

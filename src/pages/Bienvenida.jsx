@@ -17,7 +17,7 @@ export default function Bienvenida({ onSeleccionar }) {
         className="w-full rounded-2xl py-4 mb-3 text-white shadow-boton-primario"
         style={{ background: 'var(--gradiente-primario)' }}
       >
-        <span style={{ font: "500 15px/1 var(--font-body)" }}>Soy paciente</span>
+        <span style={{ font: "500 15px/1 var(--font-body)" }}>Soy cliente</span>
       </button>
 
       <button
@@ -25,7 +25,7 @@ export default function Bienvenida({ onSeleccionar }) {
         className="w-full rounded-2xl py-4"
         style={{ background: '#FFFDF9', border: '1px solid var(--color-dorado-claro)', color: 'var(--color-ink)' }}
       >
-        <span style={{ font: "500 15px/1 var(--font-body)" }}>Soy administrador de clínica</span>
+        <span style={{ font: "500 15px/1 var(--font-body)" }}>Soy administrador de negocio</span>
       </button>
     </div>
   )

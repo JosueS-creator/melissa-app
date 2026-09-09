@@ -5,7 +5,8 @@ import Personalizacion from './Personalizacion'
 
 const TABS = [
   { id: 'citas', label: 'Citas' },
-  { id: 'pacientes', label: 'Pacientes' },
+  { id: 'pacientes', label: 'Clientes' },
+  { id: 'servicios', label: 'Servicios' },
   { id: 'productos', label: 'Productos' },
   { id: 'ventas', label: 'Ventas' },
   { id: 'marca', label: 'Marca' },
@@ -34,15 +35,15 @@ export default function AdminPanel() {
       className="max-w-sm mx-auto px-5 pb-10 font-body"
       style={{ paddingTop: 'calc(env(safe-area-inset-top) + 32px)' }}
     >
-      <p className="font-display text-xl text-ink mb-1">Panel de la clínica</p>
+      <p className="font-display text-xl text-ink mb-1">Panel del negocio</p>
       <p className="text-xs text-ink/50 mb-5">Vista operativa para el equipo.</p>
 
-      <div className="grid grid-cols-5 gap-1 mb-5">
+      <div className="grid grid-cols-6 gap-1 mb-5">
         {TABS.map((t) => (
           <button
             key={t.id}
             onClick={() => setTab(t.id)}
-            className="rounded-lg py-2 text-[10px] font-medium"
+            className="rounded-lg py-2 text-[9px] font-medium"
             style={
               tab === t.id
                 ? { background: 'var(--color-primary)', color: '#FFFFFF' }
@@ -56,6 +57,7 @@ export default function AdminPanel() {
 
       {tab === 'citas' && <PanelCitas clinicaId={perfil.clinica_id} />}
       {tab === 'pacientes' && <PanelPacientes clinicaId={perfil.clinica_id} />}
+      {tab === 'servicios' && <PanelServicios clinicaId={perfil.clinica_id} />}
       {tab === 'productos' && <PanelProductos clinicaId={perfil.clinica_id} />}
       {tab === 'ventas' && <PanelVentas clinicaId={perfil.clinica_id} />}
       {tab === 'marca' && (
@@ -70,6 +72,7 @@ export default function AdminPanel() {
 function PanelCitas({ clinicaId }) {
   const [citas, setCitas] = useState([])
   const [cargando, setCargando] = useState(true)
+  const [mostrarForm, setMostrarForm] = useState(false)
 
   useEffect(() => {
     cargar()
@@ -90,9 +93,6 @@ function PanelCitas({ clinicaId }) {
     cargar()
   }
 
-  if (cargando) return <p className="text-sm text-ink/50">Cargando citas...</p>
-  if (citas.length === 0) return <p className="text-sm text-ink/50">No hay citas registradas todavía.</p>
-
   const colorEstado = {
     pendiente: '#B08D3E',
     confirmada: '#2D6E8E',
@@ -101,39 +101,319 @@ function PanelCitas({ clinicaId }) {
   }
 
   return (
-    <div className="flex flex-col gap-2.5">
-      {citas.map((c) => (
-        <div key={c.id} className="rounded-xl p-3" style={{ background: 'var(--color-accent)' }}>
-          <div className="flex justify-between items-start">
-            <div>
-              <p className="text-sm font-medium text-ink">{c.pacientes?.nombre ?? 'Paciente'}</p>
-              <p className="text-[11px] text-ink/50 mt-0.5">
-                {new Date(c.fecha_hora).toLocaleString('es-HN', { day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit' })}
-                {' · '}
-                {c.especialistas?.nombre ?? 'Sin asignar'}
-              </p>
+    <div>
+      <button
+        onClick={() => setMostrarForm((v) => !v)}
+        className="w-full rounded-xl py-2.5 text-sm font-medium mb-3"
+        style={{ background: mostrarForm ? 'var(--color-accent)' : 'var(--color-primary)', color: mostrarForm ? 'var(--color-ink)' : '#FFFFFF' }}
+      >
+        {mostrarForm ? 'Cancelar' : '+ Agendar cita'}
+      </button>
+
+      {mostrarForm && (
+        <FormularioNuevaCita
+          clinicaId={clinicaId}
+          onCreada={() => {
+            setMostrarForm(false)
+            cargar()
+          }}
+        />
+      )}
+
+      {cargando && <p className="text-sm text-ink/50">Cargando citas...</p>}
+      {!cargando && citas.length === 0 && <p className="text-sm text-ink/50">No hay citas registradas todavía.</p>}
+
+      <div className="flex flex-col gap-2.5">
+        {citas.map((c) => (
+          <div key={c.id} className="rounded-xl p-3" style={{ background: 'var(--color-accent)' }}>
+            <div className="flex justify-between items-start">
+              <div>
+                <p className="text-sm font-medium text-ink">{c.pacientes?.nombre ?? 'Cliente'}</p>
+                <p className="text-[11px] text-ink/50 mt-0.5">
+                  {new Date(c.fecha_hora).toLocaleString('es-HN', { day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit' })}
+                  {' · '}
+                  {c.especialistas?.nombre ?? 'Sin asignar'}
+                </p>
+                {c.tratamiento && <p className="text-[11px] text-ink/50">{c.tratamiento}</p>}
+              </div>
+              <span className="text-[10px] font-medium px-2 py-1 rounded-full text-white" style={{ background: colorEstado[c.estado] }}>
+                {c.estado}
+              </span>
             </div>
-            <span className="text-[10px] font-medium px-2 py-1 rounded-full text-white" style={{ background: colorEstado[c.estado] }}>
-              {c.estado}
-            </span>
+            {c.estado === 'pendiente' && (
+              <div className="flex gap-2 mt-2">
+                <button onClick={() => cambiarEstado(c.id, 'confirmada')} className="text-[11px] px-3 py-1.5 rounded-lg text-white" style={{ background: 'var(--color-primary)' }}>
+                  Confirmar
+                </button>
+                <button onClick={() => cambiarEstado(c.id, 'cancelada')} className="text-[11px] px-3 py-1.5 rounded-lg text-ink/60 bg-white">
+                  Cancelar
+                </button>
+              </div>
+            )}
+            {c.estado === 'confirmada' && (
+              <button onClick={() => cambiarEstado(c.id, 'completada')} className="text-[11px] px-3 py-1.5 rounded-lg text-white mt-2" style={{ background: 'var(--color-primary)' }}>
+                Marcar completada
+              </button>
+            )}
           </div>
-          {c.estado === 'pendiente' && (
-            <div className="flex gap-2 mt-2">
-              <button onClick={() => cambiarEstado(c.id, 'confirmada')} className="text-[11px] px-3 py-1.5 rounded-lg text-white" style={{ background: 'var(--color-primary)' }}>
-                Confirmar
-              </button>
-              <button onClick={() => cambiarEstado(c.id, 'cancelada')} className="text-[11px] px-3 py-1.5 rounded-lg text-ink/60 bg-white">
-                Cancelar
-              </button>
+        ))}
+      </div>
+    </div>
+  )
+}
+
+function FormularioNuevaCita({ clinicaId, onCreada }) {
+  const [pacientes, setPacientes] = useState([])
+  const [especialistas, setEspecialistas] = useState([])
+  const [servicios, setServicios] = useState([])
+  const [pacienteId, setPacienteId] = useState('')
+  const [especialistaId, setEspecialistaId] = useState('')
+  const [servicioNombre, setServicioNombre] = useState('')
+  const [fecha, setFecha] = useState('')
+  const [hora, setHora] = useState('')
+  const [guardando, setGuardando] = useState(false)
+  const [error, setError] = useState('')
+
+  useEffect(() => {
+    async function cargarListas() {
+      const [{ data: p }, { data: e }, { data: s }] = await Promise.all([
+        supabase.from('pacientes').select('id, nombre').eq('clinica_id', clinicaId).order('nombre'),
+        supabase.from('especialistas').select('id, nombre').eq('clinica_id', clinicaId).eq('activo', true),
+        supabase.from('servicios').select('id, nombre, precio').eq('clinica_id', clinicaId).eq('activo', true),
+      ])
+      setPacientes(p || [])
+      setEspecialistas(e || [])
+      setServicios(s || [])
+    }
+    cargarListas()
+  }, [clinicaId])
+
+  async function crearCita(e) {
+    e.preventDefault()
+    if (!pacienteId || !fecha || !hora) return
+    setGuardando(true)
+    setError('')
+
+    const fechaHora = new Date(`${fecha}T${hora}:00`).toISOString()
+
+    const { error: errorInsert } = await supabase.from('citas').insert({
+      clinica_id: clinicaId,
+      paciente_id: pacienteId,
+      especialista_id: especialistaId || null,
+      fecha_hora: fechaHora,
+      estado: 'confirmada',
+      tratamiento: servicioNombre || null,
+    })
+
+    if (errorInsert) {
+      setError('No se pudo agendar: ' + errorInsert.message)
+      setGuardando(false)
+    } else {
+      onCreada()
+    }
+  }
+
+  return (
+    <form onSubmit={crearCita} className="flex flex-col gap-2 mb-5 rounded-xl p-3" style={{ background: 'var(--color-accent)' }}>
+      <select
+        className="rounded-lg px-3 py-2 text-sm bg-white"
+        value={pacienteId}
+        onChange={(e) => setPacienteId(e.target.value)}
+        required
+      >
+        <option value="" disabled>Selecciona un cliente</option>
+        {pacientes.map((p) => (
+          <option key={p.id} value={p.id}>{p.nombre}</option>
+        ))}
+      </select>
+
+      <select
+        className="rounded-lg px-3 py-2 text-sm bg-white"
+        value={especialistaId}
+        onChange={(e) => setEspecialistaId(e.target.value)}
+      >
+        <option value="">Sin especialista asignado</option>
+        {especialistas.map((esp) => (
+          <option key={esp.id} value={esp.id}>{esp.nombre}</option>
+        ))}
+      </select>
+
+      <select
+        className="rounded-lg px-3 py-2 text-sm bg-white"
+        value={servicioNombre}
+        onChange={(e) => setServicioNombre(e.target.value)}
+      >
+        <option value="">Sin servicio específico</option>
+        {servicios.map((s) => (
+          <option key={s.id} value={s.nombre}>{s.nombre} · L {Number(s.precio).toFixed(0)}</option>
+        ))}
+      </select>
+
+      <div className="flex gap-2">
+        <input
+          className="rounded-lg px-3 py-2 text-sm bg-white flex-1"
+          type="date"
+          value={fecha}
+          onChange={(e) => setFecha(e.target.value)}
+          required
+        />
+        <input
+          className="rounded-lg px-3 py-2 text-sm bg-white flex-1"
+          type="time"
+          value={hora}
+          onChange={(e) => setHora(e.target.value)}
+          required
+        />
+      </div>
+
+      {error && <p className="text-xs" style={{ color: '#B0524A' }}>{error}</p>}
+
+      <button
+        type="submit"
+        disabled={guardando}
+        className="rounded-lg py-2.5 text-white text-sm font-medium disabled:opacity-60"
+        style={{ background: 'var(--gradiente-primario)' }}
+      >
+        {guardando ? 'Agendando...' : 'Agendar cita'}
+      </button>
+    </form>
+  )
+}
+
+function PanelServicios({ clinicaId }) {
+  const [servicios, setServicios] = useState([])
+  const [cargando, setCargando] = useState(true)
+  const [mostrarForm, setMostrarForm] = useState(false)
+  const [nombre, setNombre] = useState('')
+  const [descripcion, setDescripcion] = useState('')
+  const [precio, setPrecio] = useState('')
+  const [duracion, setDuracion] = useState('30')
+  const [guardando, setGuardando] = useState(false)
+  const [error, setError] = useState('')
+
+  useEffect(() => {
+    cargar()
+  }, [])
+
+  async function cargar() {
+    const { data } = await supabase
+      .from('servicios')
+      .select('*')
+      .eq('clinica_id', clinicaId)
+      .order('nombre', { ascending: true })
+    setServicios(data || [])
+    setCargando(false)
+  }
+
+  async function crearServicio(e) {
+    e.preventDefault()
+    setGuardando(true)
+    setError('')
+
+    const { error: errorInsert } = await supabase.from('servicios').insert({
+      clinica_id: clinicaId,
+      nombre,
+      descripcion,
+      precio: Number(precio),
+      duracion_minutos: Number(duracion) || 30,
+      activo: true,
+    })
+
+    if (errorInsert) {
+      setError('No se pudo guardar: ' + errorInsert.message)
+    } else {
+      setNombre('')
+      setDescripcion('')
+      setPrecio('')
+      setDuracion('30')
+      setMostrarForm(false)
+      cargar()
+    }
+    setGuardando(false)
+  }
+
+  async function alternarActivo(servicio) {
+    await supabase.from('servicios').update({ activo: !servicio.activo }).eq('id', servicio.id)
+    cargar()
+  }
+
+  return (
+    <div>
+      <button
+        onClick={() => setMostrarForm((v) => !v)}
+        className="w-full rounded-xl py-2.5 text-sm font-medium mb-3"
+        style={{ background: mostrarForm ? 'var(--color-accent)' : 'var(--color-primary)', color: mostrarForm ? 'var(--color-ink)' : '#FFFFFF' }}
+      >
+        {mostrarForm ? 'Cancelar' : '+ Agregar servicio'}
+      </button>
+
+      {mostrarForm && (
+        <form onSubmit={crearServicio} className="flex flex-col gap-2 mb-5 rounded-xl p-3" style={{ background: 'var(--color-accent)' }}>
+          <input
+            className="rounded-lg px-3 py-2 text-sm bg-white"
+            placeholder="Nombre del servicio (ej. Limpieza facial)"
+            value={nombre}
+            onChange={(e) => setNombre(e.target.value)}
+            required
+          />
+          <input
+            className="rounded-lg px-3 py-2 text-sm bg-white"
+            placeholder="Descripción (opcional)"
+            value={descripcion}
+            onChange={(e) => setDescripcion(e.target.value)}
+          />
+          <div className="flex gap-2">
+            <input
+              className="rounded-lg px-3 py-2 text-sm bg-white flex-1"
+              placeholder="Precio"
+              type="number"
+              step="0.01"
+              value={precio}
+              onChange={(e) => setPrecio(e.target.value)}
+              required
+            />
+            <input
+              className="rounded-lg px-3 py-2 text-sm bg-white flex-1"
+              placeholder="Duración (min)"
+              type="number"
+              value={duracion}
+              onChange={(e) => setDuracion(e.target.value)}
+            />
+          </div>
+
+          {error && <p className="text-xs" style={{ color: '#B0524A' }}>{error}</p>}
+
+          <button
+            type="submit"
+            disabled={guardando}
+            className="rounded-lg py-2.5 text-white text-sm font-medium disabled:opacity-60"
+            style={{ background: 'var(--gradiente-primario)' }}
+          >
+            {guardando ? 'Guardando...' : 'Guardar servicio'}
+          </button>
+        </form>
+      )}
+
+      {cargando && <p className="text-sm text-ink/50">Cargando servicios...</p>}
+      {!cargando && servicios.length === 0 && <p className="text-sm text-ink/50">Todavía no tienes servicios registrados.</p>}
+
+      <div className="flex flex-col gap-2">
+        {servicios.map((s) => (
+          <div key={s.id} className="rounded-xl p-3 flex items-center justify-between" style={{ background: 'var(--color-accent)', opacity: s.activo ? 1 : 0.5 }}>
+            <div>
+              <p className="text-sm font-medium text-ink">{s.nombre}</p>
+              <p className="text-[11px] text-ink/50">L {Number(s.precio).toFixed(2)} · {s.duracion_minutos} min</p>
             </div>
-          )}
-          {c.estado === 'confirmada' && (
-            <button onClick={() => cambiarEstado(c.id, 'completada')} className="text-[11px] px-3 py-1.5 rounded-lg text-white mt-2" style={{ background: 'var(--color-primary)' }}>
-              Marcar completada
+            <button
+              onClick={() => alternarActivo(s)}
+              className="text-[10px] px-2.5 py-1.5 rounded-lg flex-shrink-0"
+              style={{ background: s.activo ? 'var(--color-ink)' : 'var(--color-primary)', color: '#FFFFFF' }}
+            >
+              {s.activo ? 'Ocultar' : 'Activar'}
             </button>
-          )}
-        </div>
-      ))}
+          </div>
+        ))}
+      </div>
     </div>
   )
 }
@@ -154,8 +434,8 @@ function PanelPacientes({ clinicaId }) {
       })
   }, [])
 
-  if (cargando) return <p className="text-sm text-ink/50">Cargando pacientes...</p>
-  if (pacientes.length === 0) return <p className="text-sm text-ink/50">Todavía no hay pacientes registrados.</p>
+  if (cargando) return <p className="text-sm text-ink/50">Cargando clientes...</p>
+  if (pacientes.length === 0) return <p className="text-sm text-ink/50">Todavía no hay clientes registrados.</p>
 
   return (
     <div className="flex flex-col gap-2">
@@ -378,7 +658,7 @@ function PanelVentas({ clinicaId }) {
         {pedidos.map((p) => (
           <div key={p.id} className="rounded-xl p-3 flex justify-between items-center" style={{ background: 'var(--color-accent)' }}>
             <div>
-              <p className="text-sm font-medium text-ink">{p.pacientes?.nombre ?? 'Paciente'}</p>
+              <p className="text-sm font-medium text-ink">{p.pacientes?.nombre ?? 'Cliente'}</p>
               <p className="text-[11px] text-ink/50">
                 {new Date(p.fecha).toLocaleDateString('es-HN', { day: 'numeric', month: 'short' })} · {p.estado}
               </p>

@@ -5,7 +5,7 @@ import { calcularNivelYProgreso } from '../lib/fidelidad'
 import logoMelissa from '../assets/melissa-logo-64.png'
 import logoMelissaMarcaAgua from '../assets/melissa-logo-256.png'
 
-export default function Home({ nombrePaciente = 'Paciente', clinica, onNavigate }) {
+export default function Home({ nombrePaciente = 'Cliente', clinica, onNavigate }) {
   const [paciente, setPaciente] = useState(null)
   const [puntos, setPuntos] = useState(0)
   const [proximaCita, setProximaCita] = useState(null)

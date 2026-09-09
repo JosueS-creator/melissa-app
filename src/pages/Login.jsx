@@ -31,7 +31,7 @@ export default function Login({ onLoginExitoso, irARegistro, modo = 'paciente', 
       </p>
       <p className="text-sm text-ink/60 mb-6">
         {modo === 'clinica'
-          ? 'Inicia sesión con la cuenta de tu clínica.'
+          ? 'Inicia sesión con la cuenta de tu negocio.'
           : 'Inicia sesión para continuar tu rutina.'}
       </p>
 
@@ -74,7 +74,7 @@ export default function Login({ onLoginExitoso, irARegistro, modo = 'paciente', 
         </p>
       ) : (
         <p className="text-sm text-ink/60 mt-6 text-center">
-          ¿Tu clínica aún no tiene cuenta?{' '}
+          ¿Tu negocio aún no tiene cuenta?{' '}
           <a
             href="https://wa.me/50499990000"
             target="_blank"

@@ -18,7 +18,8 @@ function proximosDias(cantidad = 5) {
 export default function Agenda() {
   const [especialistas, setEspecialistas] = useState([])
   const [especialistaId, setEspecialistaId] = useState(null)
-  const [tratamiento, setTratamiento] = useState('')
+  const [servicios, setServicios] = useState([])
+  const [servicioId, setServicioId] = useState(null)
   const [diaSeleccionado, setDiaSeleccionado] = useState(() => new Date().toISOString().slice(0, 10))
   const [hora, setHora] = useState(null)
   const [paciente, setPaciente] = useState(null)
@@ -35,19 +36,22 @@ export default function Agenda() {
       setPaciente(pacienteActual)
 
       if (pacienteActual) {
-        const { data } = await supabase
-          .from('especialistas')
-          .select('*')
-          .eq('clinica_id', pacienteActual.clinica_id)
-          .eq('activo', true)
+        const [{ data: dataEsp }, { data: dataServ }] = await Promise.all([
+          supabase.from('especialistas').select('*').eq('clinica_id', pacienteActual.clinica_id).eq('activo', true),
+          supabase.from('servicios').select('*').eq('clinica_id', pacienteActual.clinica_id).eq('activo', true).order('nombre'),
+        ])
 
-        setEspecialistas(data || [])
-        if (data && data.length > 0) setEspecialistaId(data[0].id)
+        setEspecialistas(dataEsp || [])
+        if (dataEsp && dataEsp.length > 0) setEspecialistaId(dataEsp[0].id)
+        setServicios(dataServ || [])
+        if (dataServ && dataServ.length > 0) setServicioId(dataServ[0].id)
       }
       setCargando(false)
     }
     cargar()
   }, [])
+
+  const servicioSeleccionado = servicios.find((s) => s.id === servicioId)
 
   async function confirmarCita() {
     if (!especialistaId || !hora || !paciente) return
@@ -62,7 +66,7 @@ export default function Agenda() {
       especialista_id: especialistaId,
       fecha_hora: fechaHora,
       estado: 'pendiente',
-      tratamiento: tratamiento.trim() || 'Consulta general',
+      tratamiento: servicioSeleccionado?.nombre || 'Consulta general',
     })
 
     if (errorInsert) {
@@ -94,10 +98,12 @@ export default function Agenda() {
           Reservar
         </p>
         <p className="mt-2" style={{ fontFamily: 'var(--font-display)', fontSize: 26, lineHeight: 1.15, color: '#FFFFFF' }}>
-          {tratamiento || 'Nueva cita'}
+          {servicioSeleccionado?.nombre || 'Nueva cita'}
         </p>
         <p className="mt-1 text-xs" style={{ color: 'rgba(233,169,193,0.85)' }}>
-          {especialistas.find((e) => e.id === especialistaId)?.especialidad || 'Elige un especialista'}
+          {servicioSeleccionado
+            ? `${servicioSeleccionado.duracion_minutos} min · L ${Number(servicioSeleccionado.precio).toFixed(0)}`
+            : especialistas.find((e) => e.id === especialistaId)?.especialidad || 'Elige un servicio'}
         </p>
       </div>
 
@@ -108,19 +114,36 @@ export default function Agenda() {
           </div>
         ) : (
           <>
-            <input
-              type="text"
-              value={tratamiento}
-              onChange={(e) => setTratamiento(e.target.value)}
-              placeholder="¿Qué tratamiento deseas?"
-              className="w-full rounded-xl px-4 py-3 text-sm mb-5 bg-white"
-              style={{ border: '1px solid var(--color-borde-tarjeta)' }}
-            />
+            <p className="text-sm font-medium mb-2" style={{ color: 'var(--color-ink)' }}>Servicio</p>
+            {servicios.length === 0 && (
+              <p className="text-sm mb-4" style={{ color: 'var(--color-texto-secundario)' }}>
+                Este negocio todavía no tiene servicios registrados.
+              </p>
+            )}
+            <div className="flex flex-col gap-2 mb-5">
+              {servicios.map((s) => (
+                <button
+                  key={s.id}
+                  onClick={() => setServicioId(s.id)}
+                  className="w-full flex items-center justify-between rounded-xl px-3.5 py-3 text-left"
+                  style={{
+                    background: 'linear-gradient(160deg,#FFFFFF,#FDF7F9)',
+                    border: `1px solid ${servicioId === s.id ? 'var(--color-primary)' : 'var(--color-borde-tarjeta)'}`,
+                  }}
+                >
+                  <div>
+                    <p className="text-sm font-medium" style={{ color: 'var(--color-ink)' }}>{s.nombre}</p>
+                    <p className="text-xs" style={{ color: 'var(--color-texto-secundario)' }}>{s.duracion_minutos} min</p>
+                  </div>
+                  <p className="text-sm font-medium" style={{ color: 'var(--color-primary)' }}>L {Number(s.precio).toFixed(0)}</p>
+                </button>
+              ))}
+            </div>
 
             <p className="text-sm font-medium mb-2" style={{ color: 'var(--color-ink)' }}>Especialista</p>
             {especialistas.length === 0 && (
               <p className="text-sm mb-4" style={{ color: 'var(--color-texto-secundario)' }}>
-                Esta clínica todavía no tiene especialistas registrados.
+                Este negocio todavía no tiene especialistas registrados.
               </p>
             )}
             <div className="flex flex-col gap-2 mb-5">
