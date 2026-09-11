@@ -1,7 +1,9 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
+import jsQR from 'jsqr'
 import { supabase } from '../lib/supabaseClient'
 import { obtenerPerfilActual } from '../lib/auth'
 import Personalizacion from './Personalizacion'
+import { PREFIJO_QR_CLIENTE } from './TarjetaVIP'
 
 const TABS = [
   { id: 'citas', label: 'Citas' },
@@ -421,8 +423,13 @@ function PanelServicios({ clinicaId }) {
 function PanelPacientes({ clinicaId }) {
   const [pacientes, setPacientes] = useState([])
   const [cargando, setCargando] = useState(true)
+  const [mostrarEscaner, setMostrarEscaner] = useState(false)
 
   useEffect(() => {
+    cargar()
+  }, [])
+
+  function cargar() {
     supabase
       .from('pacientes')
       .select('*')
@@ -432,22 +439,181 @@ function PanelPacientes({ clinicaId }) {
         setPacientes(data || [])
         setCargando(false)
       })
-  }, [])
-
-  if (cargando) return <p className="text-sm text-ink/50">Cargando clientes...</p>
-  if (pacientes.length === 0) return <p className="text-sm text-ink/50">Todavía no hay clientes registrados.</p>
+  }
 
   return (
-    <div className="flex flex-col gap-2">
-      {pacientes.map((p) => (
-        <div key={p.id} className="rounded-xl p-3 flex items-center gap-3" style={{ background: 'var(--color-accent)' }}>
-          <div className="w-8 h-8 rounded-full flex-shrink-0" style={{ background: 'var(--color-primary)' }} />
-          <div>
-            <p className="text-sm font-medium text-ink">{p.nombre}</p>
-            <p className="text-[11px] text-ink/50">{p.telefono || 'Sin teléfono registrado'}</p>
+    <div>
+      <button
+        onClick={() => setMostrarEscaner((v) => !v)}
+        className="w-full rounded-xl py-2.5 text-sm font-medium mb-3"
+        style={{ background: mostrarEscaner ? 'var(--color-accent)' : 'var(--color-primary)', color: mostrarEscaner ? 'var(--color-ink)' : '#FFFFFF' }}
+      >
+        {mostrarEscaner ? 'Cerrar escáner' : '📷 Escanear QR y asignar puntos'}
+      </button>
+
+      {mostrarEscaner && (
+        <EscanerQR clinicaId={clinicaId} onPuntosAsignados={() => { setMostrarEscaner(false); cargar() }} />
+      )}
+
+      {cargando && <p className="text-sm text-ink/50">Cargando clientes...</p>}
+      {!cargando && pacientes.length === 0 && <p className="text-sm text-ink/50">Todavía no hay clientes registrados.</p>}
+
+      <div className="flex flex-col gap-2">
+        {pacientes.map((p) => (
+          <div key={p.id} className="rounded-xl p-3 flex items-center gap-3" style={{ background: 'var(--color-accent)' }}>
+            <div className="w-8 h-8 rounded-full flex-shrink-0" style={{ background: 'var(--color-primary)' }} />
+            <div>
+              <p className="text-sm font-medium text-ink">{p.nombre}</p>
+              <p className="text-[11px] text-ink/50">{p.telefono || 'Sin teléfono registrado'}</p>
+            </div>
           </div>
-        </div>
-      ))}
+        ))}
+      </div>
+    </div>
+  )
+}
+
+function EscanerQR({ clinicaId, onPuntosAsignados }) {
+  const videoRef = useRef(null)
+  const canvasRef = useRef(null)
+  const [error, setError] = useState('')
+  const [clienteEncontrado, setClienteEncontrado] = useState(null)
+  const [buscando, setBuscando] = useState(false)
+  const [puntos, setPuntos] = useState('')
+  const [motivo, setMotivo] = useState('')
+  const [asignando, setAsignando] = useState(false)
+  const [mensaje, setMensaje] = useState('')
+
+  useEffect(() => {
+    let stream
+    let animId
+
+    async function iniciar() {
+      try {
+        stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } })
+        if (videoRef.current) {
+          videoRef.current.srcObject = stream
+          await videoRef.current.play()
+          escanearCuadro()
+        }
+      } catch (err) {
+        setError('No se pudo acceder a la cámara. Verifica los permisos.')
+      }
+    }
+
+    function escanearCuadro() {
+      if (clienteEncontrado) return
+      const video = videoRef.current
+      const canvas = canvasRef.current
+      if (video && canvas && video.readyState === video.HAVE_ENOUGH_DATA) {
+        canvas.width = video.videoWidth
+        canvas.height = video.videoHeight
+        const ctx = canvas.getContext('2d')
+        ctx.drawImage(video, 0, 0, canvas.width, canvas.height)
+        const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height)
+        const codigo = jsQR(imageData.data, imageData.width, imageData.height)
+        if (codigo && codigo.data.startsWith(PREFIJO_QR_CLIENTE)) {
+          const pacienteId = codigo.data.replace(PREFIJO_QR_CLIENTE, '')
+          buscarCliente(pacienteId)
+          return
+        }
+      }
+      animId = requestAnimationFrame(escanearCuadro)
+    }
+
+    iniciar()
+
+    return () => {
+      if (animId) cancelAnimationFrame(animId)
+      stream?.getTracks().forEach((t) => t.stop())
+    }
+  }, [])
+
+  async function buscarCliente(pacienteId) {
+    setBuscando(true)
+    // Verificación de seguridad: el cliente debe pertenecer a ESTA clínica,
+    // no a cualquiera — así un QR de otro negocio nunca funciona aquí.
+    const { data, error: errorBusqueda } = await supabase
+      .from('pacientes')
+      .select('id, nombre')
+      .eq('id', pacienteId)
+      .eq('clinica_id', clinicaId)
+      .single()
+
+    if (errorBusqueda || !data) {
+      setError('Este código QR no pertenece a un cliente de tu negocio.')
+    } else {
+      setClienteEncontrado(data)
+    }
+    setBuscando(false)
+  }
+
+  async function asignarPuntos(e) {
+    e.preventDefault()
+    if (!clienteEncontrado || !puntos) return
+    setAsignando(true)
+    setMensaje('')
+
+    const { error: errorInsert } = await supabase.from('puntos_movimientos').insert({
+      clinica_id: clinicaId,
+      paciente_id: clienteEncontrado.id,
+      tipo: 'acumulacion',
+      puntos: Number(puntos),
+      motivo: motivo || 'Asignado por el negocio',
+    })
+
+    if (errorInsert) {
+      setMensaje('No se pudo asignar: ' + errorInsert.message)
+      setAsignando(false)
+    } else {
+      setMensaje(`¡${puntos} puntos asignados a ${clienteEncontrado.nombre}!`)
+      setTimeout(() => onPuntosAsignados(), 1200)
+    }
+  }
+
+  return (
+    <div className="rounded-xl p-3 mb-5" style={{ background: 'var(--color-accent)' }}>
+      {!clienteEncontrado && (
+        <>
+          <div className="rounded-lg overflow-hidden relative" style={{ aspectRatio: '1/1', background: '#000' }}>
+            <video ref={videoRef} className="w-full h-full object-cover" muted playsInline />
+            <canvas ref={canvasRef} className="hidden" />
+          </div>
+          <p className="text-xs text-center mt-2" style={{ color: 'var(--color-texto-secundario)' }}>
+            {buscando ? 'Verificando cliente...' : 'Apunta la cámara al QR de la tarjeta del cliente'}
+          </p>
+          {error && <p className="text-xs text-center mt-1" style={{ color: '#B0524A' }}>{error}</p>}
+        </>
+      )}
+
+      {clienteEncontrado && (
+        <form onSubmit={asignarPuntos} className="flex flex-col gap-2">
+          <p className="text-sm font-medium" style={{ color: 'var(--color-ink)' }}>Cliente: {clienteEncontrado.nombre}</p>
+          <input
+            className="rounded-lg px-3 py-2 text-sm bg-white"
+            placeholder="Puntos a asignar"
+            type="number"
+            value={puntos}
+            onChange={(e) => setPuntos(e.target.value)}
+            required
+          />
+          <input
+            className="rounded-lg px-3 py-2 text-sm bg-white"
+            placeholder="Motivo (ej. Compra en recepción)"
+            value={motivo}
+            onChange={(e) => setMotivo(e.target.value)}
+          />
+          {mensaje && <p className="text-xs" style={{ color: 'var(--color-primary)' }}>{mensaje}</p>}
+          <button
+            type="submit"
+            disabled={asignando}
+            className="rounded-lg py-2.5 text-white text-sm font-medium disabled:opacity-60"
+            style={{ background: 'var(--gradiente-primario)' }}
+          >
+            {asignando ? 'Asignando...' : 'Asignar puntos'}
+          </button>
+        </form>
+      )}
     </div>
   )
 }

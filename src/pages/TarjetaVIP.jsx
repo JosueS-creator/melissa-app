@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import QRCode from 'qrcode'
 import { supabase } from '../lib/supabaseClient'
 import { obtenerPacienteActual } from '../lib/auth'
 import { calcularNivelYProgreso } from '../lib/fidelidad'
@@ -11,25 +12,15 @@ const RECOMPENSAS = [
   { id: 'sesion_gratis', nombre: 'Sesión de tratamiento gratis', costo: 1500 },
 ]
 
-function PatronCodigo({ semilla }) {
-  const celdas = []
-  for (let i = 0; i < 64; i++) {
-    const char = semilla.charCodeAt(i % semilla.length) + i
-    const color = char % 3 === 0 ? 'var(--color-ink)' : char % 3 === 1 ? '#8FD1A8' : '#FFFFFF'
-    celdas.push(color)
-  }
-  return (
-    <div className="grid grid-cols-8 gap-[2px] w-full h-full">
-      {celdas.map((c, i) => (
-        <div key={i} style={{ background: c }} />
-      ))}
-    </div>
-  )
-}
+/** Prefijo que usamos para reconocer nuestros propios QR al escanearlos
+ * (así el escáner del admin no confunde un QR de Melissa con cualquier
+ * otro código que apunte a la cámara). */
+export const PREFIJO_QR_CLIENTE = 'melissa:cliente:'
 
 export default function TarjetaVIP({ onNavigate }) {
   const [paciente, setPaciente] = useState(null)
   const [puntos, setPuntos] = useState(0)
+  const [qrDataUrl, setQrDataUrl] = useState(null)
   const [cargando, setCargando] = useState(true)
   const [mostrarCanje, setMostrarCanje] = useState(false)
   const [canjeando, setCanjeando] = useState(false)
@@ -48,6 +39,14 @@ export default function TarjetaVIP({ onNavigate }) {
     }
     const { data: movimientos } = await supabase.from('puntos_movimientos').select('puntos').eq('paciente_id', p.id)
     setPuntos((movimientos || []).reduce((sum, m) => sum + m.puntos, 0))
+
+    const url = await QRCode.toDataURL(`${PREFIJO_QR_CLIENTE}${p.id}`, {
+      margin: 0,
+      width: 240,
+      color: { dark: '#4A0E2B', light: '#FFFFFF' },
+    })
+    setQrDataUrl(url)
+
     setCargando(false)
   }
 
@@ -109,12 +108,7 @@ export default function TarjetaVIP({ onNavigate }) {
         <p className="mt-1" style={{ fontFamily: 'var(--font-display)', fontSize: 30, color: 'var(--color-dorado)' }}>{puntos.toLocaleString()}</p>
 
         <div className="bg-white rounded-lg mx-auto mt-5 p-2" style={{ width: 96, height: 96 }}>
-          <div className="relative w-full h-full">
-            <PatronCodigo semilla={paciente.id} />
-            <div className="absolute inset-0 flex items-center justify-center">
-              <img src={logoMelissa} alt="" className="w-6 h-6 rounded-md bg-white p-0.5" />
-            </div>
-          </div>
+          {qrDataUrl && <img src={qrDataUrl} alt="Código QR de tu tarjeta" className="w-full h-full object-contain" />}
         </div>
         <p className="text-center text-[10px] mt-2" style={{ color: 'rgba(233,169,193,0.7)' }}>Muestra este código en recepción</p>
       </div>
