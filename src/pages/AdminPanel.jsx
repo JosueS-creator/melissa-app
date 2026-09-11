@@ -437,6 +437,7 @@ function PanelPacientes({ clinicaId }) {
   const [puntosPorCliente, setPuntosPorCliente] = useState({})
   const [cargando, setCargando] = useState(true)
   const [mostrarEscaner, setMostrarEscaner] = useState(false)
+  const [clienteExpandido, setClienteExpandido] = useState(null)
 
   useEffect(() => {
     cargar()
@@ -477,18 +478,200 @@ function PanelPacientes({ clinicaId }) {
 
       <div className="flex flex-col gap-2">
         {pacientes.map((p) => (
-          <div key={p.id} className="rounded-xl p-3 flex items-center gap-3" style={{ background: 'var(--color-accent)' }}>
-            <div className="w-8 h-8 rounded-full flex-shrink-0" style={{ background: 'var(--color-primary)' }} />
-            <div className="flex-1">
-              <p className="text-sm font-medium text-ink">{p.nombre}</p>
-              <p className="text-[11px] text-ink/50">{p.telefono || 'Sin teléfono registrado'}</p>
+          <div key={p.id} className="rounded-xl p-3" style={{ background: 'var(--color-accent)' }}>
+            <div className="flex items-center gap-3">
+              <div className="w-8 h-8 rounded-full flex-shrink-0" style={{ background: 'var(--color-primary)' }} />
+              <div className="flex-1">
+                <p className="text-sm font-medium text-ink">{p.nombre}</p>
+                <p className="text-[11px] text-ink/50">{p.telefono || 'Sin teléfono registrado'}</p>
+              </div>
+              <p className="text-sm font-medium flex-shrink-0" style={{ color: 'var(--color-primary)' }}>
+                {(puntosPorCliente[p.id] || 0).toLocaleString()} pts
+              </p>
             </div>
-            <p className="text-sm font-medium flex-shrink-0" style={{ color: 'var(--color-primary)' }}>
-              {(puntosPorCliente[p.id] || 0).toLocaleString()} pts
-            </p>
+            <button
+              onClick={() => setClienteExpandido(clienteExpandido === p.id ? null : p.id)}
+              className="text-[11px] mt-2 px-3 py-1.5 rounded-lg"
+              style={{ background: '#FFFFFF', color: 'var(--color-ink)' }}
+            >
+              {clienteExpandido === p.id ? 'Ocultar historial' : '📋 Ver / agregar historial'}
+            </button>
+            {clienteExpandido === p.id && (
+              <HistorialCliente clinicaId={clinicaId} paciente={p} />
+            )}
           </div>
         ))}
       </div>
+    </div>
+  )
+}
+
+function HistorialCliente({ clinicaId, paciente }) {
+  const [tratamientos, setTratamientos] = useState([])
+  const [servicios, setServicios] = useState([])
+  const [cargando, setCargando] = useState(true)
+  const [mostrarForm, setMostrarForm] = useState(false)
+  const [procedimiento, setProcedimiento] = useState('')
+  const [recomendaciones, setRecomendaciones] = useState('')
+  const [archivoAntes, setArchivoAntes] = useState(null)
+  const [archivoDespues, setArchivoDespues] = useState(null)
+  const [guardando, setGuardando] = useState(false)
+  const [error, setError] = useState('')
+
+  useEffect(() => {
+    cargar()
+  }, [])
+
+  async function cargar() {
+    const [{ data: dataTratamientos }, { data: dataServicios }] = await Promise.all([
+      supabase.from('tratamientos_paciente').select('*').eq('paciente_id', paciente.id).order('fecha', { ascending: false }),
+      supabase.from('servicios').select('nombre').eq('clinica_id', clinicaId).eq('activo', true),
+    ])
+    setTratamientos(dataTratamientos || [])
+    setServicios(dataServicios || [])
+    setCargando(false)
+  }
+
+  async function guardarRegistro(e) {
+    e.preventDefault()
+    if (!procedimiento) return
+    setGuardando(true)
+    setError('')
+
+    async function subir(archivo, sufijo) {
+      if (!archivo) return null
+      const extension = archivo.name.split('.').pop()
+      const ruta = `${clinicaId}/${paciente.id}/${Date.now()}-${sufijo}.${extension}`
+      const { error: errorSubida } = await supabase.storage.from('fotos-tratamientos').upload(ruta, archivo)
+      return errorSubida ? null : ruta
+    }
+
+    const [rutaAntes, rutaDespues] = await Promise.all([
+      subir(archivoAntes, 'antes'),
+      subir(archivoDespues, 'despues'),
+    ])
+
+    const { error: errorInsert } = await supabase.from('tratamientos_paciente').insert({
+      clinica_id: clinicaId,
+      paciente_id: paciente.id,
+      procedimiento,
+      recomendaciones: recomendaciones || null,
+      foto_antes_url: rutaAntes,
+      foto_despues_url: rutaDespues,
+    })
+
+    if (errorInsert) {
+      setError('No se pudo guardar: ' + errorInsert.message)
+    } else {
+      setProcedimiento('')
+      setRecomendaciones('')
+      setArchivoAntes(null)
+      setArchivoDespues(null)
+      setMostrarForm(false)
+      cargar()
+    }
+    setGuardando(false)
+  }
+
+  return (
+    <div className="mt-3 rounded-xl p-3 bg-white">
+      <button
+        onClick={() => setMostrarForm((v) => !v)}
+        className="w-full rounded-lg py-2 text-xs font-medium mb-2"
+        style={{ background: mostrarForm ? 'var(--color-accent)' : 'var(--color-primary)', color: mostrarForm ? 'var(--color-ink)' : '#FFFFFF' }}
+      >
+        {mostrarForm ? 'Cancelar' : '+ Agregar antes/después'}
+      </button>
+
+      {mostrarForm && (
+        <form onSubmit={guardarRegistro} className="flex flex-col gap-2 mb-3 rounded-lg p-2.5" style={{ background: 'var(--color-accent)' }}>
+          <select
+            className="rounded-lg px-3 py-2 text-sm bg-white"
+            value={procedimiento}
+            onChange={(e) => setProcedimiento(e.target.value)}
+            required
+          >
+            <option value="" disabled>Selecciona el procedimiento</option>
+            {servicios.map((s) => (
+              <option key={s.nombre} value={s.nombre}>{s.nombre}</option>
+            ))}
+            <option value="Otro">Otro</option>
+          </select>
+          <textarea
+            className="rounded-lg px-3 py-2 text-sm bg-white"
+            placeholder="Recomendaciones para el cliente (opcional)"
+            value={recomendaciones}
+            onChange={(e) => setRecomendaciones(e.target.value)}
+            rows={2}
+          />
+          <div className="grid grid-cols-2 gap-2">
+            <label className="text-xs px-3 py-4 rounded-lg bg-white cursor-pointer text-center" style={{ color: 'var(--color-texto-secundario)', border: '1px dashed var(--color-borde-tarjeta)' }}>
+              {archivoAntes ? '✓ Foto antes' : 'Foto antes'}
+              <input type="file" accept="image/*" onChange={(e) => setArchivoAntes(e.target.files?.[0] || null)} className="hidden" />
+            </label>
+            <label className="text-xs px-3 py-4 rounded-lg bg-white cursor-pointer text-center" style={{ color: 'var(--color-texto-secundario)', border: '1px dashed var(--color-borde-tarjeta)' }}>
+              {archivoDespues ? '✓ Foto después' : 'Foto después'}
+              <input type="file" accept="image/*" onChange={(e) => setArchivoDespues(e.target.files?.[0] || null)} className="hidden" />
+            </label>
+          </div>
+          {error && <p className="text-xs" style={{ color: '#B0524A' }}>{error}</p>}
+          <button
+            type="submit"
+            disabled={guardando}
+            className="rounded-lg py-2.5 text-white text-sm font-medium disabled:opacity-60"
+            style={{ background: 'var(--gradiente-primario)' }}
+          >
+            {guardando ? 'Guardando...' : 'Guardar registro'}
+          </button>
+        </form>
+      )}
+
+      {cargando && <p className="text-xs text-ink/50">Cargando historial...</p>}
+      {!cargando && tratamientos.length === 0 && <p className="text-xs text-ink/50">Este cliente todavía no tiene registros.</p>}
+
+      <div className="flex flex-col gap-2">
+        {tratamientos.map((t) => (
+          <FilaTratamientoAdmin key={t.id} tratamiento={t} />
+        ))}
+      </div>
+    </div>
+  )
+}
+
+function FilaTratamientoAdmin({ tratamiento }) {
+  const [urlAntes, setUrlAntes] = useState(null)
+  const [urlDespues, setUrlDespues] = useState(null)
+
+  useEffect(() => {
+    async function cargarFotos() {
+      if (tratamiento.foto_antes_url) {
+        const { data } = await supabase.storage.from('fotos-tratamientos').createSignedUrl(tratamiento.foto_antes_url, 3600)
+        if (data) setUrlAntes(data.signedUrl)
+      }
+      if (tratamiento.foto_despues_url) {
+        const { data } = await supabase.storage.from('fotos-tratamientos').createSignedUrl(tratamiento.foto_despues_url, 3600)
+        if (data) setUrlDespues(data.signedUrl)
+      }
+    }
+    cargarFotos()
+  }, [tratamiento])
+
+  const fecha = new Date(tratamiento.fecha).toLocaleDateString('es-HN', { day: 'numeric', month: 'short', year: 'numeric' })
+
+  return (
+    <div className="rounded-lg p-2.5" style={{ background: 'var(--color-accent)' }}>
+      <p className="text-xs font-medium text-ink">{tratamiento.procedimiento} · <span className="font-normal text-ink/50">{fecha}</span></p>
+      {(tratamiento.foto_antes_url || tratamiento.foto_despues_url) && (
+        <div className="grid grid-cols-2 gap-2 mt-2">
+          <div className="rounded-lg overflow-hidden flex items-center justify-center bg-white" style={{ height: 70 }}>
+            {urlAntes ? <img src={urlAntes} alt="Antes" className="w-full h-full object-cover" /> : <span className="text-[9px] text-ink/30">Antes</span>}
+          </div>
+          <div className="rounded-lg overflow-hidden flex items-center justify-center bg-white" style={{ height: 70 }}>
+            {urlDespues ? <img src={urlDespues} alt="Después" className="w-full h-full object-cover" /> : <span className="text-[9px] text-ink/30">Después</span>}
+          </div>
+        </div>
+      )}
+      {tratamiento.recomendaciones && <p className="text-[11px] text-ink/60 mt-1.5">{tratamiento.recomendaciones}</p>}
     </div>
   )
 }
