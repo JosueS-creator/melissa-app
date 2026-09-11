@@ -434,6 +434,7 @@ function PanelServicios({ clinicaId }) {
 
 function PanelPacientes({ clinicaId }) {
   const [pacientes, setPacientes] = useState([])
+  const [puntosPorCliente, setPuntosPorCliente] = useState({})
   const [cargando, setCargando] = useState(true)
   const [mostrarEscaner, setMostrarEscaner] = useState(false)
 
@@ -441,16 +442,20 @@ function PanelPacientes({ clinicaId }) {
     cargar()
   }, [])
 
-  function cargar() {
-    supabase
-      .from('pacientes')
-      .select('*')
-      .eq('clinica_id', clinicaId)
-      .order('fecha_registro', { ascending: false })
-      .then(({ data }) => {
-        setPacientes(data || [])
-        setCargando(false)
-      })
+  async function cargar() {
+    const [{ data: dataPacientes }, { data: dataMovimientos }] = await Promise.all([
+      supabase.from('pacientes').select('*').eq('clinica_id', clinicaId).order('fecha_registro', { ascending: false }),
+      supabase.from('puntos_movimientos').select('paciente_id, puntos').eq('clinica_id', clinicaId),
+    ])
+
+    const saldos = {}
+    for (const m of dataMovimientos || []) {
+      saldos[m.paciente_id] = (saldos[m.paciente_id] || 0) + m.puntos
+    }
+
+    setPacientes(dataPacientes || [])
+    setPuntosPorCliente(saldos)
+    setCargando(false)
   }
 
   return (
@@ -460,11 +465,11 @@ function PanelPacientes({ clinicaId }) {
         className="w-full rounded-xl py-2.5 text-sm font-medium mb-3"
         style={{ background: mostrarEscaner ? 'var(--color-accent)' : 'var(--color-primary)', color: mostrarEscaner ? 'var(--color-ink)' : '#FFFFFF' }}
       >
-        {mostrarEscaner ? 'Cerrar escáner' : '📷 Escanear QR y asignar puntos'}
+        {mostrarEscaner ? 'Cerrar escáner' : '📷 Escanear QR de un cliente'}
       </button>
 
       {mostrarEscaner && (
-        <EscanerQR clinicaId={clinicaId} onPuntosAsignados={() => { setMostrarEscaner(false); cargar() }} />
+        <EscanerQR clinicaId={clinicaId} onPuntosActualizados={() => { setMostrarEscaner(false); cargar() }} />
       )}
 
       {cargando && <p className="text-sm text-ink/50">Cargando clientes...</p>}
@@ -474,10 +479,13 @@ function PanelPacientes({ clinicaId }) {
         {pacientes.map((p) => (
           <div key={p.id} className="rounded-xl p-3 flex items-center gap-3" style={{ background: 'var(--color-accent)' }}>
             <div className="w-8 h-8 rounded-full flex-shrink-0" style={{ background: 'var(--color-primary)' }} />
-            <div>
+            <div className="flex-1">
               <p className="text-sm font-medium text-ink">{p.nombre}</p>
               <p className="text-[11px] text-ink/50">{p.telefono || 'Sin teléfono registrado'}</p>
             </div>
+            <p className="text-sm font-medium flex-shrink-0" style={{ color: 'var(--color-primary)' }}>
+              {(puntosPorCliente[p.id] || 0).toLocaleString()} pts
+            </p>
           </div>
         ))}
       </div>
@@ -485,12 +493,14 @@ function PanelPacientes({ clinicaId }) {
   )
 }
 
-function EscanerQR({ clinicaId, onPuntosAsignados }) {
+function EscanerQR({ clinicaId, onPuntosActualizados }) {
   const videoRef = useRef(null)
   const canvasRef = useRef(null)
   const [error, setError] = useState('')
   const [clienteEncontrado, setClienteEncontrado] = useState(null)
+  const [saldoActual, setSaldoActual] = useState(0)
   const [buscando, setBuscando] = useState(false)
+  const [modo, setModo] = useState('asignar') // 'asignar' | 'canjear'
   const [puntos, setPuntos] = useState('')
   const [motivo, setMotivo] = useState('')
   const [asignando, setAsignando] = useState(false)
@@ -555,31 +565,47 @@ function EscanerQR({ clinicaId, onPuntosAsignados }) {
     if (errorBusqueda || !data) {
       setError('Este código QR no pertenece a un cliente de tu negocio.')
     } else {
+      const { data: movimientos } = await supabase
+        .from('puntos_movimientos')
+        .select('puntos')
+        .eq('paciente_id', data.id)
+      setSaldoActual((movimientos || []).reduce((sum, m) => sum + m.puntos, 0))
       setClienteEncontrado(data)
     }
     setBuscando(false)
   }
 
-  async function asignarPuntos(e) {
+  async function confirmarMovimiento(e) {
     e.preventDefault()
     if (!clienteEncontrado || !puntos) return
+
+    const cantidad = Number(puntos)
+    if (modo === 'canjear' && cantidad > saldoActual) {
+      setMensaje(`Este cliente solo tiene ${saldoActual.toLocaleString()} puntos disponibles.`)
+      return
+    }
+
     setAsignando(true)
     setMensaje('')
 
     const { error: errorInsert } = await supabase.from('puntos_movimientos').insert({
       clinica_id: clinicaId,
       paciente_id: clienteEncontrado.id,
-      tipo: 'acumulacion',
-      puntos: Number(puntos),
-      motivo: motivo || 'Asignado por el negocio',
+      tipo: modo === 'asignar' ? 'acumulacion' : 'canje',
+      puntos: modo === 'asignar' ? cantidad : -cantidad,
+      motivo: motivo || (modo === 'asignar' ? 'Asignado por el negocio' : 'Canjeado en recepción'),
     })
 
     if (errorInsert) {
-      setMensaje('No se pudo asignar: ' + errorInsert.message)
+      setMensaje('No se pudo procesar: ' + errorInsert.message)
       setAsignando(false)
     } else {
-      setMensaje(`¡${puntos} puntos asignados a ${clienteEncontrado.nombre}!`)
-      setTimeout(() => onPuntosAsignados(), 1200)
+      setMensaje(
+        modo === 'asignar'
+          ? `¡${cantidad} puntos asignados a ${clienteEncontrado.nombre}!`
+          : `¡${cantidad} puntos canjeados de ${clienteEncontrado.nombre}!`
+      )
+      setTimeout(() => onPuntosActualizados(), 1200)
     }
   }
 
@@ -599,19 +625,43 @@ function EscanerQR({ clinicaId, onPuntosAsignados }) {
       )}
 
       {clienteEncontrado && (
-        <form onSubmit={asignarPuntos} className="flex flex-col gap-2">
+        <form onSubmit={confirmarMovimiento} className="flex flex-col gap-2">
           <p className="text-sm font-medium" style={{ color: 'var(--color-ink)' }}>Cliente: {clienteEncontrado.nombre}</p>
+          <p className="text-xs" style={{ color: 'var(--color-texto-secundario)' }}>
+            Saldo actual: <strong style={{ color: 'var(--color-primary)' }}>{saldoActual.toLocaleString()} pts</strong>
+          </p>
+
+          <div className="flex gap-2">
+            <button
+              type="button"
+              onClick={() => setModo('asignar')}
+              className="flex-1 rounded-lg py-2 text-xs font-medium"
+              style={modo === 'asignar' ? { background: 'var(--color-primary)', color: '#FFFFFF' } : { background: '#FFFFFF', color: 'var(--color-ink)' }}
+            >
+              Asignar puntos
+            </button>
+            <button
+              type="button"
+              onClick={() => setModo('canjear')}
+              className="flex-1 rounded-lg py-2 text-xs font-medium"
+              style={modo === 'canjear' ? { background: 'var(--color-primary)', color: '#FFFFFF' } : { background: '#FFFFFF', color: 'var(--color-ink)' }}
+            >
+              Canjear puntos
+            </button>
+          </div>
+
           <input
             className="rounded-lg px-3 py-2 text-sm bg-white"
-            placeholder="Puntos a asignar"
+            placeholder={modo === 'asignar' ? 'Puntos a asignar' : 'Puntos a canjear'}
             type="number"
+            max={modo === 'canjear' ? saldoActual : undefined}
             value={puntos}
             onChange={(e) => setPuntos(e.target.value)}
             required
           />
           <input
             className="rounded-lg px-3 py-2 text-sm bg-white"
-            placeholder="Motivo (ej. Compra en recepción)"
+            placeholder={modo === 'asignar' ? 'Motivo (ej. Compra en recepción)' : 'Motivo (ej. Canjeado por limpieza facial)'}
             value={motivo}
             onChange={(e) => setMotivo(e.target.value)}
           />
@@ -622,7 +672,7 @@ function EscanerQR({ clinicaId, onPuntosAsignados }) {
             className="rounded-lg py-2.5 text-white text-sm font-medium disabled:opacity-60"
             style={{ background: 'var(--gradiente-primario)' }}
           >
-            {asignando ? 'Asignando...' : 'Asignar puntos'}
+            {asignando ? 'Procesando...' : modo === 'asignar' ? 'Asignar puntos' : 'Confirmar canje'}
           </button>
         </form>
       )}
