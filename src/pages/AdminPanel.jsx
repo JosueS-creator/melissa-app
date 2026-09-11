@@ -14,7 +14,7 @@ const TABS = [
   { id: 'marca', label: 'Marca' },
 ]
 
-export default function AdminPanel() {
+export default function AdminPanel({ onCerrarSesion, esSuperAdmin, onIrAMelissa }) {
   const [perfil, setPerfil] = useState(null)
   const [cargando, setCargando] = useState(true)
   const [tab, setTab] = useState('citas')
@@ -37,7 +37,19 @@ export default function AdminPanel() {
       className="max-w-sm mx-auto px-5 pb-10 font-body"
       style={{ paddingTop: 'calc(env(safe-area-inset-top) + 32px)' }}
     >
-      <p className="font-display text-xl text-ink mb-1">Panel del negocio</p>
+      <div className="flex justify-between items-start mb-1">
+        <p className="font-display text-xl text-ink">Panel del negocio</p>
+        <div className="flex gap-2">
+          {esSuperAdmin && (
+            <button onClick={onIrAMelissa} className="text-[11px] px-2.5 py-1.5 rounded-lg" style={{ background: 'var(--color-accent)', color: 'var(--color-ink)' }}>
+              Panel de Melissa
+            </button>
+          )}
+          <button onClick={onCerrarSesion} className="text-[11px] px-2.5 py-1.5 rounded-lg" style={{ background: 'var(--color-accent)', color: 'var(--color-ink)' }}>
+            Salir
+          </button>
+        </div>
+      </div>
       <p className="text-xs text-ink/50 mb-5">Vista operativa para el equipo.</p>
 
       <div className="grid grid-cols-6 gap-1 mb-5">

@@ -53,7 +53,6 @@ export default function App() {
 
     const { data: listener } = supabase.auth.onAuthStateChange((_event, nuevaSesion) => {
       setSesion(nuevaSesion)
-      if (nuevaSesion) setPantalla('inicio')
     })
 
     return () => listener.subscription.unsubscribe()
@@ -68,6 +67,9 @@ export default function App() {
           // su tema/marca real (puede ser distinta a la de antes de login).
           aplicarTemaDeClinicaPorId(p.clinica_id).then(setClinica)
         }
+        // El admin nunca ve las pantallas de cliente (Beauty Points,
+        // reservar cita, tienda) — aterriza directo en su propio panel.
+        setPantalla(p?.rol === 'admin' ? 'admin' : 'inicio')
       })
     } else {
       setPerfil(null)
@@ -118,28 +120,37 @@ export default function App() {
     )
   }
 
-  const mostrarTabBar = PANTALLAS_CON_TABBAR.includes(pantalla)
+  const esAdmin = perfil?.rol === 'admin'
+  const mostrarTabBar = !esAdmin && PANTALLAS_CON_TABBAR.includes(pantalla)
 
   return (
     <div className="max-w-sm mx-auto min-h-screen flex flex-col" style={{ background: 'var(--color-fondo-app)' }}>
       <div className="flex-1">
-        {pantalla === 'inicio' && (
+        {!esAdmin && pantalla === 'inicio' && (
           <Home nombrePaciente={perfil?.nombre || sesion.user.email} clinica={clinica} onNavigate={setPantalla} />
         )}
-        {pantalla === 'agenda' && <Agenda />}
-        {pantalla === 'tienda' && <Tienda />}
-        {pantalla === 'tarjeta' && <TarjetaVIP onNavigate={setPantalla} />}
-        {pantalla === 'historial' && <Historial onVolver={() => setPantalla('perfil')} />}
-        {pantalla === 'referidos' && <Referidos onVolver={() => setPantalla('perfil')} />}
-        {pantalla === 'perfil' && (
+        {!esAdmin && pantalla === 'agenda' && <Agenda />}
+        {!esAdmin && pantalla === 'tienda' && <Tienda />}
+        {!esAdmin && pantalla === 'tarjeta' && <TarjetaVIP onNavigate={setPantalla} />}
+        {!esAdmin && pantalla === 'historial' && <Historial onVolver={() => setPantalla('perfil')} />}
+        {!esAdmin && pantalla === 'referidos' && <Referidos onVolver={() => setPantalla('perfil')} />}
+        {!esAdmin && pantalla === 'perfil' && (
           <Perfil onNavigate={setPantalla} onCerrarSesion={cerrarSesion} esSuperAdmin={perfil?.es_super_admin} />
         )}
-        {pantalla === 'admin' && <AdminPanel />}
-        {pantalla === 'melissa' && <PanelMelissa />}
+        {esAdmin && pantalla === 'melissa' && (
+          <PanelMelissa onVolver={() => setPantalla('admin')} />
+        )}
+        {esAdmin && pantalla !== 'melissa' && (
+          <AdminPanel
+            onCerrarSesion={cerrarSesion}
+            esSuperAdmin={perfil?.es_super_admin}
+            onIrAMelissa={() => setPantalla('melissa')}
+          />
+        )}
       </div>
 
       {mostrarTabBar && (
-        <TabBar activo={pantalla} onNavigate={setPantalla} mostrarAdmin={perfil?.rol === 'admin'} />
+        <TabBar activo={pantalla} onNavigate={setPantalla} mostrarAdmin={false} />
       )}
     </div>
   )

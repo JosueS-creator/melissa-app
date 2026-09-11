@@ -17,7 +17,7 @@ function generarSlug(nombre) {
     .replace(/(^-|-$)/g, '')
 }
 
-export default function PanelMelissa() {
+export default function PanelMelissa({ onVolver }) {
   const [clinicas, setClinicas] = useState([])
   const [cargando, setCargando] = useState(true)
   const [nombre, setNombre] = useState('')
@@ -101,6 +101,9 @@ export default function PanelMelissa() {
 
   return (
     <div className="min-h-screen font-body px-5 pb-10" style={{ background: 'var(--color-fondo-app)', paddingTop: 'calc(env(safe-area-inset-top) + 32px)' }}>
+      {onVolver && (
+        <button onClick={onVolver} className="text-xs mb-3" style={{ color: 'var(--color-primary)' }}>‹ Volver al panel</button>
+      )}
       <p style={{ fontFamily: 'var(--font-display)', fontSize: 22, color: 'var(--color-ink)' }}>Panel de Melissa</p>
       <p className="text-xs mb-6" style={{ color: 'var(--color-texto-secundario)' }}>Solo visible para ti — crea negocios y genera sus invitaciones.</p>
 
