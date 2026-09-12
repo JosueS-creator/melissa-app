@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { supabase } from '../lib/supabaseClient'
+import CampoContrasena from '../components/CampoContrasena'
 
 export default function RegistroAdmin({ codigo, onRegistroExitoso }) {
   const [clinica, setClinica] = useState(null)
@@ -108,16 +109,7 @@ export default function RegistroAdmin({ codigo, onRegistroExitoso }) {
           onChange={(e) => setEmail(e.target.value)}
           required
         />
-        <input
-          className="border rounded-xl px-4 py-3 text-sm"
-          style={{ borderColor: 'var(--color-borde-tarjeta)' }}
-          placeholder="Contraseña"
-          type="password"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          minLength={6}
-          required
-        />
+        <CampoContrasena value={password} onChange={(e) => setPassword(e.target.value)} required minLength={6} />
 
         {error && <p className="text-sm text-red-600">{error}</p>}
 

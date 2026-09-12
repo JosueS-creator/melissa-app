@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { registrarPaciente } from '../lib/auth'
 import { detectarPaisPorIP, PAISES } from '../lib/geolocalizacion'
+import CampoContrasena from '../components/CampoContrasena'
 
 export default function Registro({ onRegistroExitoso, irALogin, slugClinica }) {
   const [nombre, setNombre] = useState('')
@@ -72,15 +73,7 @@ export default function Registro({ onRegistroExitoso, irALogin, slugClinica }) {
             onChange={(e) => setEmail(e.target.value)}
             required
           />
-          <input
-            className="border border-ink/15 rounded-xl px-4 py-3 text-sm"
-            placeholder="Contraseña"
-            type="password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            minLength={6}
-            required
-          />
+          <CampoContrasena value={password} onChange={(e) => setPassword(e.target.value)} required minLength={6} />
 
           <select
             className="border border-ink/15 rounded-xl px-4 py-3 text-sm bg-white"

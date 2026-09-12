@@ -12,6 +12,8 @@ import Login from './pages/Login'
 import Registro from './pages/Registro'
 import RegistroAdmin from './pages/RegistroAdmin'
 import Bienvenida from './pages/Bienvenida'
+import OlvidePassword from './pages/OlvidePassword'
+import RestablecerPassword from './pages/RestablecerPassword'
 import TabBar from './components/TabBar'
 import { aplicarTemaDeClinica, aplicarTemaDeClinicaPorId } from './lib/aplicarTema'
 import { obtenerSesionActual, obtenerPerfilActual, cerrarSesion } from './lib/auth'
@@ -38,6 +40,7 @@ export default function App() {
   const [clinica, setClinica] = useState(null)
   const [pantalla, setPantalla] = useState('bienvenida')
   const [modoEntrada, setModoEntrada] = useState('paciente')
+  const [modoRecuperacion, setModoRecuperacion] = useState(false)
   const [parametrosURL] = useState(leerParametrosURL)
 
   useEffect(() => {
@@ -51,8 +54,14 @@ export default function App() {
       setCargando(false)
     })
 
-    const { data: listener } = supabase.auth.onAuthStateChange((_event, nuevaSesion) => {
+    const { data: listener } = supabase.auth.onAuthStateChange((event, nuevaSesion) => {
       setSesion(nuevaSesion)
+      if (event === 'PASSWORD_RECOVERY') {
+        // Supabase manda aquí cuando alguien abre el link del correo de
+        // "olvidé mi contraseña" — lo forzamos a poner una nueva antes
+        // de dejarlo entrar a cualquier otra pantalla.
+        setModoRecuperacion(true)
+      }
     })
 
     return () => listener.subscription.unsubscribe()
@@ -79,6 +88,17 @@ export default function App() {
 
   if (cargando) return null
 
+  if (modoRecuperacion) {
+    return (
+      <RestablecerPassword
+        onListo={() => {
+          setModoRecuperacion(false)
+          setPantalla('inicio')
+        }}
+      />
+    )
+  }
+
   if (!sesion) {
     if (parametrosURL.invitacion) {
       return (
@@ -99,6 +119,10 @@ export default function App() {
       )
     }
 
+    if (pantalla === 'olvide-password') {
+      return <OlvidePassword onVolver={() => setPantalla('login')} />
+    }
+
     if (pantalla === 'login') {
       return (
         <Login
@@ -106,6 +130,7 @@ export default function App() {
           irARegistro={() => setPantalla('registro')}
           modo={modoEntrada}
           onVolver={() => setPantalla('bienvenida')}
+          irAOlvidePassword={() => setPantalla('olvide-password')}
         />
       )
     }

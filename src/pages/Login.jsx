@@ -1,7 +1,8 @@
 import { useState } from 'react'
 import { iniciarSesion } from '../lib/auth'
+import CampoContrasena from '../components/CampoContrasena'
 
-export default function Login({ onLoginExitoso, irARegistro, modo = 'paciente', onVolver }) {
+export default function Login({ onLoginExitoso, irARegistro, modo = 'paciente', onVolver, irAOlvidePassword }) {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [cargando, setCargando] = useState(false)
@@ -44,14 +45,11 @@ export default function Login({ onLoginExitoso, irARegistro, modo = 'paciente', 
           onChange={(e) => setEmail(e.target.value)}
           required
         />
-        <input
-          className="border border-ink/15 rounded-xl px-4 py-3 text-sm"
-          placeholder="Contraseña"
-          type="password"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          required
-        />
+        <CampoContrasena value={password} onChange={(e) => setPassword(e.target.value)} required />
+
+        <button type="button" onClick={irAOlvidePassword} className="text-xs text-right" style={{ color: 'var(--color-primary)' }}>
+          ¿Olvidaste tu contraseña?
+        </button>
 
         {error && <p className="text-sm text-red-600">{error}</p>}
 
