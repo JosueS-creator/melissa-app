@@ -164,7 +164,7 @@ export default function Perfil({ onNavigate, onCerrarSesion, esSuperAdmin }) {
               className="flex-1 rounded-xl px-3.5 py-3 text-left"
               style={
                 activo
-                  ? { background: 'var(--gradiente-primario)', color: '#FFFFFF' }
+                  ? { background: 'var(--gradiente-primario)', color: '#FFFFFF', boxShadow: '0 3px 8px rgba(201,59,121,0.3)' }
                   : { background: '#FFFFFF', border: '1px solid var(--color-borde-tarjeta)', color: 'var(--color-ink)' }
               }
             >

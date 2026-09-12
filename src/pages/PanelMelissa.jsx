@@ -157,7 +157,7 @@ export default function PanelMelissa({ onVolver }) {
           type="submit"
           disabled={creando}
           className="rounded-xl py-3 text-white text-sm font-medium disabled:opacity-60"
-          style={{ background: 'var(--gradiente-primario)' }}
+          style={{ background: 'var(--gradiente-primario)', boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.30), 0 6px 14px rgba(201,59,121,0.28)' }}
         >
           {creando ? 'Creando...' : 'Crear negocio'}
         </button>
@@ -171,7 +171,7 @@ export default function PanelMelissa({ onVolver }) {
           <button
             onClick={() => copiar(linkGenerado.link)}
             className="mt-2 px-4 py-2 rounded-lg text-white text-xs font-medium"
-            style={{ background: 'var(--gradiente-primario)' }}
+            style={{ background: 'var(--gradiente-primario)', boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.30), 0 6px 14px rgba(201,59,121,0.28)' }}
           >
             Copiar link
           </button>

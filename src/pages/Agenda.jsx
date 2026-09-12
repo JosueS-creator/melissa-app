@@ -182,6 +182,7 @@ export default function Agenda() {
                       background: activo ? 'var(--gradiente-primario)' : '#FFFFFF',
                       border: activo ? 'none' : '1px solid var(--color-borde-tarjeta)',
                       color: activo ? '#FFFFFF' : 'var(--color-ink)',
+                      boxShadow: activo ? '0 3px 8px rgba(201,59,121,0.3)' : 'none',
                     }}
                   >
                     <span className="text-[10px] uppercase" style={{ opacity: 0.8 }}>

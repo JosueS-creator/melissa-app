@@ -60,7 +60,7 @@ export default function AdminPanel({ onCerrarSesion, esSuperAdmin, onIrAMelissa 
             className="rounded-lg py-2 text-[9px] font-medium"
             style={
               tab === t.id
-                ? { background: 'var(--color-primary)', color: '#FFFFFF' }
+                ? { background: 'var(--gradiente-primario)', color: '#FFFFFF', boxShadow: '0 2px 6px rgba(201,59,121,0.3)' }
                 : { background: 'var(--color-accent)', color: 'var(--color-ink)' }
             }
           >
@@ -156,7 +156,7 @@ function PanelCitas({ clinicaId }) {
             </div>
             {c.estado === 'pendiente' && (
               <div className="flex gap-2 mt-2">
-                <button onClick={() => cambiarEstado(c.id, 'confirmada')} className="text-[11px] px-3 py-1.5 rounded-lg text-white" style={{ background: 'var(--color-primary)' }}>
+                <button onClick={() => cambiarEstado(c.id, 'confirmada')} className="text-[11px] px-3 py-1.5 rounded-lg text-white" style={{ background: 'var(--gradiente-primario)', boxShadow: '0 3px 8px rgba(201,59,121,0.3)' }}>
                   Confirmar
                 </button>
                 <button onClick={() => cambiarEstado(c.id, 'cancelada')} className="text-[11px] px-3 py-1.5 rounded-lg text-ink/60 bg-white">
@@ -165,7 +165,7 @@ function PanelCitas({ clinicaId }) {
               </div>
             )}
             {c.estado === 'confirmada' && (
-              <button onClick={() => cambiarEstado(c.id, 'completada')} className="text-[11px] px-3 py-1.5 rounded-lg text-white mt-2" style={{ background: 'var(--color-primary)' }}>
+              <button onClick={() => cambiarEstado(c.id, 'completada')} className="text-[11px] px-3 py-1.5 rounded-lg text-white mt-2" style={{ background: 'var(--gradiente-primario)', boxShadow: '0 3px 8px rgba(201,59,121,0.3)' }}>
                 Marcar completada
               </button>
             )}
@@ -286,7 +286,7 @@ function FormularioNuevaCita({ clinicaId, onCreada }) {
         type="submit"
         disabled={guardando}
         className="rounded-lg py-2.5 text-white text-sm font-medium disabled:opacity-60"
-        style={{ background: 'var(--gradiente-primario)' }}
+        style={{ background: 'var(--gradiente-primario)', boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.30), 0 6px 14px rgba(201,59,121,0.28)' }}
       >
         {guardando ? 'Agendando...' : 'Agendar cita'}
       </button>
@@ -401,7 +401,7 @@ function PanelServicios({ clinicaId }) {
             type="submit"
             disabled={guardando}
             className="rounded-lg py-2.5 text-white text-sm font-medium disabled:opacity-60"
-            style={{ background: 'var(--gradiente-primario)' }}
+            style={{ background: 'var(--gradiente-primario)', boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.30), 0 6px 14px rgba(201,59,121,0.28)' }}
           >
             {guardando ? 'Guardando...' : 'Guardar servicio'}
           </button>
@@ -480,7 +480,7 @@ function PanelPacientes({ clinicaId }) {
         {pacientes.map((p) => (
           <div key={p.id} className="rounded-xl p-3" style={{ background: 'var(--color-accent)' }}>
             <div className="flex items-center gap-3">
-              <div className="w-8 h-8 rounded-full flex-shrink-0" style={{ background: 'var(--color-primary)' }} />
+              <div className="w-8 h-8 rounded-full flex-shrink-0" style={{ background: 'var(--gradiente-primario)', boxShadow: '0 2px 6px rgba(201,59,121,0.35)' }} />
               <div className="flex-1">
                 <p className="text-sm font-medium text-ink">{p.nombre}</p>
                 <p className="text-[11px] text-ink/50">{p.telefono || 'Sin teléfono registrado'}</p>
@@ -619,7 +619,7 @@ function HistorialCliente({ clinicaId, paciente }) {
             type="submit"
             disabled={guardando}
             className="rounded-lg py-2.5 text-white text-sm font-medium disabled:opacity-60"
-            style={{ background: 'var(--gradiente-primario)' }}
+            style={{ background: 'var(--gradiente-primario)', boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.30), 0 6px 14px rgba(201,59,121,0.28)' }}
           >
             {guardando ? 'Guardando...' : 'Guardar registro'}
           </button>
@@ -819,7 +819,7 @@ function EscanerQR({ clinicaId, onPuntosActualizados }) {
               type="button"
               onClick={() => setModo('asignar')}
               className="flex-1 rounded-lg py-2 text-xs font-medium"
-              style={modo === 'asignar' ? { background: 'var(--color-primary)', color: '#FFFFFF' } : { background: '#FFFFFF', color: 'var(--color-ink)' }}
+              style={modo === 'asignar' ? { background: 'var(--gradiente-primario)', color: '#FFFFFF', boxShadow: '0 3px 8px rgba(201,59,121,0.3)' } : { background: '#FFFFFF', color: 'var(--color-ink)' }}
             >
               Asignar puntos
             </button>
@@ -827,7 +827,7 @@ function EscanerQR({ clinicaId, onPuntosActualizados }) {
               type="button"
               onClick={() => setModo('canjear')}
               className="flex-1 rounded-lg py-2 text-xs font-medium"
-              style={modo === 'canjear' ? { background: 'var(--color-primary)', color: '#FFFFFF' } : { background: '#FFFFFF', color: 'var(--color-ink)' }}
+              style={modo === 'canjear' ? { background: 'var(--gradiente-primario)', color: '#FFFFFF', boxShadow: '0 3px 8px rgba(201,59,121,0.3)' } : { background: '#FFFFFF', color: 'var(--color-ink)' }}
             >
               Canjear puntos
             </button>
@@ -853,7 +853,7 @@ function EscanerQR({ clinicaId, onPuntosActualizados }) {
             type="submit"
             disabled={asignando}
             className="rounded-lg py-2.5 text-white text-sm font-medium disabled:opacity-60"
-            style={{ background: 'var(--gradiente-primario)' }}
+            style={{ background: 'var(--gradiente-primario)', boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.30), 0 6px 14px rgba(201,59,121,0.28)' }}
           >
             {asignando ? 'Procesando...' : modo === 'asignar' ? 'Asignar puntos' : 'Confirmar canje'}
           </button>
@@ -1004,7 +1004,7 @@ function PanelProductos({ clinicaId }) {
             type="submit"
             disabled={guardando}
             className="rounded-lg py-2.5 text-white text-sm font-medium disabled:opacity-60"
-            style={{ background: 'var(--gradiente-primario)' }}
+            style={{ background: 'var(--gradiente-primario)', boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.30), 0 6px 14px rgba(201,59,121,0.28)' }}
           >
             {guardando ? 'Guardando...' : 'Guardar producto'}
           </button>

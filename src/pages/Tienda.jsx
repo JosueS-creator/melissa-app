@@ -131,7 +131,7 @@ export default function Tienda() {
             className="px-4 py-1.5 rounded-full text-xs flex-shrink-0"
             style={
               categoria === c.id
-                ? { background: 'var(--gradiente-primario)', color: '#FFFFFF' }
+                ? { background: 'var(--gradiente-primario)', color: '#FFFFFF', boxShadow: '0 2px 6px rgba(201,59,121,0.3)' }
                 : { background: '#FFFFFF', color: 'var(--color-ink)', border: '1px solid var(--color-borde-tarjeta)' }
             }
           >
@@ -164,10 +164,10 @@ export default function Tienda() {
                   <div className="flex items-center gap-1.5">
                     <button onClick={() => quitarUno(p.id)} className="w-6 h-6 rounded-full flex items-center justify-center text-xs" style={{ border: '1px solid var(--color-dorado-claro)', color: 'var(--color-primary)' }}>−</button>
                     <span className="text-xs" style={{ color: 'var(--color-ink)' }}>{carrito[p.id]}</span>
-                    <button onClick={() => agregar(p.id)} className="w-6 h-6 rounded-full flex items-center justify-center text-white text-xs" style={{ background: 'var(--gradiente-primario)' }}>+</button>
+                    <button onClick={() => agregar(p.id)} className="w-6 h-6 rounded-full flex items-center justify-center text-white text-xs" style={{ background: 'var(--gradiente-primario)', boxShadow: '0 2px 5px rgba(201,59,121,0.35)' }}>+</button>
                   </div>
                 ) : (
-                  <button onClick={() => agregar(p.id)} className="w-6 h-6 rounded-full flex items-center justify-center text-white text-xs" style={{ background: 'var(--gradiente-primario)' }}>+</button>
+                  <button onClick={() => agregar(p.id)} className="w-6 h-6 rounded-full flex items-center justify-center text-white text-xs" style={{ background: 'var(--gradiente-primario)', boxShadow: '0 2px 5px rgba(201,59,121,0.35)' }}>+</button>
                 )}
               </div>
             </div>

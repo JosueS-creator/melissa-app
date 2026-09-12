@@ -104,7 +104,7 @@ export default function Registro({ onRegistroExitoso, irALogin, slugClinica }) {
             type="submit"
             disabled={cargando}
             className="rounded-xl py-3 text-white text-sm font-medium mt-2 disabled:opacity-60"
-            style={{ background: 'var(--color-primary)' }}
+            style={{ background: 'var(--gradiente-primario)', boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.30), 0 6px 14px rgba(201,59,121,0.28)' }}
           >
             {cargando ? 'Creando cuenta...' : 'Crear cuenta'}
           </button>

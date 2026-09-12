@@ -164,7 +164,7 @@ function FilaTratamiento({ tratamiento, esUltimo }) {
 
   return (
     <div className="relative pl-4" style={{ borderLeft: esUltimo ? 'none' : '1.5px solid var(--color-borde-tarjeta)' }}>
-      <div className="absolute -left-[5px] top-1 w-[9px] h-[9px] rounded-full" style={{ background: 'var(--color-primary)' }} />
+      <div className="absolute -left-[5px] top-1 w-[9px] h-[9px] rounded-full" style={{ background: 'var(--gradiente-primario)', boxShadow: '0 1px 3px rgba(201,59,121,0.4)' }} />
       <p className="text-[11px] mb-1.5" style={{ color: 'var(--color-texto-terciario)' }}>{fecha}</p>
       <div className="rounded-2xl p-3 bg-white border" style={{ borderColor: 'var(--color-borde-tarjeta)' }}>
         {(tratamiento.foto_antes_url || tratamiento.foto_despues_url) && (

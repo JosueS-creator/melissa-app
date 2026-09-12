@@ -111,7 +111,7 @@ export default function Referidos({ onVolver }) {
           <button
             onClick={copiarCodigo}
             className="px-4 py-2 rounded-lg text-white text-xs font-medium"
-            style={{ background: 'var(--gradiente-primario)' }}
+            style={{ background: 'var(--gradiente-primario)', boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.30), 0 6px 14px rgba(201,59,121,0.28)' }}
           >
             {copiado ? '¡Copiado!' : 'Copiar'}
           </button>
@@ -146,7 +146,7 @@ export default function Referidos({ onVolver }) {
             onClick={invitar}
             disabled={enviando || !telefono.trim()}
             className="px-4 rounded-lg text-white text-sm font-medium disabled:opacity-50"
-            style={{ background: 'var(--gradiente-primario)' }}
+            style={{ background: 'var(--gradiente-primario)', boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.30), 0 6px 14px rgba(201,59,121,0.28)' }}
           >
             Invitar
           </button>
