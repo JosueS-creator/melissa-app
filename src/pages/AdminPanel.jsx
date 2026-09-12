@@ -8,9 +8,10 @@ import { PREFIJO_QR_CLIENTE } from './TarjetaVIP'
 const TABS = [
   { id: 'citas', label: 'Citas' },
   { id: 'pacientes', label: 'Clientes' },
+  { id: 'empleados', label: 'Empleados' },
   { id: 'servicios', label: 'Servicios' },
   { id: 'productos', label: 'Productos' },
-  { id: 'ventas', label: 'Ventas' },
+  { id: 'caja', label: 'Caja' },
   { id: 'marca', label: 'Marca' },
 ]
 
@@ -52,12 +53,12 @@ export default function AdminPanel({ onCerrarSesion, esSuperAdmin, onIrAMelissa 
       </div>
       <p className="text-xs text-ink/50 mb-5">Vista operativa para el equipo.</p>
 
-      <div className="grid grid-cols-6 gap-1 mb-5">
+      <div className="flex flex-wrap gap-1.5 mb-5">
         {TABS.map((t) => (
           <button
             key={t.id}
             onClick={() => setTab(t.id)}
-            className="rounded-lg py-2 text-[9px] font-medium"
+            className="rounded-lg px-3 py-1.5 text-[10px] font-medium"
             style={
               tab === t.id
                 ? { background: 'var(--gradiente-primario)', color: '#FFFFFF', boxShadow: '0 2px 6px rgba(201,59,121,0.3)' }
@@ -71,9 +72,10 @@ export default function AdminPanel({ onCerrarSesion, esSuperAdmin, onIrAMelissa 
 
       {tab === 'citas' && <PanelCitas clinicaId={perfil.clinica_id} />}
       {tab === 'pacientes' && <PanelPacientes clinicaId={perfil.clinica_id} />}
+      {tab === 'empleados' && <PanelEmpleados clinicaId={perfil.clinica_id} />}
       {tab === 'servicios' && <PanelServicios clinicaId={perfil.clinica_id} />}
       {tab === 'productos' && <PanelProductos clinicaId={perfil.clinica_id} />}
-      {tab === 'ventas' && <PanelVentas clinicaId={perfil.clinica_id} />}
+      {tab === 'caja' && <PanelCaja clinicaId={perfil.clinica_id} perfilId={perfil.id} />}
       {tab === 'marca' && (
         <div className="-mx-5">
           <Personalizacion />
@@ -291,6 +293,119 @@ function FormularioNuevaCita({ clinicaId, onCreada }) {
         {guardando ? 'Agendando...' : 'Agendar cita'}
       </button>
     </form>
+  )
+}
+
+function PanelEmpleados({ clinicaId }) {
+  const [empleados, setEmpleados] = useState([])
+  const [cargando, setCargando] = useState(true)
+  const [mostrarForm, setMostrarForm] = useState(false)
+  const [nombre, setNombre] = useState('')
+  const [especialidad, setEspecialidad] = useState('')
+  const [guardando, setGuardando] = useState(false)
+  const [error, setError] = useState('')
+
+  useEffect(() => {
+    cargar()
+  }, [])
+
+  async function cargar() {
+    const { data } = await supabase
+      .from('especialistas')
+      .select('*')
+      .eq('clinica_id', clinicaId)
+      .order('nombre', { ascending: true })
+    setEmpleados(data || [])
+    setCargando(false)
+  }
+
+  async function agregarEmpleado(e) {
+    e.preventDefault()
+    setGuardando(true)
+    setError('')
+
+    const { error: errorInsert } = await supabase.from('especialistas').insert({
+      clinica_id: clinicaId,
+      nombre,
+      especialidad,
+      activo: true,
+    })
+
+    if (errorInsert) {
+      setError('No se pudo guardar: ' + errorInsert.message)
+    } else {
+      setNombre('')
+      setEspecialidad('')
+      setMostrarForm(false)
+      cargar()
+    }
+    setGuardando(false)
+  }
+
+  async function alternarActivo(empleado) {
+    await supabase.from('especialistas').update({ activo: !empleado.activo }).eq('id', empleado.id)
+    cargar()
+  }
+
+  return (
+    <div>
+      <button
+        onClick={() => setMostrarForm((v) => !v)}
+        className="w-full rounded-xl py-2.5 text-sm font-medium mb-3"
+        style={{ background: mostrarForm ? 'var(--color-accent)' : 'var(--gradiente-primario)', color: mostrarForm ? 'var(--color-ink)' : '#FFFFFF', boxShadow: mostrarForm ? 'none' : '0 3px 8px rgba(201,59,121,0.3)' }}
+      >
+        {mostrarForm ? 'Cancelar' : '+ Agregar empleado'}
+      </button>
+
+      {mostrarForm && (
+        <form onSubmit={agregarEmpleado} className="flex flex-col gap-2 mb-5 rounded-xl p-3" style={{ background: 'var(--color-accent)' }}>
+          <input
+            className="rounded-lg px-3 py-2 text-sm bg-white"
+            placeholder="Nombre completo"
+            value={nombre}
+            onChange={(e) => setNombre(e.target.value)}
+            required
+          />
+          <input
+            className="rounded-lg px-3 py-2 text-sm bg-white"
+            placeholder="Especialidad (ej. Dermatología estética)"
+            value={especialidad}
+            onChange={(e) => setEspecialidad(e.target.value)}
+          />
+          {error && <p className="text-xs" style={{ color: '#B0524A' }}>{error}</p>}
+          <button
+            type="submit"
+            disabled={guardando}
+            className="rounded-lg py-2.5 text-white text-sm font-medium disabled:opacity-60"
+            style={{ background: 'var(--gradiente-primario)' }}
+          >
+            {guardando ? 'Guardando...' : 'Guardar empleado'}
+          </button>
+        </form>
+      )}
+
+      {cargando && <p className="text-sm text-ink/50">Cargando empleados...</p>}
+      {!cargando && empleados.length === 0 && <p className="text-sm text-ink/50">Todavía no tienes empleados registrados.</p>}
+
+      <div className="flex flex-col gap-2">
+        {empleados.map((e) => (
+          <div key={e.id} className="rounded-xl p-3 flex items-center gap-3" style={{ background: 'var(--color-accent)', opacity: e.activo ? 1 : 0.5 }}>
+            <div className="w-9 h-9 rounded-full flex-shrink-0" style={{ background: 'var(--gradiente-dorado)' }} />
+            <div className="flex-1">
+              <p className="text-sm font-medium text-ink">{e.nombre}</p>
+              <p className="text-[11px] text-ink/50">{e.especialidad || 'Sin especialidad registrada'}</p>
+            </div>
+            <button
+              onClick={() => alternarActivo(e)}
+              className="text-[10px] px-2.5 py-1.5 rounded-lg flex-shrink-0"
+              style={{ background: e.activo ? 'var(--color-ink)' : 'var(--color-primary)', color: '#FFFFFF' }}
+            >
+              {e.activo ? 'Quitar' : 'Reactivar'}
+            </button>
+          </div>
+        ))}
+      </div>
+    </div>
   )
 }
 
@@ -1038,43 +1153,233 @@ function PanelProductos({ clinicaId }) {
   )
 }
 
-function PanelVentas({ clinicaId }) {
+function PanelCaja({ clinicaId, perfilId }) {
   const [pedidos, setPedidos] = useState([])
+  const [pagos, setPagos] = useState([])
+  const [pacientes, setPacientes] = useState([])
   const [cargando, setCargando] = useState(true)
+  const [mostrarForm, setMostrarForm] = useState(false)
+  const [concepto, setConcepto] = useState('')
+  const [tipo, setTipo] = useState('servicio')
+  const [monto, setMonto] = useState('')
+  const [metodoPago, setMetodoPago] = useState('efectivo')
+  const [pacienteId, setPacienteId] = useState('')
+  const [guardando, setGuardando] = useState(false)
+  const [error, setError] = useState('')
+  const [efectivoContado, setEfectivoContado] = useState('')
 
   useEffect(() => {
-    supabase
-      .from('pedidos')
-      .select('*, pacientes(nombre)')
-      .eq('clinica_id', clinicaId)
-      .order('fecha', { ascending: false })
-      .then(({ data }) => {
-        setPedidos(data || [])
-        setCargando(false)
-      })
+    cargar()
   }, [])
 
-  if (cargando) return <p className="text-sm text-ink/50">Cargando ventas...</p>
-  if (pedidos.length === 0) return <p className="text-sm text-ink/50">Todavía no hay pedidos registrados.</p>
+  async function cargar() {
+    const [{ data: dataPedidos }, { data: dataPagos }, { data: dataPacientes }] = await Promise.all([
+      supabase.from('pedidos').select('*, pacientes(nombre)').eq('clinica_id', clinicaId).order('fecha', { ascending: false }),
+      supabase.from('pagos').select('*, pacientes(nombre)').eq('clinica_id', clinicaId).order('fecha', { ascending: false }),
+      supabase.from('pacientes').select('id, nombre').eq('clinica_id', clinicaId).order('nombre'),
+    ])
+    setPedidos(dataPedidos || [])
+    setPagos(dataPagos || [])
+    setPacientes(dataPacientes || [])
+    setCargando(false)
+  }
 
-  const totalVentas = pedidos.reduce((sum, p) => sum + Number(p.total), 0)
+  async function registrarPago(e) {
+    e.preventDefault()
+    if (!concepto || !monto) return
+    setGuardando(true)
+    setError('')
+
+    const { error: errorInsert } = await supabase.from('pagos').insert({
+      clinica_id: clinicaId,
+      paciente_id: pacienteId || null,
+      concepto,
+      tipo,
+      monto: Number(monto),
+      metodo_pago: metodoPago,
+      registrado_por: perfilId,
+    })
+
+    if (errorInsert) {
+      setError('No se pudo registrar: ' + errorInsert.message)
+    } else {
+      setConcepto('')
+      setMonto('')
+      setPacienteId('')
+      setMostrarForm(false)
+      cargar()
+    }
+    setGuardando(false)
+  }
+
+  // Unificamos pedidos (Tienda) + pagos (registrados a mano) en una sola
+  // lista de movimientos, para que Caja refleje TODO el dinero que entra,
+  // sin importar por dónde entró.
+  const movimientos = [
+    ...pagos.map((p) => ({
+      id: 'pago-' + p.id,
+      fecha: p.fecha,
+      concepto: p.concepto,
+      cliente: p.pacientes?.nombre ?? null,
+      monto: Number(p.monto),
+      metodoPago: p.metodo_pago,
+      origen: 'manual',
+    })),
+    ...pedidos
+      .filter((p) => p.estado !== 'cancelado')
+      .map((p) => ({
+        id: 'pedido-' + p.id,
+        fecha: p.fecha,
+        concepto: 'Compra en tienda',
+        cliente: p.pacientes?.nombre ?? null,
+        monto: Number(p.total),
+        metodoPago: p.metodo_pago === 'wallet' ? 'wallet' : p.metodo_pago,
+        origen: 'tienda',
+      })),
+  ].sort((a, b) => new Date(b.fecha) - new Date(a.fecha))
+
+  const hoy = new Date().toDateString()
+  const movimientosHoy = movimientos.filter((m) => new Date(m.fecha).toDateString() === hoy)
+  const totalHoy = movimientosHoy.reduce((sum, m) => sum + m.monto, 0)
+  const efectivoHoy = movimientosHoy.filter((m) => m.metodoPago === 'efectivo').reduce((sum, m) => sum + m.monto, 0)
+  const tarjetaHoy = movimientosHoy.filter((m) => m.metodoPago === 'tarjeta').reduce((sum, m) => sum + m.monto, 0)
+  const otrosHoy = totalHoy - efectivoHoy - tarjetaHoy
+
+  const diferenciaCaja = efectivoContado === '' ? null : Number(efectivoContado) - efectivoHoy
+
+  function descargarReporte() {
+    const encabezado = 'Fecha,Concepto,Cliente,Método de pago,Monto\n'
+    const filas = movimientos
+      .map((m) => {
+        const fecha = new Date(m.fecha).toLocaleString('es-HN')
+        return `"${fecha}","${m.concepto}","${m.cliente || ''}","${m.metodoPago}","${m.monto.toFixed(2)}"`
+      })
+      .join('\n')
+    const csv = encabezado + filas
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' })
+    const url = URL.createObjectURL(blob)
+    const enlace = document.createElement('a')
+    enlace.href = url
+    enlace.download = `reporte-melissa-${new Date().toISOString().slice(0, 10)}.csv`
+    enlace.click()
+    URL.revokeObjectURL(url)
+  }
+
+  if (cargando) return <p className="text-sm text-ink/50">Cargando caja...</p>
 
   return (
     <div>
-      <div className="rounded-xl p-4 mb-4" style={{ background: 'var(--color-ink)' }}>
-        <p className="text-[11px] text-white/60">Total acumulado</p>
-        <p className="text-xl text-white font-medium mt-1">L {totalVentas.toFixed(2)}</p>
+      <button
+        onClick={() => setMostrarForm((v) => !v)}
+        className="w-full rounded-xl py-2.5 text-sm font-medium mb-3"
+        style={{ background: mostrarForm ? 'var(--color-accent)' : 'var(--gradiente-primario)', color: mostrarForm ? 'var(--color-ink)' : '#FFFFFF', boxShadow: mostrarForm ? 'none' : '0 3px 8px rgba(201,59,121,0.3)' }}
+      >
+        {mostrarForm ? 'Cancelar' : '+ Registrar pago'}
+      </button>
+
+      {mostrarForm && (
+        <form onSubmit={registrarPago} className="flex flex-col gap-2 mb-5 rounded-xl p-3" style={{ background: 'var(--color-accent)' }}>
+          <input
+            className="rounded-lg px-3 py-2 text-sm bg-white"
+            placeholder="Concepto (ej. Limpieza facial - Ana)"
+            value={concepto}
+            onChange={(e) => setConcepto(e.target.value)}
+            required
+          />
+          <select className="rounded-lg px-3 py-2 text-sm bg-white" value={pacienteId} onChange={(e) => setPacienteId(e.target.value)}>
+            <option value="">Sin cliente específico</option>
+            {pacientes.map((p) => (
+              <option key={p.id} value={p.id}>{p.nombre}</option>
+            ))}
+          </select>
+          <div className="flex gap-2">
+            <select className="rounded-lg px-3 py-2 text-sm bg-white flex-1" value={tipo} onChange={(e) => setTipo(e.target.value)}>
+              <option value="servicio">Servicio</option>
+              <option value="producto">Producto</option>
+              <option value="membresia">Membresía</option>
+              <option value="otro">Otro</option>
+            </select>
+            <select className="rounded-lg px-3 py-2 text-sm bg-white flex-1" value={metodoPago} onChange={(e) => setMetodoPago(e.target.value)}>
+              <option value="efectivo">Efectivo</option>
+              <option value="tarjeta">Tarjeta</option>
+              <option value="transferencia">Transferencia</option>
+            </select>
+          </div>
+          <input
+            className="rounded-lg px-3 py-2 text-sm bg-white"
+            placeholder="Monto (L)"
+            type="number"
+            step="0.01"
+            value={monto}
+            onChange={(e) => setMonto(e.target.value)}
+            required
+          />
+          {error && <p className="text-xs" style={{ color: '#B0524A' }}>{error}</p>}
+          <button
+            type="submit"
+            disabled={guardando}
+            className="rounded-lg py-2.5 text-white text-sm font-medium disabled:opacity-60"
+            style={{ background: 'var(--gradiente-primario)' }}
+          >
+            {guardando ? 'Guardando...' : 'Registrar pago'}
+          </button>
+        </form>
+      )}
+
+      <div className="rounded-xl p-4 mb-4" style={{ background: 'var(--gradiente-fondo-oscuro)' }}>
+        <p className="text-[11px]" style={{ color: 'var(--color-dorado-claro)' }}>Total de hoy</p>
+        <p className="text-xl text-white font-medium mt-1">L {totalHoy.toFixed(2)}</p>
+        <div className="flex gap-4 mt-2">
+          <p className="text-[11px] text-white/70">Efectivo: L {efectivoHoy.toFixed(2)}</p>
+          <p className="text-[11px] text-white/70">Tarjeta: L {tarjetaHoy.toFixed(2)}</p>
+          {otrosHoy > 0 && <p className="text-[11px] text-white/70">Otros: L {otrosHoy.toFixed(2)}</p>}
+        </div>
       </div>
+
+      <div className="rounded-xl p-3 mb-4 bg-white border" style={{ borderColor: 'var(--color-borde-tarjeta)' }}>
+        <p className="text-sm font-medium mb-2" style={{ color: 'var(--color-ink)' }}>Cuadre de caja (efectivo)</p>
+        <div className="flex gap-2 items-center">
+          <input
+            className="rounded-lg px-3 py-2 text-sm flex-1"
+            style={{ background: 'var(--color-accent)' }}
+            placeholder="Efectivo contado en caja"
+            type="number"
+            step="0.01"
+            value={efectivoContado}
+            onChange={(e) => setEfectivoContado(e.target.value)}
+          />
+        </div>
+        {diferenciaCaja !== null && (
+          <p className="text-xs mt-2" style={{ color: diferenciaCaja === 0 ? 'var(--color-primary)' : diferenciaCaja > 0 ? '#6B8E5A' : '#B0524A' }}>
+            {diferenciaCaja === 0
+              ? '✓ La caja cuadra exacto.'
+              : diferenciaCaja > 0
+                ? `Sobran L ${diferenciaCaja.toFixed(2)} respecto a lo esperado.`
+                : `Faltan L ${Math.abs(diferenciaCaja).toFixed(2)} respecto a lo esperado.`}
+          </p>
+        )}
+      </div>
+
+      <button
+        onClick={descargarReporte}
+        className="w-full rounded-xl py-2.5 text-sm font-medium mb-4"
+        style={{ background: 'var(--color-accent)', color: 'var(--color-ink)' }}
+      >
+        ⬇ Descargar reporte completo (CSV)
+      </button>
+
+      <p className="text-sm font-medium mb-2" style={{ color: 'var(--color-ink)' }}>Movimientos de hoy</p>
+      {movimientosHoy.length === 0 && <p className="text-sm text-ink/50">Todavía no hay movimientos hoy.</p>}
       <div className="flex flex-col gap-2">
-        {pedidos.map((p) => (
-          <div key={p.id} className="rounded-xl p-3 flex justify-between items-center" style={{ background: 'var(--color-accent)' }}>
+        {movimientosHoy.map((m) => (
+          <div key={m.id} className="rounded-xl p-3 flex justify-between items-center" style={{ background: 'var(--color-accent)' }}>
             <div>
-              <p className="text-sm font-medium text-ink">{p.pacientes?.nombre ?? 'Cliente'}</p>
+              <p className="text-sm font-medium text-ink">{m.concepto}</p>
               <p className="text-[11px] text-ink/50">
-                {new Date(p.fecha).toLocaleDateString('es-HN', { day: 'numeric', month: 'short' })} · {p.estado}
+                {m.cliente ? `${m.cliente} · ` : ''}{m.metodoPago} · {new Date(m.fecha).toLocaleTimeString('es-HN', { hour: 'numeric', minute: '2-digit' })}
               </p>
             </div>
-            <p className="text-sm font-medium" style={{ color: 'var(--color-primary)' }}>L {Number(p.total).toFixed(2)}</p>
+            <p className="text-sm font-medium" style={{ color: 'var(--color-primary)' }}>L {m.monto.toFixed(2)}</p>
           </div>
         ))}
       </div>
