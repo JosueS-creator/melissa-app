@@ -1,13 +1,23 @@
 import logoMelissa from '../assets/melissa-logo-256.png'
 
-export default function Bienvenida({ onSeleccionar, vieneDeQR }) {
+export default function Bienvenida({ onSeleccionar, vieneDeQR, clinica }) {
   return (
     <div
       className="max-w-sm mx-auto min-h-screen flex flex-col items-center justify-center px-6 font-body text-center"
       style={{ background: 'var(--color-fondo-app)' }}
     >
-      <img src={logoMelissa} alt="Melissa" className="w-24 h-24 rounded-2xl mb-6" />
-      <p style={{ fontFamily: 'var(--font-display)', fontSize: 26, color: 'var(--color-ink)' }}>Melissa</p>
+      {clinica?.logo_url ? (
+        <div className="flex items-center gap-3 mb-6">
+          <img src={logoMelissa} alt="Melissa" className="w-16 h-16 rounded-2xl" />
+          <span className="text-2xl" style={{ color: 'var(--color-texto-secundario)' }}>×</span>
+          <img src={clinica.logo_url} alt={clinica.nombre} className="w-16 h-16 rounded-2xl object-cover" />
+        </div>
+      ) : (
+        <img src={logoMelissa} alt="Melissa" className="w-24 h-24 rounded-2xl mb-6" />
+      )}
+      <p style={{ fontFamily: 'var(--font-display)', fontSize: 26, color: 'var(--color-ink)' }}>
+        {clinica?.nombre || 'Melissa'}
+      </p>
       <p className="text-sm mb-10" style={{ color: 'var(--color-texto-secundario)' }}>
         ¿Cómo quieres ingresar?
       </p>

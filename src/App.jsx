@@ -47,7 +47,7 @@ export default function App() {
     // Tema por defecto mientras no sabemos a qué clínica pertenece la
     // sesión (antes de login). Si vienen de un link con ?clinica=slug,
     // usamos ese; si no, el de demo.
-    aplicarTemaDeClinica(parametrosURL.slugClinica || SLUG_CLINICA_DEMO)
+    aplicarTemaDeClinica(parametrosURL.slugClinica || SLUG_CLINICA_DEMO).then(setClinica)
 
     obtenerSesionActual().then((s) => {
       setSesion(s)
@@ -142,6 +142,7 @@ export default function App() {
           setPantalla('login')
         }}
         vieneDeQR={!!parametrosURL.slugClinica}
+        clinica={parametrosURL.slugClinica ? clinica : null}
       />
     )
   }
