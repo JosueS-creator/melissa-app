@@ -74,7 +74,7 @@ export default function Login({ onLoginExitoso, irARegistro, modo = 'paciente', 
         <p className="text-sm text-ink/60 mt-6 text-center">
           ¿Tu negocio aún no tiene cuenta?{' '}
           <a
-            href="https://wa.me/50499990000"
+            href="https://wa.me/50487401299"
             target="_blank"
             rel="noopener noreferrer"
             className="font-medium"

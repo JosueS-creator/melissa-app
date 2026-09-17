@@ -1,6 +1,6 @@
 import logoMelissa from '../assets/melissa-logo-256.png'
 
-export default function Bienvenida({ onSeleccionar }) {
+export default function Bienvenida({ onSeleccionar, vieneDeQR }) {
   return (
     <div
       className="max-w-sm mx-auto min-h-screen flex flex-col items-center justify-center px-6 font-body text-center"
@@ -20,13 +20,15 @@ export default function Bienvenida({ onSeleccionar }) {
         <span style={{ font: "500 15px/1 var(--font-body)" }}>Soy cliente</span>
       </button>
 
-      <button
-        onClick={() => onSeleccionar('clinica')}
-        className="w-full rounded-2xl py-4"
-        style={{ background: '#FFFDF9', border: '1px solid var(--color-dorado-claro)', color: 'var(--color-ink)' }}
-      >
-        <span style={{ font: "500 15px/1 var(--font-body)" }}>Soy administrador de negocio</span>
-      </button>
+      {!vieneDeQR && (
+        <button
+          onClick={() => onSeleccionar('clinica')}
+          className="w-full rounded-2xl py-4"
+          style={{ background: '#FFFDF9', border: '1px solid var(--color-dorado-claro)', color: 'var(--color-ink)' }}
+        >
+          <span style={{ font: "500 15px/1 var(--font-body)" }}>Soy administrador de negocio</span>
+        </button>
+      )}
     </div>
   )
 }

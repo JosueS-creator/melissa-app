@@ -141,7 +141,18 @@ export default function App() {
           setModoEntrada(modo)
           setPantalla('login')
         }}
+        vieneDeQR={!!parametrosURL.slugClinica}
       />
+    )
+  }
+
+  if (clinica && clinica.activa === false) {
+    return (
+      <div className="max-w-sm mx-auto min-h-screen flex flex-col items-center justify-center px-6 text-center font-body">
+        <p className="font-display text-xl text-ink mb-2">Acceso suspendido</p>
+        <p className="text-sm text-ink/60 mb-6">Tu negocio no tiene acceso activo en este momento. Contacta a Melissa para más información.</p>
+        <button onClick={cerrarSesion} className="text-sm" style={{ color: 'var(--color-primary)' }}>Cerrar sesión</button>
+      </div>
     )
   }
 

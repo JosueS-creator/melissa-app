@@ -35,8 +35,25 @@ export default function PanelMelissa({ onVolver }) {
 
   async function cargarClinicas() {
     const { data } = await supabase.from('clinicas').select('*').order('fecha_creacion', { ascending: false })
-    setClinicas(data || [])
+    const lista = data || []
+
+    const conStats = await Promise.all(
+      lista.map(async (c) => {
+        const [{ count: pacientes }, { count: citas }] = await Promise.all([
+          supabase.from('pacientes').select('id', { count: 'exact', head: true }).eq('clinica_id', c.id),
+          supabase.from('citas').select('id', { count: 'exact', head: true }).eq('clinica_id', c.id),
+        ])
+        return { ...c, _pacientes: pacientes || 0, _citas: citas || 0 }
+      })
+    )
+
+    setClinicas(conStats)
     setCargando(false)
+  }
+
+  async function alternarActiva(clinica) {
+    await supabase.from('clinicas').update({ activa: !clinica.activa }).eq('id', clinica.id)
+    cargarClinicas()
   }
 
   async function crearClinica(e) {
@@ -182,20 +199,36 @@ export default function PanelMelissa({ onVolver }) {
       {cargando && <p className="text-sm" style={{ color: 'var(--color-texto-secundario)' }}>Cargando...</p>}
       <div className="flex flex-col gap-2">
         {clinicas.map((c) => (
-          <div key={c.id} className="rounded-xl px-4 py-3 flex justify-between items-center" style={{ background: 'linear-gradient(160deg,#FFFFFF,#FDF7F9)', border: '1px solid var(--color-borde-tarjeta)' }}>
-            <div>
-              <p className="text-sm font-medium" style={{ color: 'var(--color-ink)' }}>{c.nombre}</p>
-              <p className="text-[11px]" style={{ color: 'var(--color-texto-secundario)' }}>
-                {c.ciudad} · {c.pais} · {sustantivoNegocio(c.tipo_negocio)} · {c.plan}
-              </p>
+          <div key={c.id} className="rounded-xl px-4 py-3" style={{ background: 'linear-gradient(160deg,#FFFFFF,#FDF7F9)', border: '1px solid var(--color-borde-tarjeta)', opacity: c.activa ? 1 : 0.6 }}>
+            <div className="flex justify-between items-center">
+              <div>
+                <p className="text-sm font-medium" style={{ color: 'var(--color-ink)' }}>
+                  {c.nombre} {!c.activa && <span className="text-[10px]" style={{ color: '#B0524A' }}>(bloqueada)</span>}
+                </p>
+                <p className="text-[11px]" style={{ color: 'var(--color-texto-secundario)' }}>
+                  {c.ciudad} · {c.pais} · {sustantivoNegocio(c.tipo_negocio)} · {c.plan}
+                </p>
+                <p className="text-[11px] mt-1" style={{ color: 'var(--color-primary)' }}>
+                  {c._pacientes} clientes · {c._citas} citas
+                </p>
+              </div>
+              <div className="flex flex-col gap-1.5 items-end">
+                <button
+                  onClick={() => generarNuevaInvitacion(c.id, c.nombre)}
+                  className="text-[11px] px-3 py-1.5 rounded-lg"
+                  style={{ background: 'var(--color-accent)', color: 'var(--color-ink)' }}
+                >
+                  Nueva invitación
+                </button>
+                <button
+                  onClick={() => alternarActiva(c)}
+                  className="text-[11px] px-3 py-1.5 rounded-lg text-white"
+                  style={{ background: c.activa ? '#B0524A' : 'var(--color-primary)' }}
+                >
+                  {c.activa ? 'Bloquear' : 'Reactivar'}
+                </button>
+              </div>
             </div>
-            <button
-              onClick={() => generarNuevaInvitacion(c.id, c.nombre)}
-              className="text-[11px] px-3 py-1.5 rounded-lg"
-              style={{ background: 'var(--color-accent)', color: 'var(--color-ink)' }}
-            >
-              Nueva invitación
-            </button>
           </div>
         ))}
       </div>
