@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import QRCode from 'qrcode'
 import { supabase } from '../lib/supabaseClient'
 import { obtenerPerfilActual } from '../lib/auth'
 import { sustantivoNegocio } from '../lib/tiposNegocio'
@@ -190,6 +191,35 @@ export default function Personalizacion() {
       </button>
 
       {mensaje && <p className="text-center text-xs mt-3 text-ink/60">{mensaje}</p>}
+
+      {clinica?.slug && <LinkClientes slug={clinica.slug} />}
+    </div>
+  )
+}
+
+function LinkClientes({ slug }) {
+  const [qrDataUrl, setQrDataUrl] = useState(null)
+  const [copiado, setCopiado] = useState(false)
+  const link = `${window.location.origin}/?clinica=${slug}`
+
+  useEffect(() => {
+    QRCode.toDataURL(link, { margin: 1, width: 200 }).then(setQrDataUrl)
+  }, [link])
+
+  function copiar() {
+    navigator.clipboard?.writeText(link)
+    setCopiado(true)
+    setTimeout(() => setCopiado(false), 2000)
+  }
+
+  return (
+    <div className="mt-6 pt-6 border-t border-ink/10 text-center">
+      <p className="text-sm font-medium text-ink mb-2">Link para tus clientes</p>
+      <p className="text-xs text-ink/50 mb-3">Compártelo o pégalo como QR en recepción — los une a tu negocio automáticamente.</p>
+      {qrDataUrl && <img src={qrDataUrl} alt="QR de registro" className="mx-auto mb-3 w-40 h-40" />}
+      <button onClick={copiar} className="text-xs px-4 py-2 rounded-lg" style={{ background: 'var(--color-accent)', color: 'var(--color-ink)' }}>
+        {copiado ? '¡Copiado!' : 'Copiar link'}
+      </button>
     </div>
   )
 }
