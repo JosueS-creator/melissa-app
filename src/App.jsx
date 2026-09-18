@@ -161,7 +161,7 @@ export default function App() {
   const mostrarTabBar = !esAdmin && PANTALLAS_CON_TABBAR.includes(pantalla)
 
   return (
-    <div className="max-w-sm mx-auto min-h-screen flex flex-col" style={{ background: 'var(--color-fondo-app)' }}>
+    <div className={esAdmin ? 'min-h-screen flex flex-col' : 'max-w-sm mx-auto min-h-screen flex flex-col'} style={{ background: 'var(--color-fondo-app)' }}>
       <div className="flex-1">
         {!esAdmin && pantalla === 'inicio' && (
           <Home nombrePaciente={perfil?.nombre || sesion.user.email} clinica={clinica} onNavigate={setPantalla} />

@@ -4,6 +4,7 @@ import { supabase } from '../lib/supabaseClient'
 import { obtenerPerfilActual } from '../lib/auth'
 import Personalizacion from './Personalizacion'
 import { PREFIJO_QR_CLIENTE } from './TarjetaVIP'
+import { descargarDatosClinica } from '../lib/exportarDatosClinica'
 
 const TABS = [
   { id: 'citas', label: 'Citas' },
@@ -17,12 +18,17 @@ const TABS = [
 
 export default function AdminPanel({ onCerrarSesion, esSuperAdmin, onIrAMelissa }) {
   const [perfil, setPerfil] = useState(null)
+  const [nombreClinica, setNombreClinica] = useState('')
   const [cargando, setCargando] = useState(true)
   const [tab, setTab] = useState('citas')
 
   useEffect(() => {
-    obtenerPerfilActual().then((p) => {
+    obtenerPerfilActual().then(async (p) => {
       setPerfil(p)
+      if (p?.clinica_id) {
+        const { data } = await supabase.from('clinicas').select('nombre').eq('id', p.clinica_id).single()
+        setNombreClinica(data?.nombre || '')
+      }
       setCargando(false)
     })
   }, [])
@@ -34,26 +40,69 @@ export default function AdminPanel({ onCerrarSesion, esSuperAdmin, onIrAMelissa 
   }
 
   return (
-    <div
-      className="max-w-sm mx-auto px-5 pb-10 font-body"
-      style={{ paddingTop: 'calc(env(safe-area-inset-top) + 32px)' }}
-    >
+    <div className="lg:flex lg:min-h-screen">
+      <aside
+        className="hidden lg:flex lg:flex-col lg:w-[252px] lg:flex-shrink-0 lg:sticky lg:top-0 lg:h-screen px-5 py-6"
+        style={{ background: 'var(--gradiente-fondo-oscuro)' }}
+      >
+        <p className="font-display text-lg text-white mb-1">Panel del negocio</p>
+        <p className="text-[11px] mb-6" style={{ color: 'rgba(254,250,248,.62)' }}>Vista operativa</p>
+
+        <nav className="flex flex-col gap-1 flex-1">
+          {TABS.map((t) => (
+            <button
+              key={t.id}
+              onClick={() => setTab(t.id)}
+              className="text-left rounded-lg px-3.5 py-2.5 text-sm"
+              style={
+                tab === t.id
+                  ? { background: 'var(--gradiente-primario)', color: '#FFFFFF' }
+                  : { color: 'rgba(254,250,248,.74)' }
+              }
+            >
+              {t.label}
+            </button>
+          ))}
+        </nav>
+
+        <div className="pt-4 mt-4" style={{ borderTop: '1px solid rgba(235,203,134,.2)' }}>
+          {esSuperAdmin && (
+            <button onClick={onIrAMelissa} className="w-full text-left text-xs py-2" style={{ color: 'rgba(254,250,248,.74)' }}>
+              Panel de Melissa
+            </button>
+          )}
+          <button onClick={() => descargarDatosClinica(perfil.clinica_id, nombreClinica)} className="w-full text-left text-xs py-2" style={{ color: 'rgba(254,250,248,.74)' }}>
+            Descargar mis datos
+          </button>
+          <button onClick={onCerrarSesion} className="w-full text-left text-xs py-2" style={{ color: 'rgba(254,250,248,.74)' }}>
+            Salir
+          </button>
+        </div>
+      </aside>
+
+      <div
+        className="max-w-sm mx-auto lg:max-w-3xl lg:mx-0 lg:flex-1 px-5 lg:px-10 pb-10 lg:py-10 font-body"
+        style={{ paddingTop: 'calc(env(safe-area-inset-top) + 32px)' }}
+      >
       <div className="flex justify-between items-start mb-1">
-        <p className="font-display text-xl text-ink">Panel del negocio</p>
-        <div className="flex gap-2">
+        <p className="font-display text-xl text-ink lg:hidden">Panel del negocio</p>
+        <div className="flex gap-2 lg:hidden">
           {esSuperAdmin && (
             <button onClick={onIrAMelissa} className="text-[11px] px-2.5 py-1.5 rounded-lg" style={{ background: 'var(--color-accent)', color: 'var(--color-ink)' }}>
               Panel de Melissa
             </button>
           )}
+          <button onClick={() => descargarDatosClinica(perfil.clinica_id, nombreClinica)} className="text-[11px] px-2.5 py-1.5 rounded-lg" style={{ background: 'var(--color-accent)', color: 'var(--color-ink)' }}>
+            Mis datos
+          </button>
           <button onClick={onCerrarSesion} className="text-[11px] px-2.5 py-1.5 rounded-lg" style={{ background: 'var(--color-accent)', color: 'var(--color-ink)' }}>
             Salir
           </button>
         </div>
       </div>
-      <p className="text-xs text-ink/50 mb-5">Vista operativa para el equipo.</p>
+      <p className="text-xs text-ink/50 mb-5 lg:hidden">Vista operativa para el equipo.</p>
 
-      <div className="flex flex-wrap gap-1.5 mb-5">
+      <div className="flex flex-wrap gap-1.5 mb-5 lg:hidden">
         {TABS.map((t) => (
           <button
             key={t.id}
@@ -81,6 +130,7 @@ export default function AdminPanel({ onCerrarSesion, esSuperAdmin, onIrAMelissa 
           <Personalizacion />
         </div>
       )}
+      </div>
     </div>
   )
 }

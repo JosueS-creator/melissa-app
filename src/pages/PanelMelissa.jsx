@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { supabase } from '../lib/supabaseClient'
 import { TIPOS_NEGOCIO, sustantivoNegocio } from '../lib/tiposNegocio'
+import { descargarDatosClinica } from '../lib/exportarDatosClinica'
 
 const TEMAS = [
   { id: 'elegante_dorado', nombre: 'Elegante Dorado' },
@@ -20,6 +21,7 @@ function generarSlug(nombre) {
 export default function PanelMelissa({ onVolver }) {
   const [clinicas, setClinicas] = useState([])
   const [cargando, setCargando] = useState(true)
+  const [descargados, setDescargados] = useState(new Set())
   const [nombre, setNombre] = useState('')
   const [ciudad, setCiudad] = useState('')
   const [pais, setPais] = useState('HN')
@@ -53,6 +55,20 @@ export default function PanelMelissa({ onVolver }) {
 
   async function alternarActiva(clinica) {
     await supabase.from('clinicas').update({ activa: !clinica.activa }).eq('id', clinica.id)
+    cargarClinicas()
+  }
+
+  async function descargarHistorial(clinica) {
+    await descargarDatosClinica(clinica.id, clinica.nombre)
+    setDescargados((prev) => new Set(prev).add(clinica.id))
+  }
+
+  async function eliminarNegocio(clinica) {
+    const confirmado = window.confirm(
+      `Esto borra "${clinica.nombre}" y TODA su información (clientes, citas, historial, pagos) de forma permanente. ¿Confirmas?`
+    )
+    if (!confirmado) return
+    await supabase.from('clinicas').delete().eq('id', clinica.id)
     cargarClinicas()
   }
 
@@ -226,6 +242,22 @@ export default function PanelMelissa({ onVolver }) {
                   style={{ background: c.activa ? '#B0524A' : 'var(--color-primary)' }}
                 >
                   {c.activa ? 'Bloquear' : 'Reactivar'}
+                </button>
+                <button
+                  onClick={() => descargarHistorial(c)}
+                  className="text-[11px] px-3 py-1.5 rounded-lg"
+                  style={{ background: 'var(--color-accent)', color: 'var(--color-ink)' }}
+                >
+                  Descargar historial
+                </button>
+                <button
+                  onClick={() => eliminarNegocio(c)}
+                  disabled={!descargados.has(c.id)}
+                  title={!descargados.has(c.id) ? 'Descarga el historial primero' : ''}
+                  className="text-[11px] px-3 py-1.5 rounded-lg text-white disabled:opacity-40"
+                  style={{ background: '#8E2255' }}
+                >
+                  Eliminar negocio
                 </button>
               </div>
             </div>
