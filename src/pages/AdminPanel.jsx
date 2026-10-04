@@ -5,6 +5,7 @@ import { obtenerPerfilActual } from '../lib/auth'
 import Personalizacion from './Personalizacion'
 import { PREFIJO_QR_CLIENTE } from './TarjetaVIP'
 import { descargarDatosClinica } from '../lib/exportarDatosClinica'
+import EscanerBarras from '../components/EscanerBarras'
 
 const TABS = [
   { id: 'citas', label: 'Citas' },
@@ -1037,6 +1038,10 @@ function PanelProductos({ clinicaId }) {
   const [categoria, setCategoria] = useState('cremas')
   const [precio, setPrecio] = useState('')
   const [stock, setStock] = useState('')
+  const [codigoBarras, setCodigoBarras] = useState('')
+  const [escaneandoCampo, setEscaneandoCampo] = useState(false)
+  const [asignando, setAsignando] = useState(null)
+  const [mensajeCodigo, setMensajeCodigo] = useState('')
   const [archivo, setArchivo] = useState(null)
   const [guardando, setGuardando] = useState(false)
   const [error, setError] = useState('')
@@ -1082,6 +1087,7 @@ function PanelProductos({ clinicaId }) {
       precio: Number(precio),
       stock: Number(stock) || 0,
       imagen_url: imagenUrl,
+      codigo_barras: codigoBarras.trim() || null,
       activo: true,
     })
 
@@ -1092,6 +1098,7 @@ function PanelProductos({ clinicaId }) {
       setDescripcion('')
       setPrecio('')
       setStock('')
+      setCodigoBarras('')
       setArchivo(null)
       setMostrarForm(false)
       cargar()
@@ -1101,6 +1108,14 @@ function PanelProductos({ clinicaId }) {
 
   async function alternarActivo(producto) {
     await supabase.from('productos').update({ activo: !producto.activo }).eq('id', producto.id)
+    cargar()
+  }
+
+  async function asignarCodigo(codigo) {
+    const producto = asignando
+    setAsignando(null)
+    const { error: errorUpdate } = await supabase.from('productos').update({ codigo_barras: codigo }).eq('id', producto.id)
+    setMensajeCodigo(errorUpdate ? 'No se pudo asignar el código: ' + errorUpdate.message : `Código ${codigo} asignado a ${producto.nombre}`)
     cargar()
   }
 
@@ -1158,6 +1173,19 @@ function PanelProductos({ clinicaId }) {
               onChange={(e) => setStock(e.target.value)}
             />
           </div>
+          <div className="flex gap-2">
+            <input
+              className="rounded-lg px-3 py-2 text-sm bg-white flex-1"
+              placeholder="Código de barras (opcional)"
+              value={codigoBarras}
+              onChange={(e) => setCodigoBarras(e.target.value)}
+              inputMode="numeric"
+            />
+            <button type="button" onClick={() => setEscaneandoCampo((v) => !v)} className="rounded-lg px-3 text-sm bg-white">📷</button>
+          </div>
+          {escaneandoCampo && (
+            <EscanerBarras onDetectado={(c) => { setCodigoBarras(c); setEscaneandoCampo(false) }} />
+          )}
           <label className="text-xs px-3 py-2 rounded-lg bg-white cursor-pointer text-center" style={{ color: 'var(--color-texto-secundario)' }}>
             {archivo ? archivo.name : 'Elegir foto (opcional)'}
             <input type="file" accept="image/*" onChange={(e) => setArchivo(e.target.files?.[0] || null)} className="hidden" />
@@ -1179,6 +1207,16 @@ function PanelProductos({ clinicaId }) {
       {cargando && <p className="text-sm text-ink/50">Cargando productos...</p>}
       {!cargando && productos.length === 0 && <p className="text-sm text-ink/50">Todavía no tienes productos en tu tienda.</p>}
 
+      {asignando && (
+        <div className="mb-3">
+          <p className="text-xs mb-1" style={{ color: 'var(--color-texto-secundario)' }}>
+            Escanea el código de: <strong>{asignando.nombre}</strong>
+          </p>
+          <EscanerBarras key={asignando.id} onDetectado={asignarCodigo} />
+        </div>
+      )}
+      {mensajeCodigo && <p className="text-xs mb-3" style={{ color: 'var(--color-primary)' }}>{mensajeCodigo}</p>}
+
       <div className="flex flex-col gap-2">
         {productos.map((p) => (
           <div key={p.id} className="rounded-xl p-3 flex items-center gap-3" style={{ background: 'var(--color-accent)', opacity: p.activo ? 1 : 0.5 }}>
@@ -1188,7 +1226,15 @@ function PanelProductos({ clinicaId }) {
             <div className="flex-1">
               <p className="text-sm font-medium text-ink">{p.nombre}</p>
               <p className="text-[11px] text-ink/50">L {Number(p.precio).toFixed(2)} · Stock: {p.stock}</p>
+              <p className="text-[10px] text-ink/40">{p.codigo_barras ? `Código: ${p.codigo_barras}` : 'Sin código de barras'}</p>
             </div>
+            <button
+              onClick={() => { setMensajeCodigo(''); setAsignando(asignando?.id === p.id ? null : p) }}
+              className="text-[10px] px-2.5 py-1.5 rounded-lg bg-white"
+              style={{ color: 'var(--color-ink)' }}
+            >
+              {p.codigo_barras ? 'Cambiar código' : 'Asignar código'}
+            </button>
             <button
               onClick={() => alternarActivo(p)}
               className="text-[10px] px-2.5 py-1.5 rounded-lg"
@@ -1217,6 +1263,12 @@ function PanelCaja({ clinicaId, perfilId }) {
   const [guardando, setGuardando] = useState(false)
   const [error, setError] = useState('')
   const [efectivoContado, setEfectivoContado] = useState('')
+  const [direccion, setDireccion] = useState('ingreso')
+  const [escaneando, setEscaneando] = useState(false)
+  const [ventaProducto, setVentaProducto] = useState(null)
+  const [cantidadVenta, setCantidadVenta] = useState('1')
+  const [metodoVenta, setMetodoVenta] = useState('efectivo')
+  const [mensajeVenta, setMensajeVenta] = useState('')
 
   useEffect(() => {
     cargar()
@@ -1242,9 +1294,10 @@ function PanelCaja({ clinicaId, perfilId }) {
 
     const { error: errorInsert } = await supabase.from('pagos').insert({
       clinica_id: clinicaId,
-      paciente_id: pacienteId || null,
+      paciente_id: direccion === 'ingreso' ? pacienteId || null : null,
       concepto,
-      tipo,
+      tipo: direccion === 'ingreso' ? tipo : 'otro',
+      direccion,
       monto: Number(monto),
       metodo_pago: metodoPago,
       registrado_por: perfilId,
@@ -1262,6 +1315,44 @@ function PanelCaja({ clinicaId, perfilId }) {
     setGuardando(false)
   }
 
+  async function productoEscaneado(codigo) {
+    setEscaneando(false)
+    setMensajeVenta('')
+    const { data } = await supabase
+      .from('productos')
+      .select('id, nombre, precio')
+      .eq('clinica_id', clinicaId)
+      .eq('codigo_barras', codigo)
+      .maybeSingle()
+    if (!data) {
+      setMensajeVenta(`No hay un producto con el código ${codigo}. Asígnalo en la pestaña Productos.`)
+      return
+    }
+    setCantidadVenta('1')
+    setVentaProducto(data)
+  }
+
+  async function registrarVenta() {
+    const cantidad = Math.max(1, parseInt(cantidadVenta, 10) || 1)
+    const detalle = `${ventaProducto.nombre}${cantidad > 1 ? ` x${cantidad}` : ''}`
+    const { error: errorInsert } = await supabase.from('pagos').insert({
+      clinica_id: clinicaId,
+      concepto: `Venta: ${detalle}`,
+      tipo: 'producto',
+      direccion: 'ingreso',
+      monto: Number(ventaProducto.precio) * cantidad,
+      metodo_pago: metodoVenta,
+      registrado_por: perfilId,
+    })
+    if (errorInsert) {
+      setMensajeVenta('No se pudo registrar: ' + errorInsert.message)
+      return
+    }
+    setMensajeVenta(`Venta registrada: ${detalle}`)
+    setVentaProducto(null)
+    cargar()
+  }
+
   // Unificamos pedidos (Tienda) + pagos (registrados a mano) en una sola
   // lista de movimientos, para que Caja refleje TODO el dinero que entra,
   // sin importar por dónde entró.
@@ -1273,6 +1364,8 @@ function PanelCaja({ clinicaId, perfilId }) {
       cliente: p.pacientes?.nombre ?? null,
       monto: Number(p.monto),
       metodoPago: p.metodo_pago,
+      direccion: p.direccion,
+      tipo: p.tipo,
       origen: 'manual',
     })),
     ...pedidos
@@ -1284,25 +1377,36 @@ function PanelCaja({ clinicaId, perfilId }) {
         cliente: p.pacientes?.nombre ?? null,
         monto: Number(p.total),
         metodoPago: p.metodo_pago === 'wallet' ? 'wallet' : p.metodo_pago,
+        direccion: 'ingreso',
+        tipo: 'producto',
         origen: 'tienda',
       })),
   ].sort((a, b) => new Date(b.fecha) - new Date(a.fecha))
 
   const hoy = new Date().toDateString()
   const movimientosHoy = movimientos.filter((m) => new Date(m.fecha).toDateString() === hoy)
-  const totalHoy = movimientosHoy.reduce((sum, m) => sum + m.monto, 0)
-  const efectivoHoy = movimientosHoy.filter((m) => m.metodoPago === 'efectivo').reduce((sum, m) => sum + m.monto, 0)
-  const tarjetaHoy = movimientosHoy.filter((m) => m.metodoPago === 'tarjeta').reduce((sum, m) => sum + m.monto, 0)
-  const otrosHoy = totalHoy - efectivoHoy - tarjetaHoy
+  const sumar = (lista) => lista.reduce((sum, m) => sum + m.monto, 0)
+  const ingresosHoy = movimientosHoy.filter((m) => m.direccion === 'ingreso')
+  const egresosHoy = movimientosHoy.filter((m) => m.direccion === 'egreso')
+  const totalIngresos = sumar(ingresosHoy)
+  const totalEgresos = sumar(egresosHoy)
+  const netoHoy = totalIngresos - totalEgresos
+  const serviciosHoy = sumar(ingresosHoy.filter((m) => m.tipo === 'servicio'))
+  const productosHoy = sumar(ingresosHoy.filter((m) => m.tipo === 'producto'))
+  const otrosIngresosHoy = totalIngresos - serviciosHoy - productosHoy
+  const efectivoEsperado =
+    sumar(ingresosHoy.filter((m) => m.metodoPago === 'efectivo')) -
+    sumar(egresosHoy.filter((m) => m.metodoPago === 'efectivo'))
 
-  const diferenciaCaja = efectivoContado === '' ? null : Number(efectivoContado) - efectivoHoy
+  const diferenciaCaja = efectivoContado === '' ? null : Number(efectivoContado) - efectivoEsperado
 
   function descargarReporte() {
-    const encabezado = 'Fecha,Concepto,Cliente,Método de pago,Monto\n'
+    const encabezado = 'Fecha,Movimiento,Concepto,Cliente,Método de pago,Monto\n'
     const filas = movimientos
       .map((m) => {
         const fecha = new Date(m.fecha).toLocaleString('es-HN')
-        return `"${fecha}","${m.concepto}","${m.cliente || ''}","${m.metodoPago}","${m.monto.toFixed(2)}"`
+        const firmado = m.direccion === 'egreso' ? -m.monto : m.monto
+        return `"${fecha}","${m.direccion === 'egreso' ? 'Egreso' : 'Ingreso'}","${m.concepto}","${m.cliente || ''}","${m.metodoPago}","${firmado.toFixed(2)}"`
       })
       .join('\n')
     const csv = encabezado + filas
@@ -1324,31 +1428,48 @@ function PanelCaja({ clinicaId, perfilId }) {
         className="w-full rounded-xl py-2.5 text-sm font-medium mb-3"
         style={{ background: mostrarForm ? 'var(--color-accent)' : 'var(--gradiente-primario)', color: mostrarForm ? 'var(--color-ink)' : '#FFFFFF', boxShadow: mostrarForm ? 'none' : '0 3px 8px rgba(201,59,121,0.3)' }}
       >
-        {mostrarForm ? 'Cancelar' : '+ Registrar pago'}
+        {mostrarForm ? 'Cancelar' : '+ Registrar ingreso / gasto'}
       </button>
 
       {mostrarForm && (
         <form onSubmit={registrarPago} className="flex flex-col gap-2 mb-5 rounded-xl p-3" style={{ background: 'var(--color-accent)' }}>
+          <div className="flex gap-2">
+            {['ingreso', 'egreso'].map((d) => (
+              <button
+                key={d}
+                type="button"
+                onClick={() => setDireccion(d)}
+                className="flex-1 rounded-lg py-2 text-xs font-medium"
+                style={direccion === d ? { background: 'var(--gradiente-primario)', color: '#FFFFFF' } : { background: '#FFFFFF', color: 'var(--color-ink)' }}
+              >
+                {d === 'ingreso' ? 'Ingreso' : 'Egreso (gasto)'}
+              </button>
+            ))}
+          </div>
           <input
             className="rounded-lg px-3 py-2 text-sm bg-white"
-            placeholder="Concepto (ej. Limpieza facial - Ana)"
+            placeholder={direccion === 'ingreso' ? 'Concepto (ej. Limpieza facial - Ana)' : 'Concepto del gasto (ej. Compra de insumos)'}
             value={concepto}
             onChange={(e) => setConcepto(e.target.value)}
             required
           />
-          <select className="rounded-lg px-3 py-2 text-sm bg-white" value={pacienteId} onChange={(e) => setPacienteId(e.target.value)}>
-            <option value="">Sin cliente específico</option>
-            {pacientes.map((p) => (
-              <option key={p.id} value={p.id}>{p.nombre}</option>
-            ))}
-          </select>
-          <div className="flex gap-2">
-            <select className="rounded-lg px-3 py-2 text-sm bg-white flex-1" value={tipo} onChange={(e) => setTipo(e.target.value)}>
-              <option value="servicio">Servicio</option>
-              <option value="producto">Producto</option>
-              <option value="membresia">Membresía</option>
-              <option value="otro">Otro</option>
+          {direccion === 'ingreso' && (
+            <select className="rounded-lg px-3 py-2 text-sm bg-white" value={pacienteId} onChange={(e) => setPacienteId(e.target.value)}>
+              <option value="">Sin cliente específico</option>
+              {pacientes.map((p) => (
+                <option key={p.id} value={p.id}>{p.nombre}</option>
+              ))}
             </select>
+          )}
+          <div className="flex gap-2">
+            {direccion === 'ingreso' && (
+              <select className="rounded-lg px-3 py-2 text-sm bg-white flex-1" value={tipo} onChange={(e) => setTipo(e.target.value)}>
+                <option value="servicio">Servicio</option>
+                <option value="producto">Producto</option>
+                <option value="membresia">Membresía</option>
+                <option value="otro">Otro</option>
+              </select>
+            )}
             <select className="rounded-lg px-3 py-2 text-sm bg-white flex-1" value={metodoPago} onChange={(e) => setMetodoPago(e.target.value)}>
               <option value="efectivo">Efectivo</option>
               <option value="tarjeta">Tarjeta</option>
@@ -1371,23 +1492,72 @@ function PanelCaja({ clinicaId, perfilId }) {
             className="rounded-lg py-2.5 text-white text-sm font-medium disabled:opacity-60"
             style={{ background: 'var(--gradiente-primario)' }}
           >
-            {guardando ? 'Guardando...' : 'Registrar pago'}
+            {guardando ? 'Guardando...' : direccion === 'ingreso' ? 'Registrar ingreso' : 'Registrar gasto'}
           </button>
         </form>
       )}
 
+      <button
+        onClick={() => { setMensajeVenta(''); setVentaProducto(null); setEscaneando((v) => !v) }}
+        className="w-full rounded-xl py-2.5 text-sm font-medium mb-3"
+        style={{ background: 'var(--color-accent)', color: 'var(--color-ink)' }}
+      >
+        {escaneando ? 'Cerrar escáner' : '📷 Vender producto (escanear código de barras)'}
+      </button>
+
+      {escaneando && (
+        <div className="mb-3">
+          <EscanerBarras onDetectado={productoEscaneado} />
+        </div>
+      )}
+
+      {ventaProducto && (
+        <div className="rounded-xl p-3 mb-3 bg-white border flex flex-col gap-2" style={{ borderColor: 'var(--color-borde-tarjeta)' }}>
+          <p className="text-sm font-medium" style={{ color: 'var(--color-ink)' }}>{ventaProducto.nombre}</p>
+          <p className="text-xs" style={{ color: 'var(--color-texto-secundario)' }}>L {Number(ventaProducto.precio).toFixed(2)} c/u</p>
+          <div className="flex gap-2">
+            <input
+              className="rounded-lg px-3 py-2 text-sm flex-1"
+              style={{ background: 'var(--color-accent)' }}
+              type="number"
+              min="1"
+              value={cantidadVenta}
+              onChange={(e) => setCantidadVenta(e.target.value)}
+              placeholder="Cantidad"
+            />
+            <select className="rounded-lg px-3 py-2 text-sm flex-1" style={{ background: 'var(--color-accent)' }} value={metodoVenta} onChange={(e) => setMetodoVenta(e.target.value)}>
+              <option value="efectivo">Efectivo</option>
+              <option value="tarjeta">Tarjeta</option>
+              <option value="transferencia">Transferencia</option>
+            </select>
+          </div>
+          <button onClick={registrarVenta} className="rounded-lg py-2.5 text-white text-sm font-medium" style={{ background: 'var(--gradiente-primario)' }}>
+            Registrar venta · L {(Number(ventaProducto.precio) * Math.max(1, parseInt(cantidadVenta, 10) || 1)).toFixed(2)}
+          </button>
+        </div>
+      )}
+
+      {mensajeVenta && <p className="text-xs mb-3" style={{ color: 'var(--color-primary)' }}>{mensajeVenta}</p>}
+
       <div className="rounded-xl p-4 mb-4" style={{ background: 'var(--gradiente-fondo-oscuro)' }}>
-        <p className="text-[11px]" style={{ color: 'var(--color-dorado-claro)' }}>Total de hoy</p>
-        <p className="text-xl text-white font-medium mt-1">L {totalHoy.toFixed(2)}</p>
-        <div className="flex gap-4 mt-2">
-          <p className="text-[11px] text-white/70">Efectivo: L {efectivoHoy.toFixed(2)}</p>
-          <p className="text-[11px] text-white/70">Tarjeta: L {tarjetaHoy.toFixed(2)}</p>
-          {otrosHoy > 0 && <p className="text-[11px] text-white/70">Otros: L {otrosHoy.toFixed(2)}</p>}
+        <p className="text-[11px]" style={{ color: 'var(--color-dorado-claro)' }}>Resultado de hoy (ingresos − egresos)</p>
+        <p className="text-xl text-white font-medium mt-1">L {netoHoy.toFixed(2)}</p>
+        <div className="flex flex-wrap gap-x-4 gap-y-1 mt-2">
+          <p className="text-[11px] text-white/70">Ingresos: L {totalIngresos.toFixed(2)}</p>
+          <p className="text-[11px] text-white/70">Egresos: L {totalEgresos.toFixed(2)}</p>
+        </div>
+        <div className="flex flex-wrap gap-x-4 gap-y-1 mt-1">
+          <p className="text-[11px] text-white/70">Servicios: L {serviciosHoy.toFixed(2)}</p>
+          <p className="text-[11px] text-white/70">Productos: L {productosHoy.toFixed(2)}</p>
+          {otrosIngresosHoy > 0 && <p className="text-[11px] text-white/70">Otros: L {otrosIngresosHoy.toFixed(2)}</p>}
         </div>
       </div>
 
       <div className="rounded-xl p-3 mb-4 bg-white border" style={{ borderColor: 'var(--color-borde-tarjeta)' }}>
-        <p className="text-sm font-medium mb-2" style={{ color: 'var(--color-ink)' }}>Cuadre de caja (efectivo)</p>
+        <p className="text-sm font-medium mb-1" style={{ color: 'var(--color-ink)' }}>Cierre de caja (efectivo)</p>
+        <p className="text-xs mb-2" style={{ color: 'var(--color-texto-secundario)' }}>
+          Efectivo esperado en caja hoy: <strong>L {efectivoEsperado.toFixed(2)}</strong> (ingresos en efectivo − gastos en efectivo)
+        </p>
         <div className="flex gap-2 items-center">
           <input
             className="rounded-lg px-3 py-2 text-sm flex-1"
@@ -1429,7 +1599,9 @@ function PanelCaja({ clinicaId, perfilId }) {
                 {m.cliente ? `${m.cliente} · ` : ''}{m.metodoPago} · {new Date(m.fecha).toLocaleTimeString('es-HN', { hour: 'numeric', minute: '2-digit' })}
               </p>
             </div>
-            <p className="text-sm font-medium" style={{ color: 'var(--color-primary)' }}>L {m.monto.toFixed(2)}</p>
+            <p className="text-sm font-medium" style={{ color: m.direccion === 'egreso' ? '#B0524A' : 'var(--color-primary)' }}>
+              {m.direccion === 'egreso' ? '−' : ''}L {m.monto.toFixed(2)}
+            </p>
           </div>
         ))}
       </div>
