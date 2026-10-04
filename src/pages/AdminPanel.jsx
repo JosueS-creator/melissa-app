@@ -1269,6 +1269,11 @@ function PanelCaja({ clinicaId, perfilId }) {
   const [cantidadVenta, setCantidadVenta] = useState('1')
   const [metodoVenta, setMetodoVenta] = useState('efectivo')
   const [mensajeVenta, setMensajeVenta] = useState('')
+  const [anulando, setAnulando] = useState(null)
+  const [pinAnular, setPinAnular] = useState('')
+  const [motivoAnular, setMotivoAnular] = useState('')
+  const [procesandoAnular, setProcesandoAnular] = useState(false)
+  const [mensajeAnular, setMensajeAnular] = useState('')
 
   useEffect(() => {
     cargar()
@@ -1277,7 +1282,7 @@ function PanelCaja({ clinicaId, perfilId }) {
   async function cargar() {
     const [{ data: dataPedidos }, { data: dataPagos }, { data: dataPacientes }] = await Promise.all([
       supabase.from('pedidos').select('*, pacientes(nombre)').eq('clinica_id', clinicaId).order('fecha', { ascending: false }),
-      supabase.from('pagos').select('*, pacientes(nombre)').eq('clinica_id', clinicaId).order('fecha', { ascending: false }),
+      supabase.from('pagos').select('*, pacientes(nombre)').eq('clinica_id', clinicaId).is('anulado_at', null).order('fecha', { ascending: false }),
       supabase.from('pacientes').select('id, nombre').eq('clinica_id', clinicaId).order('nombre'),
     ])
     setPedidos(dataPedidos || [])
@@ -1353,12 +1358,43 @@ function PanelCaja({ clinicaId, perfilId }) {
     cargar()
   }
 
+  async function confirmarAnulacion(e) {
+    e.preventDefault()
+    setProcesandoAnular(true)
+    const { data, error: errorRpc } = await supabase.rpc('anular_pago', {
+      p_pago_id: anulando.pagoId,
+      p_pin: pinAnular,
+      p_motivo: motivoAnular,
+    })
+    setProcesandoAnular(false)
+
+    if (errorRpc) {
+      setMensajeAnular('No se pudo anular: ' + errorRpc.message)
+      return
+    }
+    if (data === 'ok') {
+      setMensajeAnular(`Movimiento anulado: ${anulando.concepto}`)
+      setAnulando(null)
+      cargar()
+      return
+    }
+    const mensajes = {
+      pin_incorrecto: 'Clave incorrecta.',
+      bloqueado: 'Demasiados intentos fallidos. Intenta de nuevo en 15 minutos.',
+      sin_clave: 'Primero crea la clave de supervisor (sección al final de Caja).',
+      motivo_requerido: 'Escribe el motivo de la anulación.',
+      no_encontrado: 'Ese movimiento ya no existe o ya fue anulado.',
+    }
+    setMensajeAnular(mensajes[data] || 'No se pudo anular.')
+  }
+
   // Unificamos pedidos (Tienda) + pagos (registrados a mano) en una sola
   // lista de movimientos, para que Caja refleje TODO el dinero que entra,
   // sin importar por dónde entró.
   const movimientos = [
     ...pagos.map((p) => ({
       id: 'pago-' + p.id,
+      pagoId: p.id,
       fecha: p.fecha,
       concepto: p.concepto,
       cliente: p.pacientes?.nombre ?? null,
@@ -1588,6 +1624,41 @@ function PanelCaja({ clinicaId, perfilId }) {
         ⬇ Descargar reporte completo (CSV)
       </button>
 
+      {anulando && (
+        <form onSubmit={confirmarAnulacion} className="rounded-xl p-3 mb-3 flex flex-col gap-2" style={{ background: 'var(--color-accent)', border: '1px solid #B0524A' }}>
+          <p className="text-sm font-medium" style={{ color: 'var(--color-ink)' }}>
+            Anular: {anulando.concepto} · L {anulando.monto.toFixed(2)}
+          </p>
+          <p className="text-xs" style={{ color: 'var(--color-texto-secundario)' }}>Requiere la clave de un supervisor o gerente.</p>
+          <input
+            className="rounded-lg px-3 py-2 text-sm bg-white"
+            placeholder="Motivo de la anulación"
+            value={motivoAnular}
+            onChange={(e) => setMotivoAnular(e.target.value)}
+            required
+          />
+          <input
+            className="rounded-lg px-3 py-2 text-sm bg-white"
+            placeholder="Clave de supervisor"
+            type="password"
+            inputMode="numeric"
+            maxLength={8}
+            value={pinAnular}
+            onChange={(e) => setPinAnular(e.target.value)}
+            required
+          />
+          <div className="flex gap-2">
+            <button type="button" onClick={() => setAnulando(null)} className="flex-1 rounded-lg py-2 text-xs bg-white" style={{ color: 'var(--color-ink)' }}>
+              Cancelar
+            </button>
+            <button type="submit" disabled={procesandoAnular} className="flex-1 rounded-lg py-2 text-xs text-white disabled:opacity-60" style={{ background: '#B0524A' }}>
+              {procesandoAnular ? 'Verificando...' : 'Confirmar anulación'}
+            </button>
+          </div>
+        </form>
+      )}
+      {mensajeAnular && <p className="text-xs mb-3" style={{ color: 'var(--color-primary)' }}>{mensajeAnular}</p>}
+
       <p className="text-sm font-medium mb-2" style={{ color: 'var(--color-ink)' }}>Movimientos de hoy</p>
       {movimientosHoy.length === 0 && <p className="text-sm text-ink/50">Todavía no hay movimientos hoy.</p>}
       <div className="flex flex-col gap-2">
@@ -1599,12 +1670,93 @@ function PanelCaja({ clinicaId, perfilId }) {
                 {m.cliente ? `${m.cliente} · ` : ''}{m.metodoPago} · {new Date(m.fecha).toLocaleTimeString('es-HN', { hour: 'numeric', minute: '2-digit' })}
               </p>
             </div>
-            <p className="text-sm font-medium" style={{ color: m.direccion === 'egreso' ? '#B0524A' : 'var(--color-primary)' }}>
-              {m.direccion === 'egreso' ? '−' : ''}L {m.monto.toFixed(2)}
-            </p>
+            <div className="text-right">
+              <p className="text-sm font-medium" style={{ color: m.direccion === 'egreso' ? '#B0524A' : 'var(--color-primary)' }}>
+                {m.direccion === 'egreso' ? '−' : ''}L {m.monto.toFixed(2)}
+              </p>
+              {m.origen === 'manual' && (
+                <button
+                  onClick={() => { setMensajeAnular(''); setPinAnular(''); setMotivoAnular(''); setAnulando(m) }}
+                  className="text-[10px] mt-1"
+                  style={{ color: '#B0524A' }}
+                >
+                  Anular
+                </button>
+              )}
+            </div>
           </div>
         ))}
       </div>
+
+      <ClaveSupervisor />
     </div>
+  )
+}
+
+function ClaveSupervisor() {
+  const [tieneClave, setTieneClave] = useState(null)
+  const [pinActual, setPinActual] = useState('')
+  const [pinNuevo, setPinNuevo] = useState('')
+  const [pinRepetido, setPinRepetido] = useState('')
+  const [guardando, setGuardando] = useState(false)
+  const [mensaje, setMensaje] = useState('')
+
+  useEffect(() => {
+    supabase.rpc('tiene_clave_supervisor').then(({ data }) => setTieneClave(!!data))
+  }, [])
+
+  async function guardar(e) {
+    e.preventDefault()
+    setMensaje('')
+    if (pinNuevo !== pinRepetido) {
+      setMensaje('Las claves nuevas no coinciden.')
+      return
+    }
+    setGuardando(true)
+    const { data, error } = await supabase.rpc('definir_clave_supervisor', {
+      p_pin_nuevo: pinNuevo,
+      p_pin_actual: tieneClave ? pinActual : null,
+    })
+    setGuardando(false)
+
+    if (error) {
+      setMensaje('No se pudo guardar: ' + error.message)
+      return
+    }
+    const mensajes = {
+      ok: 'Clave guardada.',
+      formato: 'La clave debe tener de 4 a 8 dígitos.',
+      pin_actual_incorrecto: 'La clave actual es incorrecta.',
+      bloqueado: 'Demasiados intentos fallidos. Intenta de nuevo en 15 minutos.',
+    }
+    setMensaje(mensajes[data] || 'No se pudo guardar.')
+    if (data === 'ok') {
+      setTieneClave(true)
+      setPinActual('')
+      setPinNuevo('')
+      setPinRepetido('')
+    }
+  }
+
+  if (tieneClave === null) return null
+
+  return (
+    <form onSubmit={guardar} className="rounded-xl p-3 mt-6 bg-white border flex flex-col gap-2" style={{ borderColor: 'var(--color-borde-tarjeta)' }}>
+      <p className="text-sm font-medium" style={{ color: 'var(--color-ink)' }}>Clave de supervisor</p>
+      <p className="text-xs" style={{ color: 'var(--color-texto-secundario)' }}>
+        {tieneClave
+          ? 'Se pide para anular movimientos de caja. Para cambiarla necesitas la clave actual.'
+          : 'Aún no hay clave. Créala (4 a 8 dígitos) y compártela solo con supervisores o gerentes.'}
+      </p>
+      {tieneClave && (
+        <input className="rounded-lg px-3 py-2 text-sm" style={{ background: 'var(--color-accent)' }} placeholder="Clave actual" type="password" inputMode="numeric" maxLength={8} value={pinActual} onChange={(e) => setPinActual(e.target.value)} required />
+      )}
+      <input className="rounded-lg px-3 py-2 text-sm" style={{ background: 'var(--color-accent)' }} placeholder={tieneClave ? 'Clave nueva' : 'Clave'} type="password" inputMode="numeric" maxLength={8} value={pinNuevo} onChange={(e) => setPinNuevo(e.target.value)} required />
+      <input className="rounded-lg px-3 py-2 text-sm" style={{ background: 'var(--color-accent)' }} placeholder="Repite la clave" type="password" inputMode="numeric" maxLength={8} value={pinRepetido} onChange={(e) => setPinRepetido(e.target.value)} required />
+      {mensaje && <p className="text-xs" style={{ color: 'var(--color-primary)' }}>{mensaje}</p>}
+      <button type="submit" disabled={guardando} className="rounded-lg py-2.5 text-white text-sm font-medium disabled:opacity-60" style={{ background: 'var(--gradiente-primario)' }}>
+        {guardando ? 'Guardando...' : tieneClave ? 'Cambiar clave' : 'Crear clave'}
+      </button>
+    </form>
   )
 }
