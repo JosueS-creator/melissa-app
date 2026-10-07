@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { supabase } from '../lib/supabaseClient'
 import { obtenerPerfilActual, obtenerPacienteActual } from '../lib/auth'
-import { calcularNivelYProgreso } from '../lib/fidelidad'
+import { calcularNivelYProgreso, obtenerUmbrales } from '../lib/fidelidad'
 
 const PAISES_APP = [
   { codigo: 'HN', nombre: 'Honduras', moneda: 'Lempira · HNL' },
@@ -13,8 +13,10 @@ export default function Perfil({ onNavigate, onCerrarSesion, esSuperAdmin }) {
   const [paciente, setPaciente] = useState(null)
   const [nombre, setNombre] = useState('')
   const [telefono, setTelefono] = useState('')
+  const [fechaNacimiento, setFechaNacimiento] = useState('')
   const [pais, setPais] = useState('HN')
   const [puntos, setPuntos] = useState(0)
+  const [umbrales, setUmbrales] = useState(null)
   const [preferencias, setPreferencias] = useState({
     recordatorios_citas: true,
     promociones_ofertas: true,
@@ -31,6 +33,7 @@ export default function Perfil({ onNavigate, onCerrarSesion, esSuperAdmin }) {
       setPaciente(pac)
       setNombre(p?.nombre || '')
       setTelefono(p?.telefono || '')
+      setFechaNacimiento(pac?.fecha_nacimiento || '')
       setPais(p?.pais && PAISES_APP.some((x) => x.codigo === p.pais) ? p.pais : 'HN')
       setPreferencias({
         recordatorios_citas: p?.recordatorios_citas ?? true,
@@ -40,6 +43,7 @@ export default function Perfil({ onNavigate, onCerrarSesion, esSuperAdmin }) {
       if (pac) {
         const { data: movimientos } = await supabase.from('puntos_movimientos').select('puntos').eq('paciente_id', pac.id)
         setPuntos((movimientos || []).reduce((sum, m) => sum + m.puntos, 0))
+        setUmbrales(await obtenerUmbrales(pac.clinica_id))
       }
       setCargando(false)
     }
@@ -73,7 +77,10 @@ export default function Perfil({ onNavigate, onCerrarSesion, esSuperAdmin }) {
 
     let errorPaciente = null
     if (paciente) {
-      const resultado = await supabase.from('pacientes').update({ nombre: nombre.trim(), telefono: telefono.trim() }).eq('id', paciente.id)
+      const resultado = await supabase
+        .from('pacientes')
+        .update({ nombre: nombre.trim(), telefono: telefono.trim(), fecha_nacimiento: fechaNacimiento || null })
+        .eq('id', paciente.id)
       errorPaciente = resultado.error
     }
 
@@ -95,7 +102,7 @@ export default function Perfil({ onNavigate, onCerrarSesion, esSuperAdmin }) {
   if (cargando) return <p className="text-center pt-16 text-sm text-ink/60">Cargando...</p>
   if (!perfil) return <p className="text-center pt-16 text-sm text-ink/60">Inicia sesión para continuar.</p>
 
-  const { nivelActual } = calcularNivelYProgreso(puntos)
+  const { nivelActual } = calcularNivelYProgreso(puntos, umbrales)
 
   return (
     <div
@@ -138,6 +145,17 @@ export default function Perfil({ onNavigate, onCerrarSesion, esSuperAdmin }) {
             value={telefono}
             onChange={(e) => setTelefono(e.target.value)}
             required
+          />
+        </div>
+        <div>
+          <label className="text-[11px] block mb-1" style={{ color: 'var(--color-texto-terciario)' }}>Fecha de nacimiento (opcional)</label>
+          <input
+            className="w-full rounded-xl px-4 py-3 text-sm bg-white"
+            style={{ border: '1px solid var(--color-borde-tarjeta)' }}
+            type="date"
+            value={fechaNacimiento}
+            max={new Date().toISOString().slice(0, 10)}
+            onChange={(e) => setFechaNacimiento(e.target.value)}
           />
         </div>
         <button

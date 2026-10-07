@@ -1,13 +1,14 @@
 import { useEffect, useState } from 'react'
 import { supabase } from '../lib/supabaseClient'
 import { obtenerPacienteActual } from '../lib/auth'
-import { calcularNivelYProgreso } from '../lib/fidelidad'
+import { calcularNivelYProgreso, obtenerUmbrales } from '../lib/fidelidad'
 import logoMelissa from '../assets/melissa-logo-64.png'
 import logoMelissaMarcaAgua from '../assets/melissa-logo-256.png'
 
 export default function Home({ nombrePaciente = 'Cliente', clinica, onNavigate }) {
   const [paciente, setPaciente] = useState(null)
   const [puntos, setPuntos] = useState(0)
+  const [umbrales, setUmbrales] = useState(null)
   const [proximaCita, setProximaCita] = useState(null)
   const [productos, setProductos] = useState([])
   const [cargando, setCargando] = useState(true)
@@ -35,6 +36,7 @@ export default function Home({ nombrePaciente = 'Cliente', clinica, onNavigate }
       ])
 
       setPuntos((movimientos || []).reduce((sum, m) => sum + m.puntos, 0))
+      setUmbrales(await obtenerUmbrales(p.clinica_id))
       setProximaCita(citas?.[0] || null)
       setProductos(destacados || [])
       setCargando(false)
@@ -42,7 +44,7 @@ export default function Home({ nombrePaciente = 'Cliente', clinica, onNavigate }
     cargar()
   }, [])
 
-  const { nivelActual, siguienteNivel, progreso, puntosParaSiguiente } = calcularNivelYProgreso(puntos)
+  const { nivelActual, siguienteNivel, progreso, puntosParaSiguiente } = calcularNivelYProgreso(puntos, umbrales)
 
   return (
     <div className="" style={{ background: 'var(--color-fondo-app)' }}>

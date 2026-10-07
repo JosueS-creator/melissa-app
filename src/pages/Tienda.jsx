@@ -67,18 +67,13 @@ export default function Tienda() {
     if (!paciente || items === 0) return
     setEnviando(true)
 
-    const { data: pedido, error: errorPedido } = await supabase
-      .from('pedidos')
-      .insert({
-        clinica_id: paciente.clinica_id,
-        paciente_id: paciente.id,
-        total,
-        metodo_pago: 'wallet',
-        entrega: 'domicilio',
-        estado: 'pendiente',
-      })
-      .select()
-      .single()
+    // El servidor recalcula precios y total desde la base: el navegador solo
+    // manda qué productos y cuántos.
+    const lineas = Object.entries(carrito).map(([producto_id, cantidad]) => ({ producto_id, cantidad }))
+    const { data: pedido, error: errorPedido } = await supabase.rpc('crear_pedido', {
+      p_items: lineas,
+      p_entrega: 'domicilio',
+    })
 
     if (errorPedido || !pedido) {
       setMensaje('No se pudo procesar el pedido. Intenta de nuevo.')
@@ -86,13 +81,7 @@ export default function Tienda() {
       return
     }
 
-    const filasItems = Object.entries(carrito).map(([producto_id, cantidad]) => {
-      const producto = productos.find((p) => p.id === producto_id)
-      return { pedido_id: pedido.id, producto_id, cantidad, precio_unitario: producto.precio }
-    })
-    await supabase.from('pedido_items').insert(filasItems)
-
-    setMensaje(`Pedido confirmado — L ${total.toFixed(2)}`)
+    setMensaje(`Pedido confirmado — L ${Number(pedido.total).toFixed(2)}`)
     setCarrito({})
     setEnviando(false)
   }

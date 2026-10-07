@@ -6,10 +6,13 @@ import Personalizacion from './Personalizacion'
 import { PREFIJO_QR_CLIENTE } from './TarjetaVIP'
 import { descargarDatosClinica } from '../lib/exportarDatosClinica'
 import EscanerBarras from '../components/EscanerBarras'
+import Crm from './Crm'
+import ClientesReactivar from './ClientesReactivar'
 
 const TABS = [
   { id: 'citas', label: 'Citas' },
   { id: 'pacientes', label: 'Clientes' },
+  { id: 'reactivar', label: 'Por reactivar' },
   { id: 'empleados', label: 'Empleados' },
   { id: 'servicios', label: 'Servicios' },
   { id: 'productos', label: 'Productos' },
@@ -121,7 +124,9 @@ export default function AdminPanel({ onCerrarSesion, esSuperAdmin, onIrAMelissa 
       </div>
 
       {tab === 'citas' && <PanelCitas clinicaId={perfil.clinica_id} />}
-      {tab === 'pacientes' && <PanelPacientes clinicaId={perfil.clinica_id} />}
+      {/* El CRM recibe EscanerQR e HistorialCliente (definidos aquí) para reutilizarlos sin duplicar código. */}
+      {tab === 'pacientes' && <Crm clinicaId={perfil.clinica_id} HistorialCliente={HistorialCliente} EscanerQR={EscanerQR} />}
+      {tab === 'reactivar' && <ClientesReactivar clinicaId={perfil.clinica_id} HistorialCliente={HistorialCliente} />}
       {tab === 'empleados' && <PanelEmpleados clinicaId={perfil.clinica_id} />}
       {tab === 'servicios' && <PanelServicios clinicaId={perfil.clinica_id} />}
       {tab === 'productos' && <PanelProductos clinicaId={perfil.clinica_id} />}
@@ -235,7 +240,7 @@ function FormularioNuevaCita({ clinicaId, onCreada }) {
   const [servicios, setServicios] = useState([])
   const [pacienteId, setPacienteId] = useState('')
   const [especialistaId, setEspecialistaId] = useState('')
-  const [servicioNombre, setServicioNombre] = useState('')
+  const [servicioId, setServicioId] = useState('')
   const [fecha, setFecha] = useState('')
   const [hora, setHora] = useState('')
   const [guardando, setGuardando] = useState(false)
@@ -269,7 +274,8 @@ function FormularioNuevaCita({ clinicaId, onCreada }) {
       especialista_id: especialistaId || null,
       fecha_hora: fechaHora,
       estado: 'confirmada',
-      tratamiento: servicioNombre || null,
+      servicio_id: servicioId || null,
+      tratamiento: servicios.find((s) => s.id === servicioId)?.nombre || null,
     })
 
     if (errorInsert) {
@@ -307,12 +313,12 @@ function FormularioNuevaCita({ clinicaId, onCreada }) {
 
       <select
         className="rounded-lg px-3 py-2 text-sm bg-white"
-        value={servicioNombre}
-        onChange={(e) => setServicioNombre(e.target.value)}
+        value={servicioId}
+        onChange={(e) => setServicioId(e.target.value)}
       >
         <option value="">Sin servicio específico</option>
         {servicios.map((s) => (
-          <option key={s.id} value={s.nombre}>{s.nombre} · L {Number(s.precio).toFixed(0)}</option>
+          <option key={s.id} value={s.id}>{s.nombre} · L {Number(s.precio).toFixed(0)}</option>
         ))}
       </select>
 
@@ -591,80 +597,6 @@ function PanelServicios({ clinicaId }) {
             >
               {s.activo ? 'Ocultar' : 'Activar'}
             </button>
-          </div>
-        ))}
-      </div>
-    </div>
-  )
-}
-
-function PanelPacientes({ clinicaId }) {
-  const [pacientes, setPacientes] = useState([])
-  const [puntosPorCliente, setPuntosPorCliente] = useState({})
-  const [cargando, setCargando] = useState(true)
-  const [mostrarEscaner, setMostrarEscaner] = useState(false)
-  const [clienteExpandido, setClienteExpandido] = useState(null)
-
-  useEffect(() => {
-    cargar()
-  }, [])
-
-  async function cargar() {
-    const [{ data: dataPacientes }, { data: dataMovimientos }] = await Promise.all([
-      supabase.from('pacientes').select('*').eq('clinica_id', clinicaId).order('fecha_registro', { ascending: false }),
-      supabase.from('puntos_movimientos').select('paciente_id, puntos').eq('clinica_id', clinicaId),
-    ])
-
-    const saldos = {}
-    for (const m of dataMovimientos || []) {
-      saldos[m.paciente_id] = (saldos[m.paciente_id] || 0) + m.puntos
-    }
-
-    setPacientes(dataPacientes || [])
-    setPuntosPorCliente(saldos)
-    setCargando(false)
-  }
-
-  return (
-    <div>
-      <button
-        onClick={() => setMostrarEscaner((v) => !v)}
-        className="w-full rounded-xl py-2.5 text-sm font-medium mb-3"
-        style={{ background: mostrarEscaner ? 'var(--color-accent)' : 'var(--color-primary)', color: mostrarEscaner ? 'var(--color-ink)' : '#FFFFFF' }}
-      >
-        {mostrarEscaner ? 'Cerrar escáner' : '📷 Escanear QR de un cliente'}
-      </button>
-
-      {mostrarEscaner && (
-        <EscanerQR clinicaId={clinicaId} onPuntosActualizados={() => { setMostrarEscaner(false); cargar() }} />
-      )}
-
-      {cargando && <p className="text-sm text-ink/50">Cargando clientes...</p>}
-      {!cargando && pacientes.length === 0 && <p className="text-sm text-ink/50">Todavía no hay clientes registrados.</p>}
-
-      <div className="flex flex-col gap-2">
-        {pacientes.map((p) => (
-          <div key={p.id} className="rounded-xl p-3" style={{ background: 'var(--color-accent)' }}>
-            <div className="flex items-center gap-3">
-              <div className="w-8 h-8 rounded-full flex-shrink-0" style={{ background: 'var(--gradiente-primario)', boxShadow: '0 2px 6px rgba(201,59,121,0.35)' }} />
-              <div className="flex-1">
-                <p className="text-sm font-medium text-ink">{p.nombre}</p>
-                <p className="text-[11px] text-ink/50">{p.telefono || 'Sin teléfono registrado'}</p>
-              </div>
-              <p className="text-sm font-medium flex-shrink-0" style={{ color: 'var(--color-primary)' }}>
-                {(puntosPorCliente[p.id] || 0).toLocaleString()} pts
-              </p>
-            </div>
-            <button
-              onClick={() => setClienteExpandido(clienteExpandido === p.id ? null : p.id)}
-              className="text-[11px] mt-2 px-3 py-1.5 rounded-lg"
-              style={{ background: '#FFFFFF', color: 'var(--color-ink)' }}
-            >
-              {clienteExpandido === p.id ? 'Ocultar historial' : '📋 Ver / agregar historial'}
-            </button>
-            {clienteExpandido === p.id && (
-              <HistorialCliente clinicaId={clinicaId} paciente={p} />
-            )}
           </div>
         ))}
       </div>

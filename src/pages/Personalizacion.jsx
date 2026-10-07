@@ -200,7 +200,7 @@ export default function Personalizacion() {
 function LinkClientes({ slug }) {
   const [qrDataUrl, setQrDataUrl] = useState(null)
   const [copiado, setCopiado] = useState(false)
-  const link = `${window.location.origin}/?clinica=${slug}`
+  const link = `${window.location.origin}/${slug}`
 
   useEffect(() => {
     QRCode.toDataURL(link, { margin: 1, width: 200 }).then(setQrDataUrl)

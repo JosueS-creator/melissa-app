@@ -2,15 +2,9 @@ import { useEffect, useState } from 'react'
 import QRCode from 'qrcode'
 import { supabase } from '../lib/supabaseClient'
 import { obtenerPacienteActual } from '../lib/auth'
-import { calcularNivelYProgreso } from '../lib/fidelidad'
+import { calcularNivelYProgreso, obtenerUmbrales } from '../lib/fidelidad'
 import logoMelissa from '../assets/melissa-logo-64.png'
 import logoMelissaMarcaAgua from '../assets/melissa-logo-256.png'
-
-const RECOMPENSAS = [
-  { id: 'descuento_100', nombre: 'L 100 de descuento', costo: 300 },
-  { id: 'limpieza_facial', nombre: 'Limpieza facial gratis', costo: 800 },
-  { id: 'sesion_gratis', nombre: 'Sesión de tratamiento gratis', costo: 1500 },
-]
 
 /** Prefijo que usamos para reconocer nuestros propios QR al escanearlos
  * (así el escáner del admin no confunde un QR de Melissa con cualquier
@@ -20,6 +14,8 @@ export const PREFIJO_QR_CLIENTE = 'melissa:cliente:'
 export default function TarjetaVIP({ onNavigate }) {
   const [paciente, setPaciente] = useState(null)
   const [puntos, setPuntos] = useState(0)
+  const [umbrales, setUmbrales] = useState(null)
+  const [recompensas, setRecompensas] = useState([])
   const [qrDataUrl, setQrDataUrl] = useState(null)
   const [cargando, setCargando] = useState(true)
   const [mostrarCanje, setMostrarCanje] = useState(false)
@@ -39,6 +35,15 @@ export default function TarjetaVIP({ onNavigate }) {
     }
     const { data: movimientos } = await supabase.from('puntos_movimientos').select('puntos').eq('paciente_id', p.id)
     setPuntos((movimientos || []).reduce((sum, m) => sum + m.puntos, 0))
+    setUmbrales(await obtenerUmbrales(p.clinica_id))
+
+    const { data: dataRecompensas } = await supabase
+      .from('recompensas')
+      .select('id, nombre, costo_puntos')
+      .eq('clinica_id', p.clinica_id)
+      .eq('activa', true)
+      .order('orden')
+    setRecompensas(dataRecompensas || [])
 
     const url = await QRCode.toDataURL(`${PREFIJO_QR_CLIENTE}${p.id}`, {
       margin: 0,
@@ -51,20 +56,14 @@ export default function TarjetaVIP({ onNavigate }) {
   }
 
   async function canjear(recompensa) {
-    if (!paciente || puntos < recompensa.costo) return
+    if (!paciente || puntos < recompensa.costo_puntos) return
     setCanjeando(true)
     setMensaje('')
 
-    const { error } = await supabase.from('puntos_movimientos').insert({
-      clinica_id: paciente.clinica_id,
-      paciente_id: paciente.id,
-      tipo: 'canje',
-      puntos: -recompensa.costo,
-      motivo: `Canje: ${recompensa.nombre}`,
-    })
+    const { data: resultado, error } = await supabase.rpc('canjear_recompensa', { p_recompensa_id: recompensa.id })
 
-    if (error) {
-      setMensaje('No se pudo canjear. Intenta de nuevo.')
+    if (error || resultado !== 'ok') {
+      setMensaje(resultado === 'puntos_insuficientes' ? 'No tienes puntos suficientes.' : 'No se pudo canjear. Intenta de nuevo.')
     } else {
       setMensaje(`¡Canjeaste "${recompensa.nombre}"! Muéstralo en recepción.`)
       setMostrarCanje(false)
@@ -76,7 +75,7 @@ export default function TarjetaVIP({ onNavigate }) {
   if (cargando) return <p className="text-center pt-16 text-sm text-ink/60">Cargando tarjeta...</p>
   if (!paciente) return <p className="text-center pt-16 text-sm text-ink/60">Inicia sesión para ver tu tarjeta.</p>
 
-  const { nivelActual } = calcularNivelYProgreso(puntos)
+  const { nivelActual } = calcularNivelYProgreso(puntos, umbrales)
   const codigoInterno = `MEL · ${paciente.id.slice(0, 4).toUpperCase()}`
 
   return (
@@ -132,8 +131,11 @@ export default function TarjetaVIP({ onNavigate }) {
 
       {mostrarCanje && (
         <div className="mt-4 flex flex-col gap-2">
-          {RECOMPENSAS.map((r) => {
-            const alcanza = puntos >= r.costo
+          {recompensas.length === 0 && (
+            <p className="text-center text-xs" style={{ color: 'var(--color-texto-secundario)' }}>Tu negocio aún no tiene recompensas configuradas.</p>
+          )}
+          {recompensas.map((r) => {
+            const alcanza = puntos >= r.costo_puntos
             return (
               <button
                 key={r.id}
@@ -144,7 +146,7 @@ export default function TarjetaVIP({ onNavigate }) {
               >
                 <span className="text-sm" style={{ color: 'var(--color-ink)' }}>{r.nombre}</span>
                 <span className="text-xs font-medium" style={{ color: alcanza ? 'var(--color-primary)' : 'var(--color-texto-terciario)' }}>
-                  {r.costo} pts
+                  {r.costo_puntos} pts
                 </span>
               </button>
             )

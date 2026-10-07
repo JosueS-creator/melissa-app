@@ -3,12 +3,13 @@ import { registrarPaciente } from '../lib/auth'
 import { detectarPaisPorIP, PAISES } from '../lib/geolocalizacion'
 import CampoContrasena from '../components/CampoContrasena'
 
-export default function Registro({ onRegistroExitoso, irALogin, slugClinica }) {
+export default function Registro({ onRegistroExitoso, irALogin, slugClinica, negocioNoEncontrado }) {
   const [nombre, setNombre] = useState('')
   const [telefono, setTelefono] = useState('')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [pais, setPais] = useState('')
+  const [fechaNacimiento, setFechaNacimiento] = useState('')
   const [detectandoPais, setDetectandoPais] = useState(true)
   const [cargando, setCargando] = useState(false)
   const [error, setError] = useState('')
@@ -28,7 +29,7 @@ export default function Registro({ onRegistroExitoso, irALogin, slugClinica }) {
     setError('')
     setCargando(true)
     try {
-      const resultado = await registrarPaciente({ email, password, nombre, telefono, pais, slugClinica })
+      const resultado = await registrarPaciente({ email, password, nombre, telefono, pais, slugClinica, fechaNacimiento })
       if (resultado.requiereConfirmacion) {
         setMensajeConfirmacion('Revisa tu correo para confirmar tu cuenta antes de iniciar sesión.')
       } else {
@@ -39,6 +40,22 @@ export default function Registro({ onRegistroExitoso, irALogin, slugClinica }) {
     } finally {
       setCargando(false)
     }
+  }
+
+  if (!slugClinica || negocioNoEncontrado) {
+    return (
+      <div className="max-w-sm mx-auto min-h-screen px-6 pt-16 font-body text-center">
+        <p className="font-display text-xl text-ink mb-2">
+          {negocioNoEncontrado ? 'No encontramos ese negocio' : 'Necesitas el link de tu negocio'}
+        </p>
+        <p className="text-sm text-ink/60 mb-6">
+          {negocioNoEncontrado
+            ? 'Revisa que el link o el QR esté completo, o pídeselo de nuevo a tu negocio.'
+            : 'Para crear tu cuenta, abre el link o escanea el QR que te compartió tu negocio.'}
+        </p>
+        <button onClick={irALogin} className="text-sm" style={{ color: 'var(--color-primary)' }}>Volver a iniciar sesión</button>
+      </div>
+    )
   }
 
   return (
@@ -74,6 +91,17 @@ export default function Registro({ onRegistroExitoso, irALogin, slugClinica }) {
             required
           />
           <CampoContrasena value={password} onChange={(e) => setPassword(e.target.value)} required minLength={6} />
+
+          <label className="flex flex-col gap-1">
+            <span className="text-xs text-ink/50 px-1">Fecha de nacimiento (opcional)</span>
+            <input
+              className="border border-ink/15 rounded-xl px-4 py-3 text-sm bg-white"
+              type="date"
+              value={fechaNacimiento}
+              max={new Date().toISOString().slice(0, 10)}
+              onChange={(e) => setFechaNacimiento(e.target.value)}
+            />
+          </label>
 
           <select
             className="border border-ink/15 rounded-xl px-4 py-3 text-sm bg-white"

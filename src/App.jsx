@@ -18,8 +18,7 @@ import TabBar from './components/TabBar'
 import { aplicarTemaDeClinica, aplicarTemaDeClinicaPorId } from './lib/aplicarTema'
 import { obtenerSesionActual, obtenerPerfilActual, cerrarSesion } from './lib/auth'
 import { supabase } from './lib/supabaseClient'
-
-const SLUG_CLINICA_DEMO = 'demo'
+import { resolverSlugClinica } from './lib/tenant'
 
 // Pantallas visibles en el tab bar principal. Historial y Referidos se
 // alcanzan desde Perfil (ver Perfil.jsx), no ocupan un ícono propio.
@@ -29,7 +28,7 @@ function leerParametrosURL() {
   const params = new URLSearchParams(window.location.search)
   return {
     invitacion: params.get('invitacion'),
-    slugClinica: params.get('clinica'),
+    slugClinica: resolverSlugClinica(),
   }
 }
 
@@ -41,13 +40,18 @@ export default function App() {
   const [pantalla, setPantalla] = useState('bienvenida')
   const [modoEntrada, setModoEntrada] = useState('paciente')
   const [modoRecuperacion, setModoRecuperacion] = useState(false)
+  const [negocioNoEncontrado, setNegocioNoEncontrado] = useState(false)
   const [parametrosURL] = useState(leerParametrosURL)
 
   useEffect(() => {
-    // Tema por defecto mientras no sabemos a qué clínica pertenece la
-    // sesión (antes de login). Si vienen de un link con ?clinica=slug,
-    // usamos ese; si no, el de demo.
-    aplicarTemaDeClinica(parametrosURL.slugClinica || SLUG_CLINICA_DEMO).then(setClinica)
+    // Antes del login solo conocemos el negocio si la URL lo indica
+    // (lib/tenant.js). Sin negocio se queda el tema neutro de Melissa.
+    if (parametrosURL.slugClinica) {
+      aplicarTemaDeClinica(parametrosURL.slugClinica).then((c) => {
+        setClinica(c)
+        if (!c) setNegocioNoEncontrado(true)
+      })
+    }
 
     obtenerSesionActual().then((s) => {
       setSesion(s)
@@ -115,6 +119,7 @@ export default function App() {
           onRegistroExitoso={() => setPantalla('inicio')}
           irALogin={() => setPantalla('login')}
           slugClinica={parametrosURL.slugClinica}
+          negocioNoEncontrado={negocioNoEncontrado}
         />
       )
     }

@@ -8,14 +8,19 @@ import { supabase } from './supabaseClient'
  * de correo está activada (sin sesión activa, el navegador no puede
  * insertar directamente, pero el trigger corre con privilegios de sistema).
  *
- * `slugClinica` viene de la URL (?clinica=slug) que cada clínica comparte
- * con sus pacientes. Si no viene ninguno, cae de vuelta a 'demo'.
+ * `slugClinica` lo resuelve lib/tenant.js desde el link o QR que cada negocio
+ * comparte con sus clientes. Sin negocio no hay registro (no existe un negocio
+ * por defecto).
  */
-export async function registrarPaciente({ email, password, nombre, telefono, pais, slugClinica }) {
+export async function registrarPaciente({ email, password, nombre, telefono, pais, slugClinica, fechaNacimiento }) {
+  if (!slugClinica) {
+    throw new Error('Para crear tu cuenta necesitas el link o el QR de tu negocio.')
+  }
+
   const { data: clinica, error: errorClinica } = await supabase
     .from('clinicas')
     .select('id')
-    .eq('slug', slugClinica || 'demo')
+    .eq('slug', slugClinica)
     .single()
 
   if (errorClinica || !clinica) {
@@ -26,7 +31,8 @@ export async function registrarPaciente({ email, password, nombre, telefono, pai
     email,
     password,
     options: {
-      data: { nombre, telefono, pais, clinica_id: clinica.id },
+      // El email lo guarda el servidor desde auth; la fecha de nacimiento es opcional.
+      data: { nombre, telefono, pais, clinica_id: clinica.id, ...(fechaNacimiento ? { fecha_nacimiento: fechaNacimiento } : {}) },
     },
   })
   if (errorAuth) throw errorAuth

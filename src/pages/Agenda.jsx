@@ -66,6 +66,7 @@ export default function Agenda() {
       especialista_id: especialistaId,
       fecha_hora: fechaHora,
       estado: 'pendiente',
+      servicio_id: servicioSeleccionado?.id || null,
       tratamiento: servicioSeleccionado?.nombre || 'Consulta general',
     })
 
