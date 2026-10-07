@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { leerReservaPromo, limpiarReservaPromo, formatearPorcentaje } from '../lib/promociones'
 import { supabase } from '../lib/supabaseClient'
 import { obtenerPacienteActual } from '../lib/auth'
 import logoMelissaMarcaAgua from '../assets/melissa-logo-256.png'
@@ -20,6 +21,7 @@ export default function Agenda() {
   const [especialistaId, setEspecialistaId] = useState(null)
   const [servicios, setServicios] = useState([])
   const [servicioId, setServicioId] = useState(null)
+  const [promo, setPromo] = useState(() => leerReservaPromo())   // promoción elegida en "Reservar ahora"
   const [diaSeleccionado, setDiaSeleccionado] = useState(() => new Date().toISOString().slice(0, 10))
   const [hora, setHora] = useState(null)
   const [paciente, setPaciente] = useState(null)
@@ -44,7 +46,8 @@ export default function Agenda() {
         setEspecialistas(dataEsp || [])
         if (dataEsp && dataEsp.length > 0) setEspecialistaId(dataEsp[0].id)
         setServicios(dataServ || [])
-        if (dataServ && dataServ.length > 0) setServicioId(dataServ[0].id)
+        const preferido = promo?.servicio_id && dataServ?.some((s) => s.id === promo.servicio_id) ? promo.servicio_id : dataServ?.[0]?.id
+        if (preferido) setServicioId(preferido)
       }
       setCargando(false)
     }
@@ -67,12 +70,14 @@ export default function Agenda() {
       fecha_hora: fechaHora,
       estado: 'pendiente',
       servicio_id: servicioSeleccionado?.id || null,
+      promocion_id: promo?.id || null,
       tratamiento: servicioSeleccionado?.nombre || 'Consulta general',
     })
 
     if (errorInsert) {
       setError('No se pudo reservar la cita. Intenta de nuevo.')
     } else {
+      limpiarReservaPromo()
       setConfirmacion(`Cita reservada · ${new Date(fechaHora).toLocaleDateString('es-HN', { day: 'numeric', month: 'short' })}, ${hora}`)
     }
     setEnviando(false)
@@ -109,6 +114,14 @@ export default function Agenda() {
       </div>
 
       <div className="px-5 pt-5 pb-10">
+        {promo && !confirmacion && (
+          <div className="rounded-xl px-4 py-3 mb-4 flex items-center justify-between gap-2" style={{ background: 'var(--color-accent)' }}>
+            <p className="text-xs" style={{ color: 'var(--color-ink)' }}>
+              🎁 Reservando con la promoción <strong>{promo.titulo}</strong> ({formatearPorcentaje(promo.descuento_porcentaje)}). El negocio aplica el descuento al cobrar.
+            </p>
+            <button onClick={() => { limpiarReservaPromo(); setPromo(null) }} className="text-[11px] flex-shrink-0" style={{ color: 'var(--color-primary)' }}>Quitar</button>
+          </div>
+        )}
         {confirmacion ? (
           <div className="rounded-xl p-4" style={{ background: 'var(--color-accent)' }}>
             <p className="text-sm" style={{ color: 'var(--color-ink)' }}>{confirmacion}</p>

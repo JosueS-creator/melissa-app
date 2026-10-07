@@ -47,7 +47,7 @@ hasta que haya uso; por eso se probó con datos de prueba revertibles.
 
 **Tablas nuevas:** ninguna. **Columnas nuevas:** `pacientes.email`; `clinicas.umbral_oro`, `umbral_platino`, `dias_inactividad`; `citas.servicio_id` (nullable, FK compuesta que impide apuntar al servicio de otra clínica), `citas.creada_at` (la fija un trigger; el cliente no puede falsearla).
 
-**Funciones RPC** (todas `SECURITY INVOKER`: la RLS sigue protegiendo cada tabla, y además validan que seas admin del negocio o super admin): `crm_clientes`, `crm_resumen`, `crm_cliente_360`, `crm_cliente_timeline`, `crm_puede_ver`, `nivel_por_puntos`. Revocadas para `anon`.
+**Funciones RPC** (validan que seas admin del negocio o super admin; `crm_cliente_360` y la línea de tiempo son `SECURITY INVOKER`, y desde la entrega de promociones `crm_clientes` es `SECURITY DEFINER` con ese control explícito, ver `docs/PROMOCIONES.md`): `crm_clientes`, `crm_resumen`, `crm_cliente_360`, `crm_cliente_timeline`, `crm_puede_ver`, `nivel_por_puntos`. Revocadas para `anon`.
 Una llamada por pantalla: la lista y los indicadores salen de una sola consulta agregada (sin N+1).
 
 **RLS:** no se cambiaron políticas. `pacientes.email` queda fuera de los permisos de edición del cliente (el email viene de `auth`). Los clientes antiguos sin cuenta quedan con `email` nulo.

@@ -226,7 +226,9 @@ begin
   v_out := v_out || pg_temp.chk('cita NO puede apuntar al servicio de otra clínica (FK compuesta)', e_fk = 'bloqueado', e_fk);
   v_out := v_out || pg_temp.chk('cita con servicio propio y cita sin servicio: permitidas', fk_ok);
   v_out := v_out || pg_temp.chk('al borrar un servicio, la cita queda con servicio_id null y conserva su clínica', srv_tras_borrar is null and cl_tras_borrar = v_z);
-  v_out := v_out || pg_temp.chk('citas existentes quedan con creada_at null (no se inventa historia)', n_legacy_null = n_tot_citas, n_legacy_null || '/' || n_tot_citas);
+  v_out := v_out || pg_temp.chk('no se inventó historia: ninguna cita real tiene creada_at anterior a la migración (las citas nuevas sí lo tienen)',
+    (select count(*) from citas c where c.creada_at is not null and c.paciente_id not in (p0, p1, p2, p3, p4, p5, p6, p7, p8, p9)
+       and c.creada_at < (select to_timestamp(version, 'YYYYMMDDHH24MISS') from supabase_migrations.schema_migrations where name = 'fase_b_crm')) = 0);
   v_out := v_out || pg_temp.chk('umbrales: 799 silver · 800 gold · 3199 gold · 3200 platinum',
     public.nivel_por_puntos(v_z, 799) = 'silver' and public.nivel_por_puntos(v_z, 800) = 'gold' and public.nivel_por_puntos(v_z, 3199) = 'gold' and public.nivel_por_puntos(v_z, 3200) = 'platinum');
   v_out := v_out || pg_temp.chk('umbral inválido (0) rechazado por la base', e_umbral = 'bloqueado', e_umbral);

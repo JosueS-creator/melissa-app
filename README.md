@@ -4,7 +4,7 @@ SaaS multi-negocio de **operación, fidelización y crecimiento** para clínicas
 belleza, salones de uñas y spas (Honduras y España). React + Vite + Tailwind + Supabase, desplegado en Vercel.
 
 - App: https://melissa-app.vercel.app
-- Estado del producto y decisiones por fase: [`docs/FASE_A.md`](docs/FASE_A.md) · [`docs/FASE_B.md`](docs/FASE_B.md) · [`docs/CANJES.md`](docs/CANJES.md) · [`docs/PUNTOS_AUTOMATICOS.md`](docs/PUNTOS_AUTOMATICOS.md)
+- Estado del producto y decisiones por fase: [`docs/FASE_A.md`](docs/FASE_A.md) · [`docs/FASE_B.md`](docs/FASE_B.md) · [`docs/CANJES.md`](docs/CANJES.md) · [`docs/PUNTOS_AUTOMATICOS.md`](docs/PUNTOS_AUTOMATICOS.md) · [`docs/PROMOCIONES.md`](docs/PROMOCIONES.md)
 
 ## Estructura
 

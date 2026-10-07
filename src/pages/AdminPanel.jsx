@@ -9,6 +9,7 @@ import EscanerBarras from '../components/EscanerBarras'
 import Crm from './Crm'
 import ClientesReactivar from './ClientesReactivar'
 import Canjes from './Canjes'
+import Promociones from './Promociones'
 import { CampoPuntos, PuntosEnFila } from '../components/PuntosCatalogo'
 import { useConfigPuntos, nuevaClaveOperacion } from '../lib/puntos'
 
@@ -17,6 +18,7 @@ const TABS = [
   { id: 'pacientes', label: 'Clientes' },
   { id: 'reactivar', label: 'Por reactivar' },
   { id: 'canjes', label: 'Canjes' },
+  { id: 'promociones', label: 'Promociones' },
   { id: 'empleados', label: 'Empleados' },
   { id: 'servicios', label: 'Servicios' },
   { id: 'productos', label: 'Productos' },
@@ -143,6 +145,7 @@ export default function AdminPanel({ onCerrarSesion, esSuperAdmin, onIrAMelissa 
       {tab === 'pacientes' && <Crm clinicaId={perfil.clinica_id} HistorialCliente={HistorialCliente} EscanerQR={EscanerQR} />}
       {tab === 'reactivar' && <ClientesReactivar clinicaId={perfil.clinica_id} HistorialCliente={HistorialCliente} />}
       {tab === 'canjes' && <Canjes onCambio={contarCanjesPendientes} />}
+      {tab === 'promociones' && <Promociones clinicaId={perfil.clinica_id} />}
       {tab === 'empleados' && <PanelEmpleados clinicaId={perfil.clinica_id} />}
       {tab === 'servicios' && <PanelServicios clinicaId={perfil.clinica_id} />}
       {tab === 'productos' && <PanelProductos clinicaId={perfil.clinica_id} />}
@@ -162,6 +165,7 @@ function PanelCitas({ clinicaId }) {
   const [cargando, setCargando] = useState(true)
   const [mostrarForm, setMostrarForm] = useState(false)
   const [aviso, setAviso] = useState('')
+  const [promos, setPromos] = useState({})
 
   useEffect(() => {
     cargar()
@@ -174,6 +178,8 @@ function PanelCitas({ clinicaId }) {
       .eq('clinica_id', clinicaId)
       .order('fecha_hora', { ascending: true })
     setCitas(data || [])
+    const { data: dataPromos } = await supabase.from('promociones').select('id, titulo, descuento_porcentaje').eq('clinica_id', clinicaId)
+    setPromos(Object.fromEntries((dataPromos || []).map((p) => [p.id, p])))
     setCargando(false)
   }
 
@@ -232,6 +238,11 @@ function PanelCitas({ clinicaId }) {
                   {' · '}
                   {c.especialistas?.nombre ?? 'Sin asignar'}
                 </p>
+                {c.promocion_id && promos[c.promocion_id] && (
+                  <p className="text-[11px] mt-0.5" style={{ color: 'var(--color-primary)' }}>
+                    🎁 Reservada con la promoción «{promos[c.promocion_id].titulo}» ({Number(promos[c.promocion_id].descuento_porcentaje)}%): aplícala en Promociones al cobrar.
+                  </p>
+                )}
                 {c.tratamiento && <p className="text-[11px] text-ink/50">{c.tratamiento}</p>}
               </div>
               <span className="text-[10px] font-medium px-2 py-1 rounded-full text-white" style={{ background: colorEstado[c.estado] }}>

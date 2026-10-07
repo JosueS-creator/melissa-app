@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { supabase } from '../lib/supabaseClient'
 import { obtenerPacienteActual } from '../lib/auth'
 import { calcularNivelYProgreso, obtenerUmbrales } from '../lib/fidelidad'
+import PromocionesCliente from '../components/PromocionesCliente'
 import logoMelissa from '../assets/melissa-logo-64.png'
 import logoMelissaMarcaAgua from '../assets/melissa-logo-256.png'
 
@@ -72,6 +73,7 @@ export default function Home({ nombrePaciente = 'Cliente', clinica, onNavigate }
       </div>
 
       <div className="px-5 pt-4">
+        <PromocionesCliente onNavigate={onNavigate} />
         {/* Tarjeta de puntos */}
         <div
           className="rounded-2xl p-5 relative overflow-hidden shadow-tarjeta-oscura"
