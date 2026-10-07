@@ -4,7 +4,7 @@ SaaS multi-negocio de **operación, fidelización y crecimiento** para clínicas
 belleza, salones de uñas y spas (Honduras y España). React + Vite + Tailwind + Supabase, desplegado en Vercel.
 
 - App: https://melissa-app.vercel.app
-- Estado del producto y decisiones por fase: [`docs/FASE_A.md`](docs/FASE_A.md) · [`docs/FASE_B.md`](docs/FASE_B.md) · [`docs/CANJES.md`](docs/CANJES.md)
+- Estado del producto y decisiones por fase: [`docs/FASE_A.md`](docs/FASE_A.md) · [`docs/FASE_B.md`](docs/FASE_B.md) · [`docs/CANJES.md`](docs/CANJES.md) · [`docs/PUNTOS_AUTOMATICOS.md`](docs/PUNTOS_AUTOMATICOS.md)
 
 ## Estructura
 
@@ -43,6 +43,7 @@ No existe negocio por defecto: sin link o QR de un negocio no se puede crear una
   con `solicitar_canje()` (puntos reservados; el costo viene de `recompensas`) y el negocio los aprueba con
   `aplicar_canje()` o los rechaza con `rechazar_canje()`.
 - Caja: un descuento solo puede crearse aprobando un canje; `pagos.monto` es lo realmente cobrado.
+- Puntos automáticos: los abonan triggers y funciones de la base con un origen único (índice único en Postgres); el navegador no escribe en el libro mayor. El valor de referencia del punto vive en `clinicas.valor_punto`.
 - Pedidos: se crean con `crear_pedido()`, que calcula precios y total en el servidor.
 - Citas: el cliente solo solicita (`pendiente`); confirmar/completar es del admin.
 - Plan, estado y slug del negocio solo los cambia el super admin.

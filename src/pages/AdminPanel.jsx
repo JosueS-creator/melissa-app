@@ -9,6 +9,8 @@ import EscanerBarras from '../components/EscanerBarras'
 import Crm from './Crm'
 import ClientesReactivar from './ClientesReactivar'
 import Canjes from './Canjes'
+import { CampoPuntos, PuntosEnFila } from '../components/PuntosCatalogo'
+import { useConfigPuntos, nuevaClaveOperacion } from '../lib/puntos'
 
 const TABS = [
   { id: 'citas', label: 'Citas' },
@@ -159,6 +161,7 @@ function PanelCitas({ clinicaId }) {
   const [citas, setCitas] = useState([])
   const [cargando, setCargando] = useState(true)
   const [mostrarForm, setMostrarForm] = useState(false)
+  const [aviso, setAviso] = useState('')
 
   useEffect(() => {
     cargar()
@@ -175,7 +178,15 @@ function PanelCitas({ clinicaId }) {
   }
 
   async function cambiarEstado(id, estado) {
-    await supabase.from('citas').update({ estado }).eq('id', id)
+    setAviso('')
+    const { error } = await supabase.from('citas').update({ estado }).eq('id', id)
+    if (error) {
+      setAviso('No se pudo actualizar la cita: ' + error.message)
+    } else if (estado === 'completada') {
+      // Los puntos del servicio los otorga la base de datos al completar (una sola vez).
+      const { data: abono } = await supabase.from('puntos_movimientos').select('puntos').eq('origen_tipo', 'cita').eq('origen_id', id).maybeSingle()
+      setAviso(abono ? `Cita completada · +${abono.puntos} puntos para el cliente.` : 'Cita completada.')
+    }
     cargar()
   }
 
@@ -206,6 +217,7 @@ function PanelCitas({ clinicaId }) {
         />
       )}
 
+      {aviso && <p className="text-xs mb-3 rounded-lg px-3 py-2" style={{ background: 'var(--color-accent)', color: 'var(--color-ink)' }}>{aviso}</p>}
       {cargando && <p className="text-sm text-ink/50">Cargando citas...</p>}
       {!cargando && citas.length === 0 && <p className="text-sm text-ink/50">No hay citas registradas todavía.</p>}
 
@@ -488,6 +500,8 @@ function PanelServicios({ clinicaId }) {
   const [descripcion, setDescripcion] = useState('')
   const [precio, setPrecio] = useState('')
   const [duracion, setDuracion] = useState('30')
+  const [puntos, setPuntos] = useState('0')
+  const config = useConfigPuntos(clinicaId)
   const [guardando, setGuardando] = useState(false)
   const [error, setError] = useState('')
 
@@ -516,6 +530,7 @@ function PanelServicios({ clinicaId }) {
       descripcion,
       precio: Number(precio),
       duracion_minutos: Number(duracion) || 30,
+      puntos_otorga: Math.max(0, parseInt(puntos, 10) || 0),
       activo: true,
     })
 
@@ -526,6 +541,7 @@ function PanelServicios({ clinicaId }) {
       setDescripcion('')
       setPrecio('')
       setDuracion('30')
+      setPuntos('0')
       setMostrarForm(false)
       cargar()
     }
@@ -580,6 +596,7 @@ function PanelServicios({ clinicaId }) {
               onChange={(e) => setDuracion(e.target.value)}
             />
           </div>
+          <CampoPuntos valor={puntos} onCambio={setPuntos} precio={precio} tipo="servicio" config={config} />
 
           {error && <p className="text-xs" style={{ color: '#B0524A' }}>{error}</p>}
 
@@ -603,6 +620,7 @@ function PanelServicios({ clinicaId }) {
             <div>
               <p className="text-sm font-medium text-ink">{s.nombre}</p>
               <p className="text-[11px] text-ink/50">L {Number(s.precio).toFixed(2)} · {s.duracion_minutos} min</p>
+              <PuntosEnFila tabla="servicios" fila={s} tipo="servicio" config={config} onGuardado={cargar} />
             </div>
             <button
               onClick={() => alternarActivo(s)}
@@ -985,6 +1003,8 @@ function PanelProductos({ clinicaId }) {
   const [precio, setPrecio] = useState('')
   const [stock, setStock] = useState('')
   const [codigoBarras, setCodigoBarras] = useState('')
+  const [puntos, setPuntos] = useState('0')
+  const config = useConfigPuntos(clinicaId)
   const [escaneandoCampo, setEscaneandoCampo] = useState(false)
   const [asignando, setAsignando] = useState(null)
   const [mensajeCodigo, setMensajeCodigo] = useState('')
@@ -1034,6 +1054,7 @@ function PanelProductos({ clinicaId }) {
       stock: Number(stock) || 0,
       imagen_url: imagenUrl,
       codigo_barras: codigoBarras.trim() || null,
+      puntos_otorga: Math.max(0, parseInt(puntos, 10) || 0),
       activo: true,
     })
 
@@ -1045,6 +1066,7 @@ function PanelProductos({ clinicaId }) {
       setPrecio('')
       setStock('')
       setCodigoBarras('')
+      setPuntos('0')
       setArchivo(null)
       setMostrarForm(false)
       cargar()
@@ -1119,6 +1141,7 @@ function PanelProductos({ clinicaId }) {
               onChange={(e) => setStock(e.target.value)}
             />
           </div>
+          <CampoPuntos valor={puntos} onCambio={setPuntos} precio={precio} tipo="producto" config={config} />
           <div className="flex gap-2">
             <input
               className="rounded-lg px-3 py-2 text-sm bg-white flex-1"
@@ -1172,6 +1195,7 @@ function PanelProductos({ clinicaId }) {
             <div className="flex-1">
               <p className="text-sm font-medium text-ink">{p.nombre}</p>
               <p className="text-[11px] text-ink/50">L {Number(p.precio).toFixed(2)} · Stock: {p.stock}</p>
+              <PuntosEnFila tabla="productos" fila={p} tipo="producto" config={config} onGuardado={cargar} />
               <p className="text-[10px] text-ink/40">{p.codigo_barras ? `Código: ${p.codigo_barras}` : 'Sin código de barras'}</p>
             </div>
             <button
@@ -1214,6 +1238,9 @@ function PanelCaja({ clinicaId, perfilId }) {
   const [ventaProducto, setVentaProducto] = useState(null)
   const [cantidadVenta, setCantidadVenta] = useState('1')
   const [metodoVenta, setMetodoVenta] = useState('efectivo')
+  const [ventaCliente, setVentaCliente] = useState('')
+  const [claveVenta, setClaveVenta] = useState('')
+  const [registrandoVenta, setRegistrandoVenta] = useState(false)
   const [mensajeVenta, setMensajeVenta] = useState('')
   const [anulando, setAnulando] = useState(null)
   const [pinAnular, setPinAnular] = useState('')
@@ -1271,7 +1298,7 @@ function PanelCaja({ clinicaId, perfilId }) {
     setMensajeVenta('')
     const { data } = await supabase
       .from('productos')
-      .select('id, nombre, precio')
+      .select('id, nombre, precio, puntos_otorga')
       .eq('clinica_id', clinicaId)
       .eq('codigo_barras', codigo)
       .maybeSingle()
@@ -1280,27 +1307,59 @@ function PanelCaja({ clinicaId, perfilId }) {
       return
     }
     setCantidadVenta('1')
+    setVentaCliente('')
+    setClaveVenta(nuevaClaveOperacion())   // una clave por venta: un reintento no la duplica
     setVentaProducto(data)
   }
 
   async function registrarVenta() {
+    if (registrandoVenta) return
+    setRegistrandoVenta(true)
+    setMensajeVenta('')
     const cantidad = Math.max(1, parseInt(cantidadVenta, 10) || 1)
     const detalle = `${ventaProducto.nombre}${cantidad > 1 ? ` x${cantidad}` : ''}`
-    const { error: errorInsert } = await supabase.from('pagos').insert({
-      clinica_id: clinicaId,
-      concepto: `Venta: ${detalle}`,
-      tipo: 'producto',
-      direccion: 'ingreso',
-      monto: Number(ventaProducto.precio) * cantidad,
-      metodo_pago: metodoVenta,
-      registrado_por: perfilId,
+    // El servidor calcula el precio y los puntos. Con la misma clave, un reintento devuelve la misma venta.
+    const { data, error: errorRpc } = await supabase.rpc('registrar_venta_producto', {
+      p_clave: claveVenta,
+      p_producto_id: ventaProducto.id,
+      p_cantidad: cantidad,
+      p_metodo_pago: metodoVenta,
+      p_paciente_id: ventaCliente || null,
     })
-    if (errorInsert) {
-      setMensajeVenta('No se pudo registrar: ' + errorInsert.message)
+    setRegistrandoVenta(false)
+    if (errorRpc || data?.resultado !== 'ok') {
+      const motivos = {
+        producto_no_disponible: 'Ese producto ya no está disponible.',
+        cliente_invalido: 'Ese cliente no pertenece a tu negocio.',
+        cantidad_invalida: 'La cantidad no es válida.',
+      }
+      setMensajeVenta(motivos[data?.resultado] || 'No se pudo registrar la venta. Puedes intentar de nuevo: no se duplicará.')
       return
     }
-    setMensajeVenta(`Venta registrada: ${detalle}`)
+    const cliente = pacientes.find((p) => p.id === ventaCliente)?.nombre
+    setMensajeVenta(
+      data.repetido
+        ? `Esta venta ya estaba registrada (no se duplicó): ${detalle}`
+        : `Venta registrada: ${detalle}` +
+            (data.puntos_otorgados > 0
+              ? ` · +${data.puntos_otorgados} puntos para ${cliente}`
+              : ventaCliente ? ' · este producto no otorga puntos' : ' · sin cliente: no suma puntos')
+    )
     setVentaProducto(null)
+    cargar()
+  }
+
+  async function marcarPedidoEntregado(pedido) {
+    setMensajeVenta('')
+    const { data, error: errorRpc } = await supabase.rpc('completar_pedido', { p_pedido_id: pedido.id })
+    if (errorRpc || data?.resultado !== 'ok') {
+      setMensajeVenta('No se pudo completar el pedido. Intenta de nuevo.')
+      return
+    }
+    setMensajeVenta(
+      `Pedido entregado${pedido.pacientes?.nombre ? ` a ${pedido.pacientes.nombre}` : ''}` +
+        (data.puntos_otorgados > 0 ? ` · +${data.puntos_otorgados} puntos` : data.repetido ? ' · ya estaba entregado' : ' · sin puntos para estos productos')
+    )
     cargar()
   }
 
@@ -1516,8 +1575,17 @@ function PanelCaja({ clinicaId, perfilId }) {
               <option value="transferencia">Transferencia</option>
             </select>
           </div>
-          <button onClick={registrarVenta} className="rounded-lg py-2.5 text-white text-sm font-medium" style={{ background: 'var(--gradiente-primario)' }}>
-            Registrar venta · L {(Number(ventaProducto.precio) * Math.max(1, parseInt(cantidadVenta, 10) || 1)).toFixed(2)}
+          <select className="rounded-lg px-3 py-2 text-sm" style={{ background: 'var(--color-accent)' }} value={ventaCliente} onChange={(e) => setVentaCliente(e.target.value)} aria-label="Cliente de la venta">
+            <option value="">Sin cliente (no suma puntos)</option>
+            {pacientes.map((p) => <option key={p.id} value={p.id}>{p.nombre}</option>)}
+          </select>
+          {ventaCliente && Number(ventaProducto.puntos_otorga) > 0 && (
+            <p className="text-[11px]" style={{ color: 'var(--color-primary)' }}>
+              Suma {Number(ventaProducto.puntos_otorga) * Math.max(1, parseInt(cantidadVenta, 10) || 1)} puntos al cliente.
+            </p>
+          )}
+          <button onClick={registrarVenta} disabled={registrandoVenta} className="rounded-lg py-2.5 text-white text-sm font-medium disabled:opacity-60" style={{ background: 'var(--gradiente-primario)' }}>
+            {registrandoVenta ? 'Registrando...' : `Registrar venta · L ${(Number(ventaProducto.precio) * Math.max(1, parseInt(cantidadVenta, 10) || 1)).toFixed(2)}`}
           </button>
         </div>
       )}
@@ -1613,6 +1681,30 @@ function PanelCaja({ clinicaId, perfilId }) {
         </form>
       )}
       {mensajeAnular && <p className="text-xs mb-3" style={{ color: 'var(--color-primary)' }}>{mensajeAnular}</p>}
+
+      {pedidos.some((p) => !['entregado', 'cancelado'].includes(p.estado)) && (
+        <div className="mb-4">
+          <p className="text-sm font-medium mb-2" style={{ color: 'var(--color-ink)' }}>Pedidos de la tienda por entregar</p>
+          <div className="flex flex-col gap-2">
+            {pedidos
+              .filter((p) => !['entregado', 'cancelado'].includes(p.estado))
+              .map((p) => (
+                <div key={p.id} className="rounded-xl p-3 flex items-center justify-between gap-2" style={{ background: 'var(--color-accent)' }}>
+                  <div>
+                    <p className="text-sm font-medium text-ink">{p.pacientes?.nombre ?? 'Cliente'} · L {Number(p.total).toFixed(2)}</p>
+                    <p className="text-[11px] text-ink/50">
+                      {new Date(p.fecha).toLocaleDateString('es-HN', { day: 'numeric', month: 'short' })} · {p.entrega === 'domicilio' ? 'A domicilio' : 'Recoger en el negocio'} · {p.estado}
+                    </p>
+                  </div>
+                  <button onClick={() => marcarPedidoEntregado(p)} className="text-[10px] px-2.5 py-1.5 rounded-lg text-white flex-shrink-0" style={{ background: 'var(--gradiente-primario)' }}>
+                    Marcar entregado
+                  </button>
+                </div>
+              ))}
+          </div>
+          <p className="text-[10px] mt-1.5" style={{ color: 'var(--color-texto-terciario)' }}>Al marcarlo entregado, el cliente recibe los puntos de lo que compró.</p>
+        </div>
+      )}
 
       <p className="text-sm font-medium mb-2" style={{ color: 'var(--color-ink)' }}>Movimientos de hoy</p>
       {movimientosHoy.length === 0 && <p className="text-sm text-ink/50">Todavía no hay movimientos hoy.</p>}
