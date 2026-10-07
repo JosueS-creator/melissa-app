@@ -114,6 +114,11 @@ export default function Cliente360({ pacienteId, clinicaId, onVolver, HistorialC
             ? `${fidelidad.canjes.cantidad} · ${Number(fidelidad.canjes.puntos).toLocaleString()} pts`
             : <Vacio>Ninguna todavía</Vacio>}
         </Fila>
+        {fidelidad.canjes.pendientes > 0 && (
+          <Fila etiqueta="Canjes por aprobar">
+            <strong style={{ color: 'var(--color-primary)' }}>{fidelidad.canjes.pendientes}</strong> · revísalos en la pestaña Canjes
+          </Fila>
+        )}
         {fidelidad.recientes.length > 0 && (
           <div className="mt-2 pt-2" style={{ borderTop: '1px solid var(--color-borde-tarjeta)' }}>
             <p className="text-[11px] mb-1" style={{ color: 'var(--color-texto-terciario)' }}>Movimientos recientes</p>

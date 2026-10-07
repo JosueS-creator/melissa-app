@@ -8,11 +8,13 @@ import { descargarDatosClinica } from '../lib/exportarDatosClinica'
 import EscanerBarras from '../components/EscanerBarras'
 import Crm from './Crm'
 import ClientesReactivar from './ClientesReactivar'
+import Canjes from './Canjes'
 
 const TABS = [
   { id: 'citas', label: 'Citas' },
   { id: 'pacientes', label: 'Clientes' },
   { id: 'reactivar', label: 'Por reactivar' },
+  { id: 'canjes', label: 'Canjes' },
   { id: 'empleados', label: 'Empleados' },
   { id: 'servicios', label: 'Servicios' },
   { id: 'productos', label: 'Productos' },
@@ -25,6 +27,7 @@ export default function AdminPanel({ onCerrarSesion, esSuperAdmin, onIrAMelissa 
   const [nombreClinica, setNombreClinica] = useState('')
   const [cargando, setCargando] = useState(true)
   const [tab, setTab] = useState('citas')
+  const [canjesPendientes, setCanjesPendientes] = useState(0)
 
   useEffect(() => {
     obtenerPerfilActual().then(async (p) => {
@@ -36,6 +39,16 @@ export default function AdminPanel({ onCerrarSesion, esSuperAdmin, onIrAMelissa 
       setCargando(false)
     })
   }, [])
+
+  // Aviso visible en la pestaña: cuántos canjes esperan aprobación.
+  async function contarCanjesPendientes() {
+    const { count } = await supabase.from('canjes').select('id', { count: 'exact', head: true }).eq('estado', 'pendiente')
+    setCanjesPendientes(count || 0)
+  }
+
+  useEffect(() => {
+    if (perfil?.rol === 'admin') contarCanjesPendientes()
+  }, [perfil, tab])
 
   if (cargando) return <p className="text-center pt-16 text-sm text-ink/60">Cargando...</p>
   if (!perfil) return <p className="text-center pt-16 text-sm text-ink/60">Inicia sesión para continuar.</p>
@@ -64,7 +77,7 @@ export default function AdminPanel({ onCerrarSesion, esSuperAdmin, onIrAMelissa 
                   : { color: 'rgba(254,250,248,.74)' }
               }
             >
-              {t.label}
+              {t.label}{t.id === 'canjes' && canjesPendientes > 0 ? ` (${canjesPendientes})` : ''}
             </button>
           ))}
         </nav>
@@ -118,7 +131,7 @@ export default function AdminPanel({ onCerrarSesion, esSuperAdmin, onIrAMelissa 
                 : { background: 'var(--color-accent)', color: 'var(--color-ink)' }
             }
           >
-            {t.label}
+            {t.label}{t.id === 'canjes' && canjesPendientes > 0 ? ` (${canjesPendientes})` : ''}
           </button>
         ))}
       </div>
@@ -127,6 +140,7 @@ export default function AdminPanel({ onCerrarSesion, esSuperAdmin, onIrAMelissa 
       {/* El CRM recibe EscanerQR e HistorialCliente (definidos aquí) para reutilizarlos sin duplicar código. */}
       {tab === 'pacientes' && <Crm clinicaId={perfil.clinica_id} HistorialCliente={HistorialCliente} EscanerQR={EscanerQR} />}
       {tab === 'reactivar' && <ClientesReactivar clinicaId={perfil.clinica_id} HistorialCliente={HistorialCliente} />}
+      {tab === 'canjes' && <Canjes onCambio={contarCanjesPendientes} />}
       {tab === 'empleados' && <PanelEmpleados clinicaId={perfil.clinica_id} />}
       {tab === 'servicios' && <PanelServicios clinicaId={perfil.clinica_id} />}
       {tab === 'productos' && <PanelProductos clinicaId={perfil.clinica_id} />}
@@ -1331,6 +1345,7 @@ function PanelCaja({ clinicaId, perfilId }) {
       concepto: p.concepto,
       cliente: p.pacientes?.nombre ?? null,
       monto: Number(p.monto),
+      descuento: Number(p.descuento || 0),
       metodoPago: p.metodo_pago,
       direccion: p.direccion,
       tipo: p.tipo,
@@ -1362,6 +1377,8 @@ function PanelCaja({ clinicaId, perfilId }) {
   const serviciosHoy = sumar(ingresosHoy.filter((m) => m.tipo === 'servicio'))
   const productosHoy = sumar(ingresosHoy.filter((m) => m.tipo === 'producto'))
   const otrosIngresosHoy = totalIngresos - serviciosHoy - productosHoy
+  // monto = lo realmente cobrado; el descuento por canje se informa aparte y no afecta el cuadre de efectivo.
+  const descuentosHoy = ingresosHoy.reduce((sum, m) => sum + (m.descuento || 0), 0)
   const efectivoEsperado =
     sumar(ingresosHoy.filter((m) => m.metodoPago === 'efectivo')) -
     sumar(egresosHoy.filter((m) => m.metodoPago === 'efectivo'))
@@ -1369,12 +1386,12 @@ function PanelCaja({ clinicaId, perfilId }) {
   const diferenciaCaja = efectivoContado === '' ? null : Number(efectivoContado) - efectivoEsperado
 
   function descargarReporte() {
-    const encabezado = 'Fecha,Movimiento,Concepto,Cliente,Método de pago,Monto\n'
+    const encabezado = 'Fecha,Movimiento,Concepto,Cliente,Método de pago,Descuento por canje,Monto cobrado\n'
     const filas = movimientos
       .map((m) => {
         const fecha = new Date(m.fecha).toLocaleString('es-HN')
         const firmado = m.direccion === 'egreso' ? -m.monto : m.monto
-        return `"${fecha}","${m.direccion === 'egreso' ? 'Egreso' : 'Ingreso'}","${m.concepto}","${m.cliente || ''}","${m.metodoPago}","${firmado.toFixed(2)}"`
+        return `"${fecha}","${m.direccion === 'egreso' ? 'Egreso' : 'Ingreso'}","${m.concepto}","${m.cliente || ''}","${m.metodoPago}","${(m.descuento || 0).toFixed(2)}","${firmado.toFixed(2)}"`
       })
       .join('\n')
     const csv = encabezado + filas
@@ -1518,6 +1535,7 @@ function PanelCaja({ clinicaId, perfilId }) {
           <p className="text-[11px] text-white/70">Servicios: L {serviciosHoy.toFixed(2)}</p>
           <p className="text-[11px] text-white/70">Productos: L {productosHoy.toFixed(2)}</p>
           {otrosIngresosHoy > 0 && <p className="text-[11px] text-white/70">Otros: L {otrosIngresosHoy.toFixed(2)}</p>}
+          {descuentosHoy > 0 && <p className="text-[11px] text-white/70">Descuentos por canje: L {descuentosHoy.toFixed(2)} (ya restados de lo cobrado)</p>}
         </div>
       </div>
 
@@ -1562,6 +1580,11 @@ function PanelCaja({ clinicaId, perfilId }) {
             Anular: {anulando.concepto} · L {anulando.monto.toFixed(2)}
           </p>
           <p className="text-xs" style={{ color: 'var(--color-texto-secundario)' }}>Requiere la clave de un supervisor o gerente.</p>
+          {anulando.descuento > 0 && (
+            <p className="text-xs" style={{ color: '#B0524A' }}>
+              Este cobro tiene un descuento por canje. Al anularlo, los puntos del cliente no se devuelven solos: si corresponde, ajústalos aparte.
+            </p>
+          )}
           <input
             className="rounded-lg px-3 py-2 text-sm bg-white"
             placeholder="Motivo de la anulación"
@@ -1598,6 +1621,11 @@ function PanelCaja({ clinicaId, perfilId }) {
           <div key={m.id} className="rounded-xl p-3 flex justify-between items-center" style={{ background: 'var(--color-accent)' }}>
             <div>
               <p className="text-sm font-medium text-ink">{m.concepto}</p>
+              {m.descuento > 0 && (
+                <p className="text-[11px]" style={{ color: '#4F7A3E' }}>
+                  Total L {(m.monto + m.descuento).toFixed(2)} − descuento por canje L {m.descuento.toFixed(2)}
+                </p>
+              )}
               <p className="text-[11px] text-ink/50">
                 {m.cliente ? `${m.cliente} · ` : ''}{m.metodoPago} · {new Date(m.fecha).toLocaleTimeString('es-HN', { hour: 'numeric', minute: '2-digit' })}
               </p>
