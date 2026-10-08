@@ -55,7 +55,7 @@ export default function RegistroAdmin({ codigo, onRegistroExitoso }) {
 
   if (!clinica) {
     return (
-      <div className="max-w-sm mx-auto min-h-screen px-6 pt-16 font-body text-center">
+      <div className="sm:max-w-app mx-auto min-h-screen px-6 pt-16 font-body text-center">
         <p style={{ fontFamily: 'var(--font-display)', fontSize: 20, color: 'var(--color-ink)' }}>Invitación no válida</p>
         <p className="text-sm mt-2" style={{ color: 'var(--color-texto-secundario)' }}>
           Este link ya se usó o no existe. Pide uno nuevo.
@@ -66,7 +66,7 @@ export default function RegistroAdmin({ codigo, onRegistroExitoso }) {
 
   if (mensajeConfirmacion) {
     return (
-      <div className="max-w-sm mx-auto min-h-screen px-6 pt-16 font-body text-center">
+      <div className="sm:max-w-app mx-auto min-h-screen px-6 pt-16 font-body text-center">
         <p style={{ fontFamily: 'var(--font-display)', fontSize: 20, color: 'var(--color-ink)' }}>Casi listo</p>
         <p className="text-sm mt-2" style={{ color: 'var(--color-texto-secundario)' }}>{mensajeConfirmacion}</p>
       </div>
@@ -74,7 +74,7 @@ export default function RegistroAdmin({ codigo, onRegistroExitoso }) {
   }
 
   return (
-    <div className="max-w-sm mx-auto min-h-screen px-6 pt-16 font-body">
+    <div className="sm:max-w-app mx-auto min-h-screen px-6 pt-16 font-body">
       <p style={{ fontFamily: 'var(--font-display)', fontSize: 22, color: 'var(--color-ink)' }}>
         Bienvenido a Melissa
       </p>

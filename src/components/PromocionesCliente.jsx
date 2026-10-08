@@ -110,7 +110,7 @@ export default function PromocionesCliente({ onNavigate }) {
           <div
             role="dialog"
             aria-label={abierta.titulo}
-            className="w-full max-w-sm rounded-t-3xl p-6 bg-white"
+            className="w-full sm:max-w-app rounded-t-3xl p-6 bg-white"
             style={{ paddingBottom: 'calc(env(safe-area-inset-bottom) + 24px)' }}
             onClick={(e) => e.stopPropagation()}
           >

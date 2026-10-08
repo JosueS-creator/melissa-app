@@ -25,7 +25,7 @@ export default function OlvidePassword({ onVolver }) {
   }
 
   return (
-    <div className="max-w-sm mx-auto min-h-screen px-6 pt-16 font-body">
+    <div className="sm:max-w-app mx-auto min-h-screen px-6 pt-16 font-body">
       <button onClick={onVolver} className="text-xs mb-4" style={{ color: 'var(--color-primary)' }}>‹ Volver</button>
 
       {enviado ? (

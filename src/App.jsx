@@ -154,7 +154,7 @@ export default function App() {
 
   if (clinica && clinica.activa === false) {
     return (
-      <div className="max-w-sm mx-auto min-h-screen flex flex-col items-center justify-center px-6 text-center font-body">
+      <div className="sm:max-w-app mx-auto min-h-screen flex flex-col items-center justify-center px-6 text-center font-body">
         <p className="font-display text-xl text-ink mb-2">Acceso suspendido</p>
         <p className="text-sm text-ink/60 mb-6">Tu negocio no tiene acceso activo en este momento. Contacta a Melissa para más información.</p>
         <button onClick={cerrarSesion} className="text-sm" style={{ color: 'var(--color-primary)' }}>Cerrar sesión</button>
@@ -166,7 +166,7 @@ export default function App() {
   const mostrarTabBar = !esAdmin && PANTALLAS_CON_TABBAR.includes(pantalla)
 
   return (
-    <div className={esAdmin ? 'min-h-screen flex flex-col' : 'max-w-sm mx-auto min-h-screen flex flex-col'} style={{ background: 'var(--color-fondo-app)' }}>
+    <div className={esAdmin ? 'min-h-screen flex flex-col' : 'sm:max-w-app mx-auto min-h-screen flex flex-col'} style={{ background: 'var(--color-fondo-app)' }}>
       <div className="flex-1">
         {!esAdmin && pantalla === 'inicio' && (
           <Home nombrePaciente={perfil?.nombre || sesion.user.email} clinica={clinica} onNavigate={setPantalla} />

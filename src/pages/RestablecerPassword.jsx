@@ -33,7 +33,7 @@ export default function RestablecerPassword({ onListo }) {
   }
 
   return (
-    <div className="max-w-sm mx-auto min-h-screen px-6 pt-16 font-body">
+    <div className="sm:max-w-app mx-auto min-h-screen px-6 pt-16 font-body">
       <p className="font-display text-2xl text-ink mb-1">Crea tu nueva contraseña</p>
       <p className="text-sm text-ink/60 mb-6">Escríbela dos veces para confirmar.</p>
 

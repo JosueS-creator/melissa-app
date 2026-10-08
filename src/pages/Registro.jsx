@@ -44,7 +44,7 @@ export default function Registro({ onRegistroExitoso, irALogin, slugClinica, neg
 
   if (!slugClinica || negocioNoEncontrado) {
     return (
-      <div className="max-w-sm mx-auto min-h-screen px-6 pt-16 font-body text-center">
+      <div className="sm:max-w-app mx-auto min-h-screen px-6 pt-16 font-body text-center">
         <p className="font-display text-xl text-ink mb-2">
           {negocioNoEncontrado ? 'No encontramos ese negocio' : 'Necesitas el link de tu negocio'}
         </p>
@@ -59,7 +59,7 @@ export default function Registro({ onRegistroExitoso, irALogin, slugClinica, neg
   }
 
   return (
-    <div className="max-w-sm mx-auto min-h-screen px-6 pt-16 font-body">
+    <div className="sm:max-w-app mx-auto min-h-screen px-6 pt-16 font-body">
       <p className="font-display text-2xl text-ink mb-1">Crea tu cuenta</p>
       <p className="text-sm text-ink/60 mb-6">Únete y empieza a construir tu Beauty Score.</p>
 

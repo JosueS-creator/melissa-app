@@ -102,7 +102,7 @@ export default function AdminPanel({ onCerrarSesion, esSuperAdmin, onIrAMelissa 
       </aside>
 
       <div
-        className="max-w-sm mx-auto lg:max-w-3xl lg:mx-0 lg:flex-1 px-5 lg:px-10 pb-10 lg:py-10 font-body"
+        className="sm:max-w-app mx-auto lg:max-w-3xl lg:mx-0 lg:flex-1 px-5 lg:px-10 pb-10 lg:py-10 font-body"
         style={{ paddingTop: 'calc(env(safe-area-inset-top) + 32px)' }}
       >
       <div className="flex justify-between items-start mb-1">

@@ -23,7 +23,7 @@ export default function Login({ onLoginExitoso, irARegistro, modo = 'paciente', 
   }
 
   return (
-    <div className="max-w-sm mx-auto min-h-screen px-6 pt-16 font-body">
+    <div className="sm:max-w-app mx-auto min-h-screen px-6 pt-16 font-body">
       {onVolver && (
         <button onClick={onVolver} className="text-xs mb-4" style={{ color: 'var(--color-primary)' }}>‹ Volver</button>
       )}

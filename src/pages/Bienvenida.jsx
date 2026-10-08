@@ -3,7 +3,7 @@ import logoMelissa from '../assets/melissa-logo-256.png'
 export default function Bienvenida({ onSeleccionar, vieneDeQR, clinica }) {
   return (
     <div
-      className="max-w-sm mx-auto min-h-screen flex flex-col items-center justify-center px-6 font-body text-center"
+      className="sm:max-w-app mx-auto min-h-screen flex flex-col items-center justify-center px-6 font-body text-center"
       style={{ background: 'var(--color-fondo-app)' }}
     >
       {clinica?.logo_url ? (

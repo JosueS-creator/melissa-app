@@ -25,6 +25,8 @@ export default {
         display: 'var(--font-display)',
         body: 'var(--font-body)',
       },
+      // Ancho máximo de la columna de la app en pantallas grandes (≥640 px). En celulares la app ocupa el 100 % del ancho.
+      maxWidth: { app: '30rem' },
       boxShadow: {
         'tarjeta-oscura': '0 14px 30px rgba(74,14,43,0.28), inset 0 1px 0 rgba(255,255,255,0.16)',
         'boton-primario': 'inset 0 1px 0 rgba(255,255,255,0.30), 0 6px 14px rgba(201,59,121,0.28)',
