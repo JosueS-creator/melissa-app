@@ -198,16 +198,16 @@ export default function Perfil({ onNavigate, onCerrarSesion, esSuperAdmin }) {
         Preferencias
       </p>
       <div className="flex flex-col gap-2 mb-6">
-        <FilaToggle etiqueta="Recordatorios de cita" valor={preferencias.recordatorios_citas} onChange={() => togglePreferencia('recordatorios_citas')} />
-        <FilaToggle etiqueta="Promociones y ofertas" valor={preferencias.promociones_ofertas} onChange={() => togglePreferencia('promociones_ofertas')} />
-        <FilaToggle etiqueta="Compartir fotos de progreso" valor={preferencias.compartir_fotos_progreso} onChange={() => togglePreferencia('compartir_fotos_progreso')} />
+        <FilaToggle etiqueta="Recordatorios de cita" ayuda="Aún no enviamos recordatorios. Guardamos tu preferencia para cuando estén disponibles." valor={preferencias.recordatorios_citas} onChange={() => togglePreferencia('recordatorios_citas')} />
+        <FilaToggle etiqueta="Promociones y ofertas" ayuda="Si la apagas, no verás avisos de promociones en la app y el negocio no te incluirá en sus mensajes para que vuelvas." valor={preferencias.promociones_ofertas} onChange={() => togglePreferencia('promociones_ofertas')} />
+        <FilaToggle etiqueta="Compartir fotos de progreso" ayuda="Tu negocio siempre ve las fotos que subes a tu historial. Esta opción es solo para permitir que las use con otros fines (por ejemplo, difusión); hoy Melissa no las usa para eso." valor={preferencias.compartir_fotos_progreso} onChange={() => togglePreferencia('compartir_fotos_progreso')} />
       </div>
 
       <p className="text-[11px] mb-2" style={{ color: 'var(--color-texto-terciario)', letterSpacing: '0.1em', textTransform: 'uppercase' }}>
         Mi actividad
       </p>
       <div className="flex flex-col gap-2 mb-6">
-        <FilaNavegacion etiqueta="Mi historial" onClick={() => onNavigate?.('historial')} />
+        <FilaNavegacion etiqueta="Mi progreso y fotos" onClick={() => onNavigate?.('historial')} />
         <FilaNavegacion etiqueta="Referidos" onClick={() => onNavigate?.('referidos')} />
         {esSuperAdmin && <FilaNavegacion etiqueta="Panel de Melissa" onClick={() => onNavigate?.('melissa')} />}
       </div>
@@ -249,10 +249,13 @@ function FilaNavegacion({ etiqueta, onClick, proximamente }) {
   )
 }
 
-function FilaToggle({ etiqueta, valor, onChange }) {
+function FilaToggle({ etiqueta, ayuda, valor, onChange }) {
   return (
-    <div className="w-full flex items-center justify-between rounded-xl px-4 py-3.5" style={{ background: 'linear-gradient(160deg,#FFFFFF,#FDF7F9)', border: '1px solid var(--color-borde-tarjeta)' }}>
-      <span className="text-sm" style={{ color: 'var(--color-ink)' }}>{etiqueta}</span>
+    <div className="w-full flex items-center justify-between gap-3 rounded-xl px-4 py-3.5" style={{ background: 'linear-gradient(160deg,#FFFFFF,#FDF7F9)', border: '1px solid var(--color-borde-tarjeta)' }}>
+      <div>
+        <span className="text-sm" style={{ color: 'var(--color-ink)' }}>{etiqueta}</span>
+        {ayuda && <p className="text-[10px] mt-0.5" style={{ color: 'var(--color-texto-terciario)' }}>{ayuda}</p>}
+      </div>
       <button
         onClick={onChange}
         className="relative rounded-full transition-all"

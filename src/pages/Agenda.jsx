@@ -2,7 +2,9 @@ import { useEffect, useState } from 'react'
 import { leerReservaPromo, limpiarReservaPromo, formatearPorcentaje } from '../lib/promociones'
 import { supabase } from '../lib/supabaseClient'
 import { obtenerPacienteActual } from '../lib/auth'
+import { estadoDeCita, esProxima, aIsoLocal, fechaLocal, esHoraPasada, textoFechaHora } from '../lib/citas'
 import logoMelissaMarcaAgua from '../assets/melissa-logo-256.png'
+import ContactoNegocio from '../components/ContactoNegocio'
 
 const HORAS_DISPONIBLES = ['09:00', '09:45', '10:30', '11:15', '14:00', '15:30']
 
@@ -16,13 +18,77 @@ function proximosDias(cantidad = 5) {
   return dias
 }
 
+/** Mis citas: lo que el cliente solicitó y en qué estado está. El cliente no puede confirmar, completar ni cancelar. */
+function MisCitas({ pacienteId, refresco }) {
+  const [citas, setCitas] = useState(null)
+  const [verAnteriores, setVerAnteriores] = useState(false)
+
+  useEffect(() => {
+    supabase
+      .from('citas')
+      .select('id, fecha_hora, estado, tratamiento, especialistas(nombre)')
+      .eq('paciente_id', pacienteId)
+      .order('fecha_hora', { ascending: false })
+      .limit(30)
+      .then(({ data }) => setCitas(data || []))
+  }, [pacienteId, refresco])
+
+  if (!citas) return null
+  const proximas = citas.filter((c) => esProxima(c)).sort((a, b) => new Date(a.fecha_hora) - new Date(b.fecha_hora))
+  const anteriores = citas.filter((c) => !esProxima(c)).slice(0, 5)
+
+  const fila = (c) => {
+    const estado = estadoDeCita(c)
+    return (
+      <div key={c.id} className="rounded-xl px-3.5 py-3 bg-white" style={{ border: '1px solid var(--color-borde-tarjeta)' }}>
+        <p className="text-sm font-medium" style={{ color: 'var(--color-ink)' }}>{c.tratamiento || 'Cita'}</p>
+        <p className="text-xs" style={{ color: 'var(--color-texto-secundario)' }}>
+          {textoFechaHora(c.fecha_hora)}{c.especialistas?.nombre ? ` · ${c.especialistas.nombre}` : ''}
+        </p>
+        <p className="text-[11px] font-medium mt-1" style={{ color: estado.color }}>{estado.texto}</p>
+        {c.estado === 'pendiente' && esProxima(c) && (
+          <p className="text-[10px] mt-0.5" style={{ color: 'var(--color-texto-terciario)' }}>El negocio te confirmará o te propondrá otro horario.</p>
+        )}
+      </div>
+    )
+  }
+
+  return (
+    <div className="mb-6">
+      <p className="text-sm font-medium mb-2" style={{ color: 'var(--color-ink)' }}>Mis citas</p>
+      {proximas.length === 0 ? (
+        <p className="text-sm" style={{ color: 'var(--color-texto-secundario)' }}>No tienes citas próximas.</p>
+      ) : (
+        <div className="flex flex-col gap-2">{proximas.map(fila)}</div>
+      )}
+      {proximas.length > 0 && (
+        <>
+          <p className="text-[10px] mt-2" style={{ color: 'var(--color-texto-terciario)' }}>
+            Para cambiar o cancelar una cita, comunícate con el negocio: desde Melissa solo puedes solicitar citas nuevas.
+          </p>
+          <ContactoNegocio />
+        </>
+      )}
+      {anteriores.length > 0 && (
+        <div className="mt-3">
+          <button onClick={() => setVerAnteriores((v) => !v)} className="text-xs" style={{ color: 'var(--color-primary)' }}>
+            Citas anteriores ({anteriores.length}) {verAnteriores ? '▴' : '▾'}
+          </button>
+          {verAnteriores && <div className="flex flex-col gap-2 mt-2">{anteriores.map(fila)}</div>}
+        </div>
+      )}
+    </div>
+  )
+}
+
 export default function Agenda() {
   const [especialistas, setEspecialistas] = useState([])
   const [especialistaId, setEspecialistaId] = useState(null)
   const [servicios, setServicios] = useState([])
   const [servicioId, setServicioId] = useState(null)
   const [promo, setPromo] = useState(() => leerReservaPromo())   // promoción elegida en "Reservar ahora"
-  const [diaSeleccionado, setDiaSeleccionado] = useState(() => new Date().toISOString().slice(0, 10))
+  const [diaSeleccionado, setDiaSeleccionado] = useState(() => aIsoLocal(new Date()))
+  const [refresco, setRefresco] = useState(0)
   const [hora, setHora] = useState(null)
   const [paciente, setPaciente] = useState(null)
   const [cargando, setCargando] = useState(true)
@@ -55,13 +121,16 @@ export default function Agenda() {
   }, [])
 
   const servicioSeleccionado = servicios.find((s) => s.id === servicioId)
+  // Una hora ya pasada de hoy no se puede solicitar (el sistema sí sabe qué hora es; no sabe la disponibilidad del negocio).
+  const horaEfectiva = hora && !esHoraPasada(diaSeleccionado, hora) ? hora : null
+  const quedanHorasHoy = HORAS_DISPONIBLES.some((h) => !esHoraPasada(diaSeleccionado, h))
 
   async function confirmarCita() {
-    if (!especialistaId || !hora || !paciente) return
+    if (!especialistaId || !horaEfectiva || !paciente) return
     setEnviando(true)
     setError('')
 
-    const fechaHora = new Date(`${diaSeleccionado}T${hora}:00`).toISOString()
+    const fechaHora = new Date(`${diaSeleccionado}T${horaEfectiva}:00`).toISOString()
 
     const { error: errorInsert } = await supabase.from('citas').insert({
       clinica_id: paciente.clinica_id,
@@ -75,10 +144,11 @@ export default function Agenda() {
     })
 
     if (errorInsert) {
-      setError('No se pudo reservar la cita. Intenta de nuevo.')
+      setError('No se pudo enviar la solicitud. Revisa que la fecha y la hora sean futuras e intenta de nuevo.')
     } else {
       limpiarReservaPromo()
-      setConfirmacion(`Cita reservada · ${new Date(fechaHora).toLocaleDateString('es-HN', { day: 'numeric', month: 'short' })}, ${hora}`)
+      setConfirmacion(`${new Date(fechaHora).toLocaleDateString('es-HN', { day: 'numeric', month: 'short' })}, ${horaEfectiva}`)
+      setRefresco((n) => n + 1)
     }
     setEnviando(false)
   }
@@ -101,7 +171,7 @@ export default function Agenda() {
           style={{ top: -20, right: -30, width: 180, height: 180, opacity: 0.13, objectFit: 'contain' }}
         />
         <p style={{ font: "500 10px/1 var(--font-body)", letterSpacing: '0.2em', textTransform: 'uppercase', color: 'var(--color-dorado-claro)' }}>
-          Reservar
+          Solicitar cita
         </p>
         <p className="mt-2" style={{ fontFamily: 'var(--font-display)', fontSize: 26, lineHeight: 1.15, color: '#FFFFFF' }}>
           {servicioSeleccionado?.nombre || 'Nueva cita'}
@@ -117,17 +187,21 @@ export default function Agenda() {
         {promo && !confirmacion && (
           <div className="rounded-xl px-4 py-3 mb-4 flex items-center justify-between gap-2" style={{ background: 'var(--color-accent)' }}>
             <p className="text-xs" style={{ color: 'var(--color-ink)' }}>
-              🎁 Reservando con la promoción <strong>{promo.titulo}</strong> ({formatearPorcentaje(promo.descuento_porcentaje)}). El negocio aplica el descuento al cobrar.
+              🎁 Solicitando cita con la promoción <strong>{promo.titulo}</strong> ({formatearPorcentaje(promo.descuento_porcentaje)}). El negocio aplica el descuento al cobrar.
             </p>
             <button onClick={() => { limpiarReservaPromo(); setPromo(null) }} className="text-[11px] flex-shrink-0" style={{ color: 'var(--color-primary)' }}>Quitar</button>
           </div>
         )}
+        <MisCitas pacienteId={paciente.id} refresco={refresco} />
+
         {confirmacion ? (
           <div className="rounded-xl p-4" style={{ background: 'var(--color-accent)' }}>
-            <p className="text-sm" style={{ color: 'var(--color-ink)' }}>{confirmacion}</p>
+            <p className="text-sm font-medium" style={{ color: 'var(--color-ink)' }}>Solicitud enviada · {confirmacion}</p>
+            <p className="text-xs mt-1" style={{ color: 'var(--color-ink)' }}>Tu cita todavía <strong>no está confirmada</strong>: el negocio la confirmará o te propondrá otro horario. Verás el cambio en «Mis citas».</p>
           </div>
         ) : (
           <>
+            <p className="text-sm font-medium mb-3 pt-1" style={{ color: 'var(--color-ink)', borderTop: '1px solid var(--color-borde-tarjeta)', paddingTop: 16 }}>Solicitar una cita nueva</p>
             <p className="text-sm font-medium mb-2" style={{ color: 'var(--color-ink)' }}>Servicio</p>
             {servicios.length === 0 && (
               <p className="text-sm mb-4" style={{ color: 'var(--color-texto-secundario)' }}>
@@ -183,7 +257,7 @@ export default function Agenda() {
             <p className="text-sm font-medium mb-2" style={{ color: 'var(--color-ink)' }}>Fecha</p>
             <div className="flex gap-2 mb-5 overflow-x-auto">
               {dias.map((d) => {
-                const iso = d.toISOString().slice(0, 10)
+                const iso = aIsoLocal(d)
                 const activo = iso === diaSeleccionado
                 return (
                   <button
@@ -208,34 +282,43 @@ export default function Agenda() {
               })}
             </div>
 
-            <p className="text-sm font-medium mb-2" style={{ color: 'var(--color-ink)' }}>Horarios disponibles</p>
+            <p className="text-sm font-medium mb-0.5" style={{ color: 'var(--color-ink)' }}>Horarios sugeridos</p>
+            <p className="text-[11px] mb-2" style={{ color: 'var(--color-texto-secundario)' }}>
+              Elige el horario que prefieres. El negocio no publica su disponibilidad aquí: tu solicitud queda pendiente hasta que la confirme o te proponga otro horario.
+            </p>
+            {!quedanHorasHoy && <p className="text-xs mb-2" style={{ color: '#B08D3E' }}>Ya no quedan horarios sugeridos para este día: elige otro.</p>}
             <div className="grid grid-cols-3 gap-2 mb-6">
-              {HORAS_DISPONIBLES.map((h) => (
-                <button
-                  key={h}
-                  onClick={() => setHora(h)}
-                  className="rounded-lg py-2.5 text-sm"
-                  style={{
-                    background: hora === h ? 'var(--color-fondo-app)' : '#FFFFFF',
-                    border: `1px solid ${hora === h ? 'var(--color-dorado)' : 'var(--color-borde-tarjeta)'}`,
-                    color: hora === h ? 'var(--color-primary)' : 'var(--color-ink)',
-                    fontWeight: hora === h ? 600 : 400,
-                  }}
-                >
-                  {h}
-                </button>
-              ))}
+              {HORAS_DISPONIBLES.map((h) => {
+                const pasada = esHoraPasada(diaSeleccionado, h)
+                const activa = horaEfectiva === h
+                return (
+                  <button
+                    key={h}
+                    onClick={() => setHora(h)}
+                    disabled={pasada}
+                    className="rounded-lg py-2.5 text-sm disabled:opacity-40"
+                    style={{
+                      background: activa ? 'var(--color-fondo-app)' : '#FFFFFF',
+                      border: `1px solid ${activa ? 'var(--color-dorado)' : 'var(--color-borde-tarjeta)'}`,
+                      color: activa ? 'var(--color-primary)' : 'var(--color-ink)',
+                      fontWeight: activa ? 600 : 400,
+                    }}
+                  >
+                    {h}
+                  </button>
+                )
+              })}
             </div>
 
             {error && <p className="text-sm mb-3" style={{ color: '#B0524A' }}>{error}</p>}
 
             <button
               onClick={confirmarCita}
-              disabled={!especialistaId || !hora || enviando}
+              disabled={!especialistaId || !horaEfectiva || enviando}
               className="w-full rounded-[10px] py-3 text-white shadow-boton-primario disabled:opacity-50"
               style={{ background: 'var(--gradiente-primario)', font: "500 13px/1 var(--font-body)", letterSpacing: '0.04em' }}
             >
-              {enviando ? 'Reservando...' : `Confirmar cita${hora ? ` · ${new Date(diaSeleccionado).toLocaleDateString('es-HN', { day: 'numeric', month: 'short' })}, ${hora}` : ''}`}
+              {enviando ? 'Enviando...' : `Solicitar cita${horaEfectiva ? ` · ${fechaLocal(diaSeleccionado).toLocaleDateString('es-HN', { day: 'numeric', month: 'short' })}, ${horaEfectiva}` : ''}`}
             </button>
           </>
         )}

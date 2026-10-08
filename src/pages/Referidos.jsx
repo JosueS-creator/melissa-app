@@ -4,7 +4,6 @@ import { obtenerPacienteActual } from '../lib/auth'
 import logoMelissa from '../assets/melissa-logo-64.png'
 import logoMelissaMarcaAgua from '../assets/melissa-logo-256.png'
 
-const META_MENSUAL = 5
 
 export default function Referidos({ onVolver }) {
   const [paciente, setPaciente] = useState(null)
@@ -52,7 +51,7 @@ export default function Referidos({ onVolver }) {
     })
 
     if (error) {
-      setMensaje('No se pudo enviar la invitación.')
+      setMensaje('No se pudo registrar la invitación.')
     } else {
       setMensaje('¡Invitación registrada! ✓')
       setTelefono('')
@@ -72,7 +71,6 @@ export default function Referidos({ onVolver }) {
 
   const recompensados = referidos.filter((r) => r.estado === 'recompensado').length
   const registrados = referidos.filter((r) => r.estado === 'registrado' || r.estado === 'recompensado').length
-  const progresoMeta = Math.min((registrados / META_MENSUAL) * 100, 100)
 
   const colorEstado = { invitado: '#B08D3E', registrado: '#2D6E8E', recompensado: '#6B8E5A' }
   const etiquetaEstado = { invitado: 'Invitado', registrado: 'Registrada · cita pendiente', recompensado: 'Primera cita completada' }
@@ -95,10 +93,10 @@ export default function Referidos({ onVolver }) {
         )}
         <img src={logoMelissa} alt="Melissa" className="w-11 h-11 rounded-xl" />
         <p className="mt-3" style={{ fontFamily: 'var(--font-display)', fontSize: 24, color: '#FFFFFF', lineHeight: 1.2 }}>
-          Invita y ganan las dos
+          Invita a una amiga
         </p>
         <p className="text-xs mt-2" style={{ color: 'rgba(233,169,193,0.85)' }}>
-          Ella recibe 20% en su primera cita. Tú, 500 Beauty Points.
+          Comparte tu código. Si tu negocio ofrece un beneficio por invitar, te lo confirmará directamente.
         </p>
       </div>
 
@@ -119,20 +117,12 @@ export default function Referidos({ onVolver }) {
       </div>
 
       <div className="px-5 pt-5">
-        <div className="flex justify-between items-baseline mb-1.5">
-          <p className="text-sm" style={{ color: 'var(--color-ink)' }}>{registrados} de {META_MENSUAL} invitadas</p>
-          <span className="text-xs font-medium" style={{ color: 'var(--color-primary)' }}>Meta del mes</span>
-        </div>
-        <div className="h-[6px] rounded-full overflow-hidden" style={{ background: 'var(--color-accent)' }}>
-          <div className="h-full rounded-full" style={{ width: `${progresoMeta}%`, background: 'var(--gradiente-primario)' }} />
-        </div>
-        {registrados < META_MENSUAL && (
-          <p className="text-[11px] mt-1.5" style={{ color: 'var(--color-texto-secundario)' }}>
-            {META_MENSUAL - registrados} más y desbloqueas una limpieza facial gratis
-          </p>
-        )}
+        <p className="text-sm" style={{ color: 'var(--color-ink)' }}>
+          {registrados} {registrados === 1 ? 'invitada registrada' : 'invitadas registradas'}
+        </p>
 
-        <p className="text-sm font-medium mt-6 mb-2" style={{ color: 'var(--color-ink)' }}>Invitar por teléfono</p>
+        <p className="text-sm font-medium mt-6 mb-0.5" style={{ color: 'var(--color-ink)' }}>Invitar por teléfono</p>
+        <p className="text-[11px] mb-2" style={{ color: 'var(--color-texto-secundario)' }}>Esto solo guarda el número en tu lista: Melissa no envía ningún mensaje. Comparte tu código tú misma.</p>
         <div className="flex gap-2 mb-2">
           <input
             type="tel"
@@ -163,7 +153,7 @@ export default function Referidos({ onVolver }) {
                 <p className="text-sm" style={{ color: 'var(--color-ink)' }}>{r.telefono_referido}</p>
               </div>
               <span className="text-[10px] font-medium" style={{ color: colorEstado[r.estado] }}>
-                {r.estado === 'recompensado' ? '+500' : etiquetaEstado[r.estado]}
+                {etiquetaEstado[r.estado]}
               </span>
             </div>
           ))}

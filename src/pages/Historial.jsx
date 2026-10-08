@@ -52,6 +52,12 @@ export default function Historial({ onVolver }) {
       subir(archivoAntes, 'antes'),
       subir(archivoDespues, 'despues'),
     ])
+    // Si una foto elegida no se pudo subir, NO se guarda un registro que parezca completo.
+    if ((archivoAntes && !rutaAntes) || (archivoDespues && !rutaDespues)) {
+      setMensaje('No se pudo subir una de las fotos, así que no se guardó el registro. Intenta de nuevo.')
+      setSubiendo(false)
+      return
+    }
 
     const { error: errorInsert } = await supabase.from('tratamientos_paciente').insert({
       clinica_id: paciente.clinica_id,
@@ -94,7 +100,7 @@ export default function Historial({ onVolver }) {
           <button onClick={onVolver} className="text-xs mb-3" style={{ color: 'var(--color-dorado-claro)' }}>‹ Volver</button>
         )}
         <p style={{ font: "500 10px/1 var(--font-body)", letterSpacing: '0.2em', textTransform: 'uppercase', color: 'var(--color-dorado-claro)' }}>
-          Historial clínico
+          Mi progreso
         </p>
         <p className="mt-2" style={{ fontFamily: 'var(--font-display)', fontSize: 26, color: '#FFFFFF' }}>
           {tratamientos.length} {tratamientos.length === 1 ? 'registro' : 'registros'}
@@ -102,10 +108,12 @@ export default function Historial({ onVolver }) {
         {totalInvertido > 0 && (
           <p className="text-xs mt-1" style={{ color: 'rgba(233,169,193,0.85)' }}>L {totalInvertido.toLocaleString()} invertidos</p>
         )}
+        <p className="text-[11px] mt-1.5" style={{ color: 'rgba(233,169,193,0.75)' }}>Tus tratamientos y fotos de progreso. Tus citas están en Agenda → Mis citas.</p>
       </div>
 
       <div className="px-5 pt-5">
-        <p className="text-sm font-medium mb-2" style={{ color: 'var(--color-ink)' }}>Agregar foto de progreso</p>
+        <p className="text-sm font-medium mb-0.5" style={{ color: 'var(--color-ink)' }}>Agregar foto de progreso</p>
+        <p className="text-[11px] mb-2" style={{ color: 'var(--color-texto-secundario)' }}>Tus fotos son privadas: solo las ven tú y tu negocio.</p>
         <div className="grid grid-cols-2 gap-2 mb-2">
           <label className="rounded-xl border border-dashed flex flex-col items-center justify-center py-4 text-center cursor-pointer" style={{ borderColor: 'var(--color-borde-tarjeta)', background: '#FDEFF4' }}>
             <span className="text-xs" style={{ color: 'var(--color-texto-secundario)' }}>Antes</span>

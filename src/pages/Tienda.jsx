@@ -81,7 +81,7 @@ export default function Tienda() {
       return
     }
 
-    setMensaje(`Pedido confirmado — L ${Number(pedido.total).toFixed(2)}`)
+    setMensaje(`Pedido enviado al negocio — L ${Number(pedido.total).toFixed(2)}. Aún no se cobra nada en línea: el negocio lo confirmará y coordinará el pago y la entrega.`)
     setCarrito({})
     setEnviando(false)
   }
@@ -175,7 +175,7 @@ export default function Tienda() {
             className="w-full rounded-[10px] py-3 text-white shadow-boton-primario disabled:opacity-50"
             style={{ background: 'var(--gradiente-primario)', font: "500 13px/1 var(--font-body)", letterSpacing: '0.04em' }}
           >
-            {enviando ? 'Procesando...' : `Confirmar pedido — L ${total.toFixed(2)}`}
+            {enviando ? 'Enviando...' : `Enviar pedido — L ${total.toFixed(2)}`}
           </button>
         </div>
       )}

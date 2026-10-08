@@ -3,6 +3,8 @@ import { supabase } from '../lib/supabaseClient'
 import { obtenerPacienteActual } from '../lib/auth'
 import { calcularNivelYProgreso, obtenerUmbrales } from '../lib/fidelidad'
 import PromocionesCliente from '../components/PromocionesCliente'
+import { estadoDeCita } from '../lib/citas'
+import ContactoNegocio from '../components/ContactoNegocio'
 import logoMelissa from '../assets/melissa-logo-64.png'
 import logoMelissaMarcaAgua from '../assets/melissa-logo-256.png'
 
@@ -139,22 +141,16 @@ export default function Home({ nombrePaciente = 'Cliente', clinica, onNavigate }
                   {new Date(proximaCita.fecha_hora).toLocaleTimeString('es-HN', { hour: 'numeric', minute: '2-digit' })}
                   {proximaCita.especialistas?.nombre ? ` · ${proximaCita.especialistas.nombre}` : ''}
                 </p>
-                <div className="flex gap-2 mt-3">
-                  <button
-                    onClick={() => onNavigate('agenda')}
-                    className="flex-1 rounded-[10px] py-2.5 text-white shadow-boton-primario"
-                    style={{ background: 'var(--gradiente-primario)', font: "500 12px/1 var(--font-body)", letterSpacing: '0.04em' }}
-                  >
-                    Ver detalles
-                  </button>
-                  <button
-                    onClick={() => onNavigate('agenda')}
-                    className="flex-1 rounded-[10px] py-2.5"
-                    style={{ background: '#FFFDF9', border: '1px solid var(--color-dorado-claro)', color: 'var(--color-primary)', font: "500 12px/1 var(--font-body)", letterSpacing: '0.04em' }}
-                  >
-                    Reprogramar
-                  </button>
-                </div>
+                <p className="text-[11px] mt-1 font-medium" style={{ color: estadoDeCita(proximaCita).color }}>{estadoDeCita(proximaCita).texto}</p>
+                <button
+                  onClick={() => onNavigate('agenda')}
+                  className="mt-3 w-full rounded-[10px] py-2.5 text-white shadow-boton-primario"
+                  style={{ background: 'var(--gradiente-primario)', font: "500 12px/1 var(--font-body)", letterSpacing: '0.04em' }}
+                >
+                  Ver mis citas
+                </button>
+                <p className="text-[10px] mt-2" style={{ color: 'var(--color-texto-terciario)' }}>Para cambiar o cancelar esta cita, comunícate con el negocio.</p>
+                <ContactoNegocio />
               </div>
             </div>
           ) : (
@@ -165,7 +161,7 @@ export default function Home({ nombrePaciente = 'Cliente', clinica, onNavigate }
                 className="mt-3 w-full rounded-[10px] py-2.5 text-white shadow-boton-primario"
                 style={{ background: 'var(--gradiente-primario)', font: "500 12px/1 var(--font-body)", letterSpacing: '0.04em' }}
               >
-                Reservar cita
+                Solicitar cita
               </button>
             </div>
           )}
