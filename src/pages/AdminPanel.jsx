@@ -142,7 +142,7 @@ export default function AdminPanel({ onCerrarSesion, esSuperAdmin, onIrAMelissa 
 
       {tab === 'citas' && <PanelCitas clinicaId={perfil.clinica_id} />}
       {/* El CRM recibe EscanerQR e HistorialCliente (definidos aquí) para reutilizarlos sin duplicar código. */}
-      {tab === 'pacientes' && <Crm clinicaId={perfil.clinica_id} HistorialCliente={HistorialCliente} EscanerQR={EscanerQR} />}
+      {tab === 'pacientes' && <Crm clinicaId={perfil.clinica_id} HistorialCliente={HistorialCliente} EscanerQR={EscanerQR} onVerOportunidades={() => setTab('reactivar')} />}
       {tab === 'reactivar' && <ClientesReactivar clinicaId={perfil.clinica_id} HistorialCliente={HistorialCliente} />}
       {tab === 'canjes' && <Canjes onCambio={contarCanjesPendientes} />}
       {tab === 'promociones' && <Promociones clinicaId={perfil.clinica_id} />}

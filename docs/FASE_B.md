@@ -80,7 +80,7 @@ Una llamada por pantalla: la lista y los indicadores salen de una sola consulta 
 2. Como admin: **Clientes** → indicadores, segmentos, búsqueda y orden.
 3. Agendar una cita desde el panel con un servicio, completarla y abrir el **Cliente 360**: última visita, servicio, línea de tiempo.
 4. Asignar puntos con el escáner y comprobar nivel y movimientos.
-5. Probar **Por reactivar** con los filtros 45+/60+/90+ (requiere clientes con visitas antiguas).
+5. Probar **Por reactivar** (requiere clientes con visitas antiguas). Desde la Fase C esta pestaña muestra oportunidades priorizadas con WhatsApp asistido; ver `docs/REACTIVACION_WHATSAPP.md` (ya no tiene los filtros 45+/60+/90+).
 6. Como cliente: no ver ninguna pestaña del panel; Perfil muestra y guarda la fecha de nacimiento.
 7. Canje de puntos y compra en la Tienda (cambios de la Fase A).
 

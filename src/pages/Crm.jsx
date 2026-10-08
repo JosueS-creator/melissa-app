@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 import Cliente360 from './Cliente360'
 import NivelBadge from '../components/NivelBadge'
 import { SEGMENTOS, obtenerClientesCrm, obtenerResumenCrm, ordenarClientes, formatearFecha, textoDias } from '../lib/crm'
+import { obtenerResumenReactivacion } from '../lib/reactivacion'
 
 function Indicador({ etiqueta, valor, nota }) {
   return (
@@ -32,9 +33,10 @@ export function FilaCliente({ cliente, onAbrir, detalle }) {
   )
 }
 
-export default function Crm({ clinicaId, HistorialCliente, EscanerQR }) {
+export default function Crm({ clinicaId, HistorialCliente, EscanerQR, onVerOportunidades }) {
   const [clientes, setClientes] = useState([])
   const [resumen, setResumen] = useState(null)
+  const [reactivacion, setReactivacion] = useState(null)
   const [cargando, setCargando] = useState(true)
   const [error, setError] = useState('')
   const [segmento, setSegmento] = useState('todos')
@@ -54,6 +56,8 @@ export default function Crm({ clinicaId, HistorialCliente, EscanerQR }) {
     } finally {
       setCargando(false)
     }
+    // La tarjeta de reactivación es un extra: si falla, el CRM sigue funcionando.
+    obtenerResumenReactivacion().then(setReactivacion).catch(() => setReactivacion(null))
   }
 
   useEffect(() => {
@@ -101,6 +105,15 @@ export default function Crm({ clinicaId, HistorialCliente, EscanerQR }) {
             valor={resumen.recuperados_desde ? resumen.recuperados : '—'}
             nota={resumen.recuperados_desde ? `desde el ${formatearFecha(resumen.recuperados_desde)}` : 'se mide desde la primera cita nueva'}
           />
+        </div>
+      )}
+
+      {reactivacion && onVerOportunidades && (
+        <div className="rounded-xl p-4 mb-4 bg-white" style={{ border: '1px solid var(--color-dorado)' }}>
+          <p className="text-[10px] uppercase" style={{ letterSpacing: '0.16em', color: 'var(--color-dorado)' }}>Clientes por reactivar</p>
+          <p style={{ fontFamily: 'var(--font-display)', fontSize: 28, lineHeight: 1.1, color: 'var(--color-ink)' }}>{reactivacion.oportunidades}</p>
+          <p className="text-xs" style={{ color: 'var(--color-texto-secundario)' }}>{reactivacion.oportunidades === 0 ? 'Aún no hay clientes para reactivar.' : `Personas que podrían volver a reservar.${reactivacion.alta > 0 ? ` ${reactivacion.alta} de prioridad alta.` : ''}`}</p>
+          <button onClick={onVerOportunidades} className="mt-2 text-xs font-medium" style={{ color: 'var(--color-primary)' }}>Ver oportunidades ›</button>
         </div>
       )}
 

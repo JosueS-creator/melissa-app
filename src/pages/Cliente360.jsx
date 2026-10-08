@@ -13,6 +13,7 @@ const TIPOS_EVENTO = {
   referido: 'Referido',
   membresia: 'Membresía',
   tratamiento: 'Tratamiento',
+  reactivacion: 'Reactivación',
 }
 
 function Seccion({ titulo, children }) {
