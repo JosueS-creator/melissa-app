@@ -10,10 +10,12 @@ import Crm from './Crm'
 import ClientesReactivar from './ClientesReactivar'
 import Canjes from './Canjes'
 import Promociones from './Promociones'
+import InicioAdmin from './InicioAdmin'
 import { CampoPuntos, PuntosEnFila } from '../components/PuntosCatalogo'
 import { useConfigPuntos, nuevaClaveOperacion } from '../lib/puntos'
 
 const TABS = [
+  { id: 'inicio', label: 'Inicio' },
   { id: 'citas', label: 'Citas' },
   { id: 'pacientes', label: 'Clientes' },
   { id: 'reactivar', label: 'Por reactivar' },
@@ -30,7 +32,7 @@ export default function AdminPanel({ onCerrarSesion, esSuperAdmin, onIrAMelissa 
   const [perfil, setPerfil] = useState(null)
   const [nombreClinica, setNombreClinica] = useState('')
   const [cargando, setCargando] = useState(true)
-  const [tab, setTab] = useState('citas')
+  const [tab, setTab] = useState('inicio')
   const [canjesPendientes, setCanjesPendientes] = useState(0)
 
   useEffect(() => {
@@ -67,7 +69,7 @@ export default function AdminPanel({ onCerrarSesion, esSuperAdmin, onIrAMelissa 
         style={{ background: 'var(--gradiente-fondo-oscuro)' }}
       >
         <p className="font-display text-lg text-white mb-1">Panel del negocio</p>
-        <p className="text-[11px] mb-6" style={{ color: 'rgba(254,250,248,.62)' }}>Vista operativa</p>
+        <p className="text-xs mb-6" style={{ color: 'rgba(254,250,248,.72)' }}>Vista operativa</p>
 
         <nav className="flex flex-col gap-1 flex-1">
           {TABS.map((t) => (
@@ -88,47 +90,47 @@ export default function AdminPanel({ onCerrarSesion, esSuperAdmin, onIrAMelissa 
 
         <div className="pt-4 mt-4" style={{ borderTop: '1px solid rgba(235,203,134,.2)' }}>
           {esSuperAdmin && (
-            <button onClick={onIrAMelissa} className="w-full text-left text-xs py-2" style={{ color: 'rgba(254,250,248,.74)' }}>
+            <button onClick={onIrAMelissa} className="w-full text-left text-sm min-h-[44px]" style={{ color: 'rgba(254,250,248,.74)' }}>
               Panel de Melissa
             </button>
           )}
-          <button onClick={() => descargarDatosClinica(perfil.clinica_id, nombreClinica)} className="w-full text-left text-xs py-2" style={{ color: 'rgba(254,250,248,.74)' }}>
+          <button onClick={() => descargarDatosClinica(perfil.clinica_id, nombreClinica)} className="w-full text-left text-sm min-h-[44px]" style={{ color: 'rgba(254,250,248,.74)' }}>
             Descargar mis datos
           </button>
-          <button onClick={onCerrarSesion} className="w-full text-left text-xs py-2" style={{ color: 'rgba(254,250,248,.74)' }}>
+          <button onClick={onCerrarSesion} className="w-full text-left text-sm min-h-[44px]" style={{ color: 'rgba(254,250,248,.74)' }}>
             Salir
           </button>
         </div>
       </aside>
 
       <div
-        className="sm:max-w-app mx-auto lg:max-w-3xl lg:mx-0 lg:flex-1 px-5 lg:px-10 pb-10 lg:py-10 font-body"
+        className="sm:max-w-app mx-auto lg:max-w-6xl lg:mx-0 lg:flex-1 px-5 lg:px-10 pb-10 lg:py-10 font-body"
         style={{ paddingTop: 'calc(env(safe-area-inset-top) + 32px)' }}
       >
       <div className="flex justify-between items-start mb-1">
         <p className="font-display text-xl text-ink lg:hidden">Panel del negocio</p>
-        <div className="flex gap-2 lg:hidden">
+        <div className="flex flex-wrap justify-end gap-2 lg:hidden">
           {esSuperAdmin && (
-            <button onClick={onIrAMelissa} className="text-[11px] px-2.5 py-1.5 rounded-lg" style={{ background: 'var(--color-accent)', color: 'var(--color-ink)' }}>
+            <button onClick={onIrAMelissa} className="text-xs px-3 min-h-[44px] rounded-lg" style={{ background: 'var(--color-accent)', color: 'var(--color-ink)' }}>
               Panel de Melissa
             </button>
           )}
-          <button onClick={() => descargarDatosClinica(perfil.clinica_id, nombreClinica)} className="text-[11px] px-2.5 py-1.5 rounded-lg" style={{ background: 'var(--color-accent)', color: 'var(--color-ink)' }}>
+          <button onClick={() => descargarDatosClinica(perfil.clinica_id, nombreClinica)} className="text-xs px-3 min-h-[44px] rounded-lg" style={{ background: 'var(--color-accent)', color: 'var(--color-ink)' }}>
             Mis datos
           </button>
-          <button onClick={onCerrarSesion} className="text-[11px] px-2.5 py-1.5 rounded-lg" style={{ background: 'var(--color-accent)', color: 'var(--color-ink)' }}>
+          <button onClick={onCerrarSesion} className="text-xs px-3 min-h-[44px] rounded-lg" style={{ background: 'var(--color-accent)', color: 'var(--color-ink)' }}>
             Salir
           </button>
         </div>
       </div>
       <p className="text-xs text-ink/50 mb-5 lg:hidden">Vista operativa para el equipo.</p>
 
-      <div className="flex flex-wrap gap-1.5 mb-5 lg:hidden">
+      <div className="flex gap-1.5 mb-5 -mx-5 px-5 overflow-x-auto lg:hidden">
         {TABS.map((t) => (
           <button
             key={t.id}
             onClick={() => setTab(t.id)}
-            className="rounded-lg px-3 py-1.5 text-[10px] font-medium"
+            className="flex-shrink-0 whitespace-nowrap rounded-lg px-3.5 min-h-[44px] text-xs font-medium"
             style={
               tab === t.id
                 ? { background: 'var(--gradiente-primario)', color: '#FFFFFF', boxShadow: '0 2px 6px rgba(201,59,121,0.3)' }
@@ -140,6 +142,9 @@ export default function AdminPanel({ onCerrarSesion, esSuperAdmin, onIrAMelissa 
         ))}
       </div>
 
+      {tab === 'inicio' && <InicioAdmin clinicaId={perfil.clinica_id} canjesPendientes={canjesPendientes} onIr={setTab} />}
+      {/* Las demás pestañas conservan su ancho de lectura hasta rediseñarlas una por una. */}
+      <div className="lg:max-w-3xl">
       {tab === 'citas' && <PanelCitas clinicaId={perfil.clinica_id} />}
       {/* El CRM recibe EscanerQR e HistorialCliente (definidos aquí) para reutilizarlos sin duplicar código. */}
       {tab === 'pacientes' && <Crm clinicaId={perfil.clinica_id} HistorialCliente={HistorialCliente} EscanerQR={EscanerQR} onVerOportunidades={() => setTab('reactivar')} />}
@@ -155,6 +160,7 @@ export default function AdminPanel({ onCerrarSesion, esSuperAdmin, onIrAMelissa 
           <Personalizacion />
         </div>
       )}
+      </div>
       </div>
     </div>
   )
