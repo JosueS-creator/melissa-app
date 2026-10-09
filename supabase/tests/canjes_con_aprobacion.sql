@@ -18,7 +18,11 @@ begin
     $f$ select case when coalesce(ok,false) then 'OK    ' else 'FALLA ' end || n || case when extra <> '' then '   [' || extra || ']' else '' end || E'\n' $f$;
 
   -- ---------- actores y datos de prueba ----------
-  select id, clinica_id into v_adm, v_z from perfiles where rol = 'admin' and not es_super_admin limit 1;
+  -- Clínica y admin de prueba propios (nunca un negocio real); se revierten con el resto.
+  insert into clinicas (nombre, pais, slug, moneda) values ('ZZ Clínica Prueba', 'HN', 'zz-prueba-' || substr(gen_random_uuid()::text, 1, 8), 'HNL') returning id into v_z;
+  v_adm := gen_random_uuid();
+  insert into auth.users (id, email, raw_user_meta_data) values (v_adm, 'zz-adm-z@x.test', jsonb_build_object('clinica_id', v_z, 'nombre', 'ZZ Admin Z'));
+  update perfiles set rol = 'admin' where id = v_adm;
   select id, clinica_id into v_sup, v_y from perfiles where es_super_admin limit 1;   -- admin de OTRA clínica (y super admin)
   insert into auth.users (id, email, raw_user_meta_data) values (v_u1, 'zz-c1@x.test', jsonb_build_object('clinica_id', v_z, 'nombre', 'ZZ Cliente 1'));
   insert into auth.users (id, email, raw_user_meta_data) values (v_u2, 'zz-c2@x.test', jsonb_build_object('clinica_id', v_z, 'nombre', 'ZZ Cliente 2'));
