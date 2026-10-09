@@ -1,7 +1,7 @@
 -- ============================================================
 -- ESQUEMA COMPLETO DE MELISSA (solo estructura, SIN datos)
 -- Copia de referencia del esquema de producción (proyecto Supabase mpbfqbixzwcbwipfegmn),
--- generada desde la base el 2026-10-09. Incluye las ~37 migraciones antiguas (ago–sep 2026)
+-- generada desde la base el 2026-10-09, después del cierre de privacidad (catálogos y clínicas). Incluye las ~37 migraciones antiguas (ago–sep 2026)
 -- que nunca se guardaron en el repositorio, más todo lo aplicado después.
 --
 -- NO SE APLICA en la base actual (ya existe). Sirve para:
@@ -704,6 +704,26 @@ CREATE OR REPLACE FUNCTION public.clinica_actual()
  STABLE SECURITY DEFINER
  SET search_path TO 'public'
 AS $function$ select clinica_id from perfiles where id = auth.uid() $function$
+;
+
+CREATE OR REPLACE FUNCTION public.clinica_publica_por_slug(p_slug text)
+ RETURNS jsonb
+ LANGUAGE sql
+ STABLE SECURITY DEFINER
+ SET search_path TO 'public'
+AS $function$
+  select jsonb_build_object(
+    'id', c.id, 'nombre', c.nombre, 'slug', c.slug, 'activa', c.activa,
+    'pais', c.pais, 'moneda', c.moneda, 'ciudad', c.ciudad, 'tipo_negocio', c.tipo_negocio,
+    'logo_url', c.logo_url, 'fuente', c.fuente,
+    'color_primario', c.color_primario, 'color_secundario', c.color_secundario, 'color_acento', c.color_acento,
+    'tema_base_id', c.tema_base_id,
+    'temas_base', to_jsonb(t))
+  from clinicas c
+  left join temas_base t on t.id = c.tema_base_id
+  where c.slug = lower(trim(p_slug)) and c.activa = true
+  limit 1
+$function$
 ;
 
 CREATE OR REPLACE FUNCTION public.completar_pedido(p_pedido_id uuid)
@@ -1906,6 +1926,9 @@ grant execute on function public.cancelar_canje(p_canje_id uuid) to authenticate
 revoke all on function public.clinica_actual() from public, anon, authenticated;
 grant execute on function public.clinica_actual() to anon;
 grant execute on function public.clinica_actual() to authenticated;
+revoke all on function public.clinica_publica_por_slug(p_slug text) from public, anon, authenticated;
+grant execute on function public.clinica_publica_por_slug(p_slug text) to anon;
+grant execute on function public.clinica_publica_por_slug(p_slug text) to authenticated;
 revoke all on function public.completar_pedido(p_pedido_id uuid) from public, anon, authenticated;
 grant execute on function public.completar_pedido(p_pedido_id uuid) to authenticated;
 revoke all on function public.contacto_de_mi_clinica() from public, anon, authenticated;
@@ -2050,8 +2073,8 @@ create policy super_admin_gestiona_contacto on public.clinica_contacto as PERMIS
 create policy admin_edita_propia_clinica on public.clinicas as PERMISSIVE for UPDATE to public
   using (((id = clinica_actual()) AND es_admin_clinica()));
 
-create policy lectura_publica_clinicas_activas on public.clinicas as PERMISSIVE for SELECT to public
-  using ((activa = true));
+create policy lectura_publica_clinicas_cerrada on public.clinicas as PERMISSIVE for SELECT to authenticated
+  using (false);
 
 create policy miembros_ven_su_clinica on public.clinicas as PERMISSIVE for SELECT to authenticated
   using ((id = clinica_actual()));
@@ -2078,8 +2101,8 @@ create policy admin_gestiona_especialistas on public.especialistas as PERMISSIVE
   using (((clinica_id = clinica_actual()) AND es_admin_clinica()))
   with check (((clinica_id = clinica_actual()) AND es_admin_clinica()));
 
-create policy catalogo_publico_especialistas on public.especialistas as PERMISSIVE for SELECT to public
-  using ((activo = true));
+create policy catalogo_de_mi_clinica_especialistas on public.especialistas as PERMISSIVE for SELECT to authenticated
+  using (((activo = true) AND (clinica_id = clinica_actual())));
 
 create policy super_admin_lee_especialistas on public.especialistas as PERMISSIVE for SELECT to public
   using (es_super_admin_global());
@@ -2091,8 +2114,8 @@ create policy admin_gestiona_membresias on public.membresias as PERMISSIVE for A
   using (((clinica_id = clinica_actual()) AND es_admin_clinica()))
   with check (((clinica_id = clinica_actual()) AND es_admin_clinica()));
 
-create policy catalogo_publico_membresias on public.membresias as PERMISSIVE for SELECT to public
-  using ((activa = true));
+create policy catalogo_de_mi_clinica_membresias on public.membresias as PERMISSIVE for SELECT to authenticated
+  using (((activa = true) AND (clinica_id = clinica_actual())));
 
 create policy super_admin_lee_membresias on public.membresias as PERMISSIVE for SELECT to public
   using (es_super_admin_global());
@@ -2157,8 +2180,8 @@ create policy admin_gestiona_productos on public.productos as PERMISSIVE for ALL
   using (((clinica_id = clinica_actual()) AND es_admin_clinica()))
   with check (((clinica_id = clinica_actual()) AND es_admin_clinica()));
 
-create policy catalogo_publico_productos on public.productos as PERMISSIVE for SELECT to public
-  using ((activo = true));
+create policy catalogo_de_mi_clinica_productos on public.productos as PERMISSIVE for SELECT to authenticated
+  using (((activo = true) AND (clinica_id = clinica_actual())));
 
 create policy super_admin_lee_productos on public.productos as PERMISSIVE for SELECT to public
   using (es_super_admin_global());
@@ -2215,8 +2238,8 @@ create policy admin_gestiona_servicios on public.servicios as PERMISSIVE for ALL
   using (((clinica_id = clinica_actual()) AND es_admin_clinica()))
   with check (((clinica_id = clinica_actual()) AND es_admin_clinica()));
 
-create policy catalogo_publico_servicios on public.servicios as PERMISSIVE for SELECT to public
-  using ((activo = true));
+create policy catalogo_de_mi_clinica_servicios on public.servicios as PERMISSIVE for SELECT to authenticated
+  using (((activo = true) AND (clinica_id = clinica_actual())));
 
 create policy super_admin_lee_servicios on public.servicios as PERMISSIVE for SELECT to public
   using (es_super_admin_global());

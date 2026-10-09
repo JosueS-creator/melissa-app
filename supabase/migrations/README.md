@@ -30,3 +30,18 @@ una por entrega, en secuencia; por eso algunas llevan una fecha posterior a la r
 **Si algún día se usa el CLI de Supabase** (`supabase db push` / `migration list`): comparará versiones por nombre de archivo y verá todas estas como no
 aplicadas. Antes de usarlo hay que reconciliar con `supabase migration repair` (marcando cada archivo con su versión real de la tabla de arriba).
 Mientras se siga aplicando desde el editor SQL, esto no genera ningún problema.
+
+## Cierre de privacidad (9 oct 2026): diferencia entre archivos y base
+
+Las migraciones `20261016000001_…` y `20261016000002_…` usan `DROP POLICY` + `CREATE POLICY`. En producción se
+aplicaron con `ALTER POLICY … TO authenticated USING (…)` + `RENAME` (mismo efecto, sin borrar políticas), y quedaron
+registradas en `schema_migrations` como `catalogos_solo_de_mi_clinica_y_clinica_publica_por_slug` y
+`cerrar_lectura_publica_de_clinicas`. Diferencias de nombres que existen solo en la base:
+
+| Archivo del repo | En producción |
+|---|---|
+| `catalogo_de_mi_clinica_*` (creadas) | `catalogo_de_mi_clinica_*` (renombradas desde `catalogo_publico_*`): mismo nombre y misma regla |
+| `lectura_publica_clinicas_activas` eliminada | existe como `lectura_publica_clinicas_cerrada`, `TO authenticated USING (false)`: no da acceso a nadie |
+
+No se renombran ni se borran solo para uniformar: el comportamiento es idéntico. `supabase/esquema_completo.sql`
+refleja el estado real de producción.
