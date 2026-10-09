@@ -17,11 +17,7 @@ export async function registrarPaciente({ email, password, nombre, telefono, pai
     throw new Error('Para crear tu cuenta necesitas el link o el QR de tu negocio.')
   }
 
-  const { data: clinica, error: errorClinica } = await supabase
-    .from('clinicas')
-    .select('id')
-    .eq('slug', slugClinica)
-    .single()
+  const { data: clinica, error: errorClinica } = await supabase.rpc('clinica_publica_por_slug', { p_slug: slugClinica })
 
   if (errorClinica || !clinica) {
     throw new Error('No se pudo identificar la clínica. Verifica el link que usaste para registrarte.')

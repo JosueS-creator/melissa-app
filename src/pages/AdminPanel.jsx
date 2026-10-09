@@ -63,20 +63,22 @@ export default function AdminPanel({ onCerrarSesion, esSuperAdmin, onIrAMelissa 
   }
 
   return (
-    <div className="lg:flex lg:min-h-screen">
+    // En computadora (≥1024 px) el panel se ve 15 % más grande: muchos textos están en px pensados para teléfono.
+    // Las alturas usan 100vh / 1.15 para que el menú lateral siga cabiendo en la pantalla con el zoom.
+    <div className="lg:flex lg:min-h-[calc(100vh/1.15)] lg:[zoom:1.15]">
       <aside
-        className="hidden lg:flex lg:flex-col lg:w-[252px] lg:flex-shrink-0 lg:sticky lg:top-0 lg:h-screen px-5 py-6"
+        className="hidden lg:flex lg:flex-col lg:w-[252px] lg:flex-shrink-0 lg:sticky lg:top-0 lg:h-[calc(100vh/1.15)] px-5 py-6"
         style={{ background: 'var(--gradiente-fondo-oscuro)' }}
       >
         <p className="font-display text-lg text-white mb-1">Panel del negocio</p>
         <p className="text-xs mb-6" style={{ color: 'rgba(254,250,248,.72)' }}>Vista operativa</p>
 
-        <nav className="flex flex-col gap-1 flex-1">
+        <nav className="flex flex-col gap-0.5 flex-1 min-h-0 overflow-y-auto">
           {TABS.map((t) => (
             <button
               key={t.id}
               onClick={() => setTab(t.id)}
-              className="text-left rounded-lg px-3.5 py-2.5 text-sm"
+              className="text-left rounded-lg px-3.5 py-2 text-sm"
               style={
                 tab === t.id
                   ? { background: 'var(--gradiente-primario)', color: '#FFFFFF' }

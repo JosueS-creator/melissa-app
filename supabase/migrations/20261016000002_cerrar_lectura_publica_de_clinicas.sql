@@ -1,0 +1,15 @@
+-- ============================================================
+-- Cierra la lectura pública de la tabla `clinicas`.
+-- Antes cualquiera (sin cuenta) podía listar TODOS los negocios activos con su plan de
+-- licencia y configuración interna: la lista de clientes de Melissa quedaba expuesta.
+--
+-- APLICAR SOLO DESPUÉS de publicar la app que usa clinica_publica_por_slug()
+-- (src/lib/aplicarTema.js y src/lib/auth.js). Si se aplica antes, la pantalla de
+-- entrada por link/QR de un negocio no encuentra la clínica.
+--
+-- Quién sigue leyendo `clinicas`:
+--   * miembros_ven_su_clinica  → cliente o admin, solo SU negocio (sesión iniciada)
+--   * super_admin_lee_clinicas → super administración
+--   * antes del login: solo vía clinica_publica_por_slug(slug), un negocio y solo su marca.
+-- ============================================================
+drop policy if exists lectura_publica_clinicas_activas on public.clinicas;
