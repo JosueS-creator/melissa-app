@@ -21,12 +21,12 @@ export default function ContactoNegocio() {
   if (!llamar && !whatsapp) return null
 
   return (
-    <div className="flex gap-2 mt-2">
+    <div className="flex gap-2 mt-2.5">
       {llamar && (
         <a
           href={llamar}
-          className="rounded-lg px-4 py-2 text-xs font-medium"
-          style={{ background: '#FFFDF9', border: '1px solid var(--color-dorado-claro)', color: 'var(--color-primary)' }}
+          className="inline-flex items-center rounded-xl px-5 text-sm font-medium"
+          style={{ minHeight: 44, background: '#FFFFFF', border: '1px solid var(--color-dorado)', color: 'var(--color-ink)' }}
         >
           Llamar
         </a>
@@ -36,8 +36,8 @@ export default function ContactoNegocio() {
           href={whatsapp}
           target="_blank"
           rel="noopener noreferrer"
-          className="rounded-lg px-4 py-2 text-xs font-medium text-white"
-          style={{ background: 'var(--gradiente-primario)' }}
+          className="inline-flex items-center rounded-xl px-5 text-sm font-medium text-white"
+          style={{ minHeight: 44, background: 'var(--color-primary)' }}
         >
           WhatsApp
         </a>

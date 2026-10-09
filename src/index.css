@@ -22,6 +22,9 @@
   --color-dorado: var(--color-primary);
   --color-dorado-claro: var(--color-accent);
   --gradiente-dorado: var(--color-primary);
+  /* Fondo de la tarjeta de Beauty Points: por defecto el fondo oscuro del tema (contraste seguro con texto blanco).
+     "Rosa y Oro" lo redefine con su degradado magenta (token puntos_gradiente). */
+  --gradiente-puntos: var(--gradiente-fondo-oscuro);
   --color-texto-secundario: #8A7E6A;
   --color-texto-terciario: #A88096;
   --color-borde-tarjeta: var(--color-accent);
@@ -40,4 +43,20 @@ body {
    texto alrededor — es un mínimo técnico, no una preferencia de diseño. */
 input, select, textarea {
   font-size: 16px;
+}
+
+/* Esqueleto de carga: color suave derivado del tema; el brillo solo se anima si la persona no pidió movimiento reducido. */
+.sk {
+  background-color: color-mix(in srgb, var(--color-primary) 10%, var(--color-fondo-app));
+}
+@media (prefers-reduced-motion: no-preference) {
+  .sk {
+    background-image: linear-gradient(90deg, rgba(255, 255, 255, 0) 0%, rgba(255, 255, 255, 0.65) 50%, rgba(255, 255, 255, 0) 100%);
+    background-size: 200% 100%;
+    animation: sk-brillo 1.5s ease-in-out infinite;
+  }
+  @keyframes sk-brillo {
+    0% { background-position: 200% 0; }
+    100% { background-position: -200% 0; }
+  }
 }

@@ -23,6 +23,7 @@ una por entrega, en secuencia; por eso algunas llevan una fecha posterior a la r
 | 20261012000003_reactivacion_regreso_por_fecha_de_visita | reactivacion_regreso_por_fecha_de_visita | 20261008025109 |
 | 20261013000001_cliente_solicita_cita_valida | cliente_solicita_cita_valida | 20261008151941 |
 | 20261014000001_contacto_de_la_clinica | contacto_de_la_clinica | 20261008181208 |
+| 20261015000001_rediseno_inicio_foto_servicio_y_gradiente_puntos | rediseno_inicio_foto_servicio_y_gradiente_puntos | 20261009003733 |
 
 **No renombres archivos ya aplicados** (al subir por la web de GitHub quedarían duplicados con el nombre viejo) ni los edites: toda corrección va en una migración nueva.
 

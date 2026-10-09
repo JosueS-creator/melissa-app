@@ -26,6 +26,7 @@ function inyectarTokens(clinica) {
   if (tokens.dorado) root.style.setProperty('--color-dorado', tokens.dorado)
   if (tokens.dorado_claro) root.style.setProperty('--color-dorado-claro', tokens.dorado_claro)
   if (tokens.dorado_gradiente) root.style.setProperty('--gradiente-dorado', tokens.dorado_gradiente)
+  if (tokens.puntos_gradiente) root.style.setProperty('--gradiente-puntos', tokens.puntos_gradiente)
   if (tokens.texto_principal) root.style.setProperty('--color-ink', tokens.texto_principal)
   if (tokens.texto_secundario) root.style.setProperty('--color-texto-secundario', tokens.texto_secundario)
   if (tokens.texto_terciario) root.style.setProperty('--color-texto-terciario', tokens.texto_terciario)

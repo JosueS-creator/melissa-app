@@ -50,27 +50,49 @@ export default function PromocionesCliente({ onNavigate }) {
   const otras = lista.length
 
   return (
-    <div className="mb-4">
+    <div>
       {mostrarBanner && (
         <div
-          className="rounded-2xl p-4 relative mb-2"
-          style={{ background: 'linear-gradient(160deg,#FFFFFF,#FDF7F9)', border: '1px solid var(--color-dorado)' }}
+          className="relative mb-2"
+          style={{
+            background: 'color-mix(in srgb, var(--color-primary) 8%, var(--color-fondo-app))',
+            border: '1px solid var(--color-borde-tarjeta)',
+            borderRadius: 20,
+            padding: '16px 18px',
+          }}
         >
-          <button onClick={() => setBannerOculto(true)} aria-label="Cerrar aviso" className="absolute top-2.5 right-3 text-xs" style={{ color: 'var(--color-texto-terciario)' }}>✕</button>
-          <p style={{ font: '500 10px/1 var(--font-body)', letterSpacing: '0.18em', textTransform: 'uppercase', color: 'var(--color-dorado)' }}>
-            ✨ Tenemos algo especial para ti
-          </p>
-          <p className="mt-2" style={{ fontFamily: 'var(--font-display)', fontSize: 24, lineHeight: 1.15, color: 'var(--color-ink)' }}>
-            {formatearPorcentaje(banner.descuento_porcentaje)} de descuento
-          </p>
-          <p className="text-sm mt-1" style={{ color: 'var(--color-ink)' }}>
-            {banner.titulo}{banner.servicio_nombre ? ` · ${banner.servicio_nombre}` : ''}
-          </p>
-          <div className="flex items-center gap-3 mt-3">
-            <button onClick={() => abrir(banner)} className="rounded-lg px-4 py-2 text-xs font-medium text-white" style={{ background: 'var(--gradiente-primario)' }}>
+          <button
+            onClick={() => setBannerOculto(true)}
+            aria-label="Cerrar aviso"
+            className="absolute top-0 right-0 flex items-center justify-center text-sm"
+            style={{ width: 44, height: 44, color: 'var(--color-texto-secundario)' }}
+          >
+            ✕
+          </button>
+          <div className="flex items-center gap-4">
+            <div className="flex-none text-center">
+              <span className="block" style={{ fontFamily: 'var(--font-display)', fontSize: 42, lineHeight: 1, color: 'var(--color-primary)' }}>
+                {formatearPorcentaje(banner.descuento_porcentaje)}
+              </span>
+              <span className="block mt-1" style={{ fontSize: 12, lineHeight: 1.2, color: 'var(--color-texto-secundario)' }}>de descuento</span>
+            </div>
+            <div className="min-w-0 flex-1" style={{ paddingRight: 20 }}>
+              <p style={{ font: '500 12px/1.2 var(--font-body)', letterSpacing: '0.14em', textTransform: 'uppercase', color: 'var(--color-texto-secundario)' }}>
+                Un beneficio para ti
+              </p>
+              <p className="mt-1" style={{ font: '500 16px/1.25 var(--font-body)', color: 'var(--color-ink)' }}>
+                {banner.titulo}
+              </p>
+              {banner.servicio_nombre && (
+                <p className="mt-0.5" style={{ fontSize: 13, lineHeight: 1.4, color: 'var(--color-texto-secundario)' }}>En {banner.servicio_nombre}</p>
+              )}
+            </div>
+          </div>
+          <div className="flex items-center gap-4 mt-1">
+            <button onClick={() => abrir(banner)} className="text-sm font-medium" style={{ minHeight: 44, color: 'var(--color-primary)' }}>
               Ver promoción
             </button>
-            <button onClick={() => dejarDeVer(banner)} className="text-[11px]" style={{ color: 'var(--color-texto-secundario)' }}>
+            <button onClick={() => dejarDeVer(banner)} className="text-[13px]" style={{ minHeight: 44, color: 'var(--color-texto-secundario)' }}>
               No mostrar más
             </button>
           </div>
@@ -79,8 +101,8 @@ export default function PromocionesCliente({ onNavigate }) {
 
       {otras > 0 && (
         <div>
-          <button onClick={() => setVerLista((v) => !v)} className="text-xs" style={{ color: 'var(--color-primary)' }}>
-            🎁 Tus beneficios ({otras}) {verLista ? '▴' : '▾'}
+          <button onClick={() => setVerLista((v) => !v)} className="text-sm font-medium" style={{ minHeight: 44, color: 'var(--color-primary)' }}>
+            Tus beneficios ({otras}) {verLista ? '▴' : '▾'}
           </button>
           {verLista && (
             <div className="flex flex-col gap-2 mt-2">

@@ -1,9 +1,13 @@
+// Barra inferior: 4 pestañas. "Citas" abre la Agenda y "Beneficios" la Tarjeta (puntos, recompensas y canjes).
+// La Tienda no tiene pestaña: se llega desde "Para ti" en Inicio; estando en la Tienda ninguna pestaña queda marcada.
+const trazo = { fill: 'none', strokeWidth: 1.6, strokeLinecap: 'round', strokeLinejoin: 'round' }
+
 const ITEMS = [
   {
     id: 'inicio',
     label: 'Inicio',
     icon: (color) => (
-      <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
+      <svg width="24" height="24" viewBox="0 0 24 24" stroke={color} {...trazo} aria-hidden="true">
         <path d="M4 10.5 12 3.5l8 7V20a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1z" />
         <path d="M9.5 21v-6h5v6" />
       </svg>
@@ -11,31 +15,22 @@ const ITEMS = [
   },
   {
     id: 'agenda',
-    label: 'Agenda',
+    label: 'Citas',
     icon: (color) => (
-      <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
-        <rect x="3.5" y="5" width="17" height="15.5" rx="2.5" />
+      <svg width="24" height="24" viewBox="0 0 24 24" stroke={color} {...trazo} aria-hidden="true">
+        <rect x="3.5" y="5" width="17" height="15.5" rx="3" />
         <path d="M8 3v4M16 3v4M3.5 10.5h17" />
       </svg>
     ),
   },
   {
     id: 'tarjeta',
-    label: 'Tarjeta',
+    label: 'Beneficios',
     icon: (color) => (
-      <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
-        <rect x="2.5" y="5.5" width="19" height="13.5" rx="2.5" />
-        <path d="M2.5 10.5h19M6 15h4" />
-      </svg>
-    ),
-  },
-  {
-    id: 'tienda',
-    label: 'Tienda',
-    icon: (color) => (
-      <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
-        <path d="M6 8h12l1 12.5H5z" />
-        <path d="M9 8V6.2a3 3 0 0 1 6 0V8" />
+      <svg width="24" height="24" viewBox="0 0 24 24" stroke={color} {...trazo} aria-hidden="true">
+        <rect x="3" y="8" width="18" height="4" rx="1" />
+        <path d="M12 8v13M5 12v8a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-8" />
+        <path d="M7.5 8a2.5 2.5 0 0 1 0-5C10 3 12 8 12 8s2-5 4.5-5a2.5 2.5 0 0 1 0 5" />
       </svg>
     ),
   },
@@ -43,9 +38,9 @@ const ITEMS = [
     id: 'perfil',
     label: 'Perfil',
     icon: (color) => (
-      <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
-        <circle cx="12" cy="8.5" r="3.5" />
-        <path d="M5 20.5c0-3.6 3.1-6 7-6s7 2.4 7 6" />
+      <svg width="24" height="24" viewBox="0 0 24 24" stroke={color} {...trazo} aria-hidden="true">
+        <circle cx="12" cy="8" r="3.5" />
+        <path d="M5 20c0-3.6 3.1-6 7-6s7 2.4 7 6" />
       </svg>
     ),
   },
@@ -53,41 +48,38 @@ const ITEMS = [
 
 export default function TabBar({ activo, onNavigate, mostrarAdmin }) {
   const colorActivo = 'var(--color-primary)'
-  const colorInactivo = 'var(--color-texto-terciario)'
+  const colorInactivo = 'var(--color-texto-secundario)'
+  const item = 'flex-1 flex flex-col items-center justify-center gap-1 min-h-[52px]'
 
   return (
-    <div
-      className="flex items-end justify-between px-4 pt-2.5"
+    <nav
+      aria-label="Navegación principal"
+      className="flex px-2 pt-2 sticky bottom-0 z-30"
       style={{
-        background: 'var(--color-fondo-app)',
+        background: '#FFFFFF',
         borderTop: '1px solid var(--color-borde-tarjeta)',
-        paddingBottom: 'calc(env(safe-area-inset-bottom) + 20px)',
+        paddingBottom: 'calc(env(safe-area-inset-bottom) + 16px)',
       }}
     >
-      {ITEMS.map((item) => {
-        const esActivo = activo === item.id
+      {ITEMS.map((it) => {
+        const esActivo = activo === it.id
         const color = esActivo ? colorActivo : colorInactivo
         return (
-          <button
-            key={item.id}
-            onClick={() => onNavigate(item.id)}
-            className="flex flex-col items-center gap-1.5"
-            style={{ width: 56 }}
-          >
-            {item.icon(color)}
-            <span style={{ font: "500 9px/1 var(--font-body)", letterSpacing: '0.06em', color }}>{item.label}</span>
+          <button key={it.id} onClick={() => onNavigate(it.id)} aria-current={esActivo ? 'page' : undefined} className={item}>
+            {it.icon(color)}
+            <span style={{ font: '500 12px/1 var(--font-body)', color }}>{it.label}</span>
           </button>
         )
       })}
       {mostrarAdmin && (
-        <button onClick={() => onNavigate('admin')} className="flex flex-col items-center gap-1.5" style={{ width: 56 }}>
-          <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke={activo === 'admin' ? colorActivo : colorInactivo} strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
+        <button onClick={() => onNavigate('admin')} aria-current={activo === 'admin' ? 'page' : undefined} className={item}>
+          <svg width="24" height="24" viewBox="0 0 24 24" stroke={activo === 'admin' ? colorActivo : colorInactivo} {...trazo} aria-hidden="true">
             <circle cx="12" cy="12" r="3" />
-            <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09a1.65 1.65 0 0 0-1-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09a1.65 1.65 0 0 0 1.51-1 1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" />
+            <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" />
           </svg>
-          <span style={{ font: "500 9px/1 var(--font-body)", letterSpacing: '0.06em', color: activo === 'admin' ? colorActivo : colorInactivo }}>Panel</span>
+          <span style={{ font: '500 12px/1 var(--font-body)', color: activo === 'admin' ? colorActivo : colorInactivo }}>Panel</span>
         </button>
       )}
-    </div>
+    </nav>
   )
 }

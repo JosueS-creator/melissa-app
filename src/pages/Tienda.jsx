@@ -167,7 +167,7 @@ export default function Tienda() {
       {items > 0 && (
         <div
           className="fixed left-0 right-0 sm:max-w-app mx-auto px-5"
-          style={{ bottom: 'calc(4.5rem + env(safe-area-inset-bottom))' }}
+          style={{ bottom: 'calc(5.25rem + env(safe-area-inset-bottom))' }}
         >
           <button
             onClick={confirmarPedido}
