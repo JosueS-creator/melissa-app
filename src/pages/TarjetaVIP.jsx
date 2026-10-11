@@ -1,3 +1,4 @@
+import { useFunciones } from '../lib/FuncionesContext'
 import { useEffect, useState } from 'react'
 import QRCode from 'qrcode'
 import { supabase } from '../lib/supabaseClient'
@@ -19,6 +20,7 @@ const ESTADOS_CANJE = {
 }
 
 export default function TarjetaVIP({ onNavigate }) {
+  const { tiene } = useFunciones()
   const [paciente, setPaciente] = useState(null)
   const [puntos, setPuntos] = useState(0)
   const [umbrales, setUmbrales] = useState(null)
@@ -118,9 +120,11 @@ export default function TarjetaVIP({ onNavigate }) {
     >
       <div className="flex flex-col items-center mb-5">
         <img src={logoMelissa} alt="Melissa" className="w-16 h-16 rounded-2xl" />
-        <p className="mt-2" style={{ font: "500 10px/1 var(--font-body)", letterSpacing: '0.16em', textTransform: 'uppercase', color: 'var(--color-dorado)' }}>
-          Miembro {nivelActual.nombre}
-        </p>
+        {tiene('membresias') && (
+          <p className="mt-2" style={{ font: "500 10px/1 var(--font-body)", letterSpacing: '0.16em', textTransform: 'uppercase', color: 'var(--color-dorado)' }}>
+            Miembro {nivelActual.nombre}
+          </p>
+        )}
       </div>
 
       <div className="rounded-2xl p-5 shadow-tarjeta-oscura relative overflow-hidden" style={{ background: 'var(--gradiente-fondo-oscuro)', border: '1px solid var(--color-dorado)' }}>
@@ -146,6 +150,7 @@ export default function TarjetaVIP({ onNavigate }) {
       </div>
 
       <div className="flex gap-2.5 mt-4">
+        {tiene('canjes') && (
         <button
           onClick={() => setMostrarCanje((v) => !v)}
           className="flex-1 rounded-[10px] py-2.5 text-sm"
@@ -153,6 +158,8 @@ export default function TarjetaVIP({ onNavigate }) {
         >
           Canjear puntos
         </button>
+        )}
+        {tiene('referidos') && (
         <button
           onClick={() => onNavigate?.('referidos')}
           className="flex-1 rounded-[10px] py-2.5 text-white"
@@ -160,9 +167,10 @@ export default function TarjetaVIP({ onNavigate }) {
         >
           Invitar amiga
         </button>
+        )}
       </div>
 
-      {mostrarCanje && (
+      {tiene('canjes') && mostrarCanje && (
         <div className="mt-4 flex flex-col gap-2">
           <p className="text-[11px] text-center" style={{ color: 'var(--color-texto-secundario)' }}>
             Al pedir un canje, tus puntos quedan reservados y el negocio lo aprueba y aplica el descuento en tu compra.
@@ -192,7 +200,7 @@ export default function TarjetaVIP({ onNavigate }) {
 
       {mensaje && <p className="text-center text-xs mt-4" style={{ color: 'var(--color-primary)' }}>{mensaje}</p>}
 
-      {canjes.length > 0 && (
+      {tiene('canjes') && canjes.length > 0 && (
         <div className="mt-6">
           <p className="text-[10px] uppercase mb-2" style={{ letterSpacing: '0.16em', color: 'var(--color-dorado)' }}>Mis canjes</p>
           <div className="flex flex-col gap-2">

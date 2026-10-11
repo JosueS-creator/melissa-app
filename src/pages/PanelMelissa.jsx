@@ -3,6 +3,7 @@ import { supabase } from '../lib/supabaseClient'
 import { TIPOS_NEGOCIO, sustantivoNegocio } from '../lib/tiposNegocio'
 import { descargarDatosClinica } from '../lib/exportarDatosClinica'
 import { validarTelefono, validarWhatsapp } from '../lib/contacto'
+import { ORDEN_PLANES, NOMBRE_PLAN } from '../lib/planes'
 
 const TEMAS = [
   { id: 'elegante_dorado', nombre: 'Elegante Dorado' },
@@ -78,6 +79,8 @@ export default function PanelMelissa({ onVolver }) {
   const [pais, setPais] = useState('HN')
   const [tipoNegocio, setTipoNegocio] = useState('clinica_estetica')
   const [temaBase, setTemaBase] = useState('elegante_dorado')
+  const [plan, setPlan] = useState('starter')
+  const [avisoPlan, setAvisoPlan] = useState('')
   const [telefonoContacto, setTelefonoContacto] = useState('')
   const [whatsappContacto, setWhatsappContacto] = useState('')
   const [contactos, setContactos] = useState({})
@@ -112,6 +115,18 @@ export default function PanelMelissa({ onVolver }) {
 
   async function alternarActiva(clinica) {
     await supabase.from('clinicas').update({ activa: !clinica.activa }).eq('id', clinica.id)
+    cargarClinicas()
+  }
+
+  // El plan lo cambia solo Super Administración (la base lo exige). Al bajar de plan los datos se conservan; solo quedan bloqueados.
+  async function cambiarPlan(clinica, nuevoPlan) {
+    setAvisoPlan('')
+    const { error } = await supabase.from('clinicas').update({ plan: nuevoPlan }).eq('id', clinica.id)
+    if (error) {
+      setAvisoPlan('No se pudo cambiar el plan: ' + error.message)
+      return
+    }
+    setAvisoPlan(`${clinica.nombre}: ahora tiene el plan ${NOMBRE_PLAN[nuevoPlan] || nuevoPlan} ✓`)
     cargarClinicas()
   }
 
@@ -152,7 +167,7 @@ export default function PanelMelissa({ onVolver }) {
         pais,
         slug,
         moneda: pais === 'ES' ? 'EUR' : 'HNL',
-        plan: 'starter',
+        plan,
         tema_base_id: temaBase,
         tipo_negocio: tipoNegocio,
       })
@@ -262,6 +277,20 @@ export default function PanelMelissa({ onVolver }) {
             <option key={t.id} value={t.id}>{t.nombre}</option>
           ))}
         </select>
+        <label className="flex flex-col gap-1">
+          <span className="text-[11px]" style={{ color: 'var(--color-texto-secundario)' }}>Plan de suscripción</span>
+          <select
+            aria-label="Plan de suscripción"
+            className="rounded-xl px-4 py-3 text-sm bg-white"
+            style={{ border: '1px solid var(--color-borde-tarjeta)' }}
+            value={plan}
+            onChange={(e) => setPlan(e.target.value)}
+          >
+            {ORDEN_PLANES.map((p) => (
+              <option key={p} value={p}>{NOMBRE_PLAN[p]}</option>
+            ))}
+          </select>
+        </label>
         <p className="text-sm font-medium mt-1" style={{ color: 'var(--color-ink)' }}>Datos de contacto</p>
         <label className="flex flex-col gap-1">
           <span className="text-[11px]" style={{ color: 'var(--color-texto-secundario)' }}>Teléfono (opcional)</span>
@@ -313,6 +342,9 @@ export default function PanelMelissa({ onVolver }) {
       )}
 
       <p className="text-sm font-medium mb-2" style={{ color: 'var(--color-ink)' }}>Negocios existentes</p>
+      {avisoPlan && (
+        <p role="status" className="text-xs mb-2" style={{ color: avisoPlan.endsWith('✓') ? 'var(--color-primary)' : '#B0524A' }}>{avisoPlan}</p>
+      )}
       {cargando && <p className="text-sm" style={{ color: 'var(--color-texto-secundario)' }}>Cargando...</p>}
       <div className="flex flex-col gap-2">
         {clinicas.map((c) => (
@@ -323,7 +355,7 @@ export default function PanelMelissa({ onVolver }) {
                   {c.nombre} {!c.activa && <span className="text-[10px]" style={{ color: '#B0524A' }}>(bloqueada)</span>}
                 </p>
                 <p className="text-[11px]" style={{ color: 'var(--color-texto-secundario)' }}>
-                  {c.ciudad} · {c.pais} · {sustantivoNegocio(c.tipo_negocio)} · {c.plan}
+                  {c.ciudad} · {c.pais} · {sustantivoNegocio(c.tipo_negocio)} · Plan {NOMBRE_PLAN[c.plan] || c.plan}
                 </p>
                 <p className="text-[11px] mt-1" style={{ color: 'var(--color-primary)' }}>
                   {c._pacientes} clientes · {c._citas} citas
@@ -335,6 +367,17 @@ export default function PanelMelissa({ onVolver }) {
                 </p>
               </div>
               <div className="flex flex-col gap-1.5 items-end">
+                <select
+                  aria-label={`Plan de ${c.nombre}`}
+                  value={c.plan}
+                  onChange={(e) => cambiarPlan(c, e.target.value)}
+                  className="text-[11px] px-2 py-1.5 rounded-lg"
+                  style={{ background: 'var(--color-accent)', color: 'var(--color-ink)' }}
+                >
+                  {ORDEN_PLANES.map((p) => (
+                    <option key={p} value={p}>Plan {NOMBRE_PLAN[p]}</option>
+                  ))}
+                </select>
                 <button
                   onClick={() => generarNuevaInvitacion(c.id, c.nombre)}
                   className="text-[11px] px-3 py-1.5 rounded-lg"

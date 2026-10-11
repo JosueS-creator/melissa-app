@@ -6,6 +6,7 @@ import { textoFechaHora } from '../lib/citas'
 import PromocionesCliente from '../components/PromocionesCliente'
 import ContactoNegocio from '../components/ContactoNegocio'
 import FotoTarjeta, { TINTES } from '../components/FotoTarjeta'
+import { useFunciones } from '../lib/FuncionesContext'
 import logoMelissa from '../assets/melissa-logo-64.png'
 import logoMelissaMarcaAgua from '../assets/melissa-logo-256.png'
 
@@ -243,9 +244,9 @@ function Servicios({ servicios, onNavigate }) {
   )
 }
 
-function TarjetaPuntos({ puntos, umbrales, onNavigate }) {
+function TarjetaPuntos({ puntos, umbrales, onNavigate, conNiveles }) {
   const { nivelActual, siguienteNivel, progreso, puntosParaSiguiente } = calcularNivelYProgreso(puntos, umbrales)
-  const pie = siguienteNivel ? `${puntosParaSiguiente.toLocaleString()} pts para ${siguienteNivel.nombre}` : umbrales ? 'Nivel más alto alcanzado' : null
+  const pie = !conNiveles ? null : siguienteNivel ? `${puntosParaSiguiente.toLocaleString()} pts para ${siguienteNivel.nombre}` : umbrales ? 'Nivel más alto alcanzado' : null
 
   return (
     <section>
@@ -268,7 +269,8 @@ function TarjetaPuntos({ puntos, umbrales, onNavigate }) {
           <p className="mt-1.5" style={{ fontFamily: 'var(--font-display)', fontSize: 36, lineHeight: 1 }}>{puntos.toLocaleString()}</p>
           <p className="mt-1.5" style={{ fontSize: 13, lineHeight: 1.3 }}>Puntos acumulados</p>
         </div>
-        <div aria-hidden="true" className="self-stretch" style={{ width: 1, background: 'rgba(255,255,255,0.28)' }} />
+        {conNiveles && <div aria-hidden="true" className="self-stretch" style={{ width: 1, background: 'rgba(255,255,255,0.28)' }} />}
+        {conNiveles && (
         <div className="flex-none" style={{ width: 128 }}>
           <span className="inline-flex items-center gap-1.5 rounded-[10px]" style={{ padding: '5px 12px', background: 'rgba(255,255,255,0.18)', font: '500 14px/1.2 var(--font-body)' }}>
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--color-dorado-claro)" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
@@ -283,6 +285,7 @@ function TarjetaPuntos({ puntos, umbrales, onNavigate }) {
           )}
           {pie && <p className="mt-2" style={{ fontSize: 13, lineHeight: 1.3 }}>{pie}</p>}
         </div>
+        )}
         <Flecha tam={20} color="#FFFFFF" />
       </a>
       {puntos === 0 && (
@@ -323,6 +326,7 @@ function Productos({ productos, onNavigate }) {
 }
 
 export default function Home({ nombrePaciente = 'Cliente', clinica, onNavigate }) {
+  const { tiene } = useFunciones()
   const [puntos, setPuntos] = useState(0)
   const [umbrales, setUmbrales] = useState(null)
   const [proximaCita, setProximaCita] = useState(null)
@@ -393,8 +397,8 @@ export default function Home({ nombrePaciente = 'Cliente', clinica, onNavigate }
             <SinCita onNavigate={onNavigate} />
           )}
           {servicios.length > 0 && <Servicios servicios={servicios} onNavigate={onNavigate} />}
-          <TarjetaPuntos puntos={puntos} umbrales={umbrales} onNavigate={onNavigate} />
-          <PromocionesCliente onNavigate={onNavigate} />
+          <TarjetaPuntos puntos={puntos} umbrales={umbrales} onNavigate={onNavigate} conNiveles={tiene('membresias')} />
+          {tiene('promociones') && <PromocionesCliente onNavigate={onNavigate} />}
           {productos.length > 0 && <Productos productos={productos} onNavigate={onNavigate} />}
         </div>
       )}

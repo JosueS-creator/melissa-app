@@ -5,35 +5,48 @@ import { obtenerPerfilActual } from '../lib/auth'
 import Personalizacion from './Personalizacion'
 import { PREFIJO_QR_CLIENTE } from './TarjetaVIP'
 import { descargarDatosClinica } from '../lib/exportarDatosClinica'
+import { useFunciones } from '../lib/FuncionesContext'
+import { NOMBRE_PLAN } from '../lib/planes'
+import FuncionBloqueada from '../components/FuncionBloqueada'
 import EscanerBarras from '../components/EscanerBarras'
 import Crm from './Crm'
 import ClientesReactivar from './ClientesReactivar'
 import Canjes from './Canjes'
 import Promociones from './Promociones'
-import InicioAdmin from './InicioAdmin'
 import { CampoPuntos, PuntosEnFila } from '../components/PuntosCatalogo'
 import { useConfigPuntos, nuevaClaveOperacion } from '../lib/puntos'
 
+// `funcion`: la función del plan que desbloquea la pestaña (el servidor también la exige).
 const TABS = [
-  { id: 'inicio', label: 'Inicio' },
-  { id: 'citas', label: 'Citas' },
-  { id: 'pacientes', label: 'Clientes' },
-  { id: 'reactivar', label: 'Por reactivar' },
-  { id: 'canjes', label: 'Canjes' },
-  { id: 'promociones', label: 'Promociones' },
-  { id: 'empleados', label: 'Empleados' },
-  { id: 'servicios', label: 'Servicios' },
-  { id: 'productos', label: 'Productos' },
-  { id: 'caja', label: 'Caja' },
-  { id: 'marca', label: 'Marca' },
+  { id: 'citas', label: 'Citas', funcion: 'agenda' },
+  { id: 'pacientes', label: 'Clientes', funcion: 'clientes' },
+  { id: 'reactivar', label: 'Por reactivar', funcion: 'reactivacion' },
+  { id: 'canjes', label: 'Canjes', funcion: 'canjes' },
+  { id: 'promociones', label: 'Promociones', funcion: 'promociones' },
+  { id: 'empleados', label: 'Empleados', funcion: 'empleados' },
+  { id: 'servicios', label: 'Servicios', funcion: 'servicios' },
+  { id: 'productos', label: 'Productos', funcion: 'tienda' },
+  { id: 'caja', label: 'Caja', funcion: 'caja' },
+  { id: 'marca', label: 'Marca', funcion: 'marca' },
 ]
+
+const Candado = () => (
+  <svg className="inline-block ml-1.5 align-[-1px]" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" role="img" aria-label="No incluida en tu plan">
+    <rect x="4.5" y="10.5" width="15" height="10" rx="2.5" />
+    <path d="M8 10.5V8a4 4 0 0 1 8 0v2.5" />
+  </svg>
+)
 
 export default function AdminPanel({ onCerrarSesion, esSuperAdmin, onIrAMelissa }) {
   const [perfil, setPerfil] = useState(null)
   const [nombreClinica, setNombreClinica] = useState('')
   const [cargando, setCargando] = useState(true)
-  const [tab, setTab] = useState('inicio')
+  const [tab, setTab] = useState('citas')
   const [canjesPendientes, setCanjesPendientes] = useState(0)
+  const { cargado: planCargado, plan, tiene } = useFunciones()
+  const sinPlan = (t) => planCargado && !tiene(t.funcion)
+  const tabActual = TABS.find((t) => t.id === tab)
+  const mostrar = (id) => tab === id && !sinPlan(tabActual)
 
   useEffect(() => {
     obtenerPerfilActual().then(async (p) => {
@@ -63,106 +76,101 @@ export default function AdminPanel({ onCerrarSesion, esSuperAdmin, onIrAMelissa 
   }
 
   return (
-    // En computadora (≥1024 px) el panel se ve 15 % más grande: muchos textos están en px pensados para teléfono.
-    // Las alturas usan 100vh / 1.15 para que el menú lateral siga cabiendo en la pantalla con el zoom.
-    <div className="lg:flex lg:min-h-[calc(100vh/1.15)] lg:[zoom:1.15]">
+    <div className="lg:flex lg:min-h-screen">
       <aside
-        className="hidden lg:flex lg:flex-col lg:w-[252px] lg:flex-shrink-0 lg:sticky lg:top-0 lg:h-[calc(100vh/1.15)] px-5 py-6"
+        className="hidden lg:flex lg:flex-col lg:w-[252px] lg:flex-shrink-0 lg:sticky lg:top-0 lg:h-screen px-5 py-6"
         style={{ background: 'var(--gradiente-fondo-oscuro)' }}
       >
         <p className="font-display text-lg text-white mb-1">Panel del negocio</p>
-        <p className="text-xs mb-6" style={{ color: 'rgba(254,250,248,.72)' }}>Vista operativa</p>
+        <p className="text-[11px] mb-6" style={{ color: 'rgba(254,250,248,.62)' }}>Vista operativa{plan ? ` · Plan ${NOMBRE_PLAN[plan] || plan}` : ''}</p>
 
-        <nav className="flex flex-col gap-0.5 flex-1 min-h-0 overflow-y-auto">
+        <nav className="flex flex-col gap-1 flex-1">
           {TABS.map((t) => (
             <button
               key={t.id}
               onClick={() => setTab(t.id)}
-              className="text-left rounded-lg px-3.5 py-2 text-sm"
+              className="text-left rounded-lg px-3.5 py-2.5 text-sm"
               style={
                 tab === t.id
                   ? { background: 'var(--gradiente-primario)', color: '#FFFFFF' }
                   : { color: 'rgba(254,250,248,.74)' }
               }
             >
-              {t.label}{t.id === 'canjes' && canjesPendientes > 0 ? ` (${canjesPendientes})` : ''}
+              {t.label}{t.id === 'canjes' && canjesPendientes > 0 ? ` (${canjesPendientes})` : ''}{sinPlan(t) && <Candado />}
             </button>
           ))}
         </nav>
 
         <div className="pt-4 mt-4" style={{ borderTop: '1px solid rgba(235,203,134,.2)' }}>
           {esSuperAdmin && (
-            <button onClick={onIrAMelissa} className="w-full text-left text-sm min-h-[44px]" style={{ color: 'rgba(254,250,248,.74)' }}>
+            <button onClick={onIrAMelissa} className="w-full text-left text-xs py-2" style={{ color: 'rgba(254,250,248,.74)' }}>
               Panel de Melissa
             </button>
           )}
-          <button onClick={() => descargarDatosClinica(perfil.clinica_id, nombreClinica)} className="w-full text-left text-sm min-h-[44px]" style={{ color: 'rgba(254,250,248,.74)' }}>
+          <button onClick={() => descargarDatosClinica(perfil.clinica_id, nombreClinica)} className="w-full text-left text-xs py-2" style={{ color: 'rgba(254,250,248,.74)' }}>
             Descargar mis datos
           </button>
-          <button onClick={onCerrarSesion} className="w-full text-left text-sm min-h-[44px]" style={{ color: 'rgba(254,250,248,.74)' }}>
+          <button onClick={onCerrarSesion} className="w-full text-left text-xs py-2" style={{ color: 'rgba(254,250,248,.74)' }}>
             Salir
           </button>
         </div>
       </aside>
 
       <div
-        className="sm:max-w-app mx-auto lg:max-w-6xl lg:mx-0 lg:flex-1 px-5 lg:px-10 pb-10 lg:py-10 font-body"
+        className="sm:max-w-app mx-auto lg:max-w-3xl lg:mx-0 lg:flex-1 px-5 lg:px-10 pb-10 lg:py-10 font-body"
         style={{ paddingTop: 'calc(env(safe-area-inset-top) + 32px)' }}
       >
       <div className="flex justify-between items-start mb-1">
         <p className="font-display text-xl text-ink lg:hidden">Panel del negocio</p>
-        <div className="flex flex-wrap justify-end gap-2 lg:hidden">
+        <div className="flex gap-2 lg:hidden">
           {esSuperAdmin && (
-            <button onClick={onIrAMelissa} className="text-xs px-3 min-h-[44px] rounded-lg" style={{ background: 'var(--color-accent)', color: 'var(--color-ink)' }}>
+            <button onClick={onIrAMelissa} className="text-[11px] px-2.5 py-1.5 rounded-lg" style={{ background: 'var(--color-accent)', color: 'var(--color-ink)' }}>
               Panel de Melissa
             </button>
           )}
-          <button onClick={() => descargarDatosClinica(perfil.clinica_id, nombreClinica)} className="text-xs px-3 min-h-[44px] rounded-lg" style={{ background: 'var(--color-accent)', color: 'var(--color-ink)' }}>
+          <button onClick={() => descargarDatosClinica(perfil.clinica_id, nombreClinica)} className="text-[11px] px-2.5 py-1.5 rounded-lg" style={{ background: 'var(--color-accent)', color: 'var(--color-ink)' }}>
             Mis datos
           </button>
-          <button onClick={onCerrarSesion} className="text-xs px-3 min-h-[44px] rounded-lg" style={{ background: 'var(--color-accent)', color: 'var(--color-ink)' }}>
+          <button onClick={onCerrarSesion} className="text-[11px] px-2.5 py-1.5 rounded-lg" style={{ background: 'var(--color-accent)', color: 'var(--color-ink)' }}>
             Salir
           </button>
         </div>
       </div>
-      <p className="text-xs text-ink/50 mb-5 lg:hidden">Vista operativa para el equipo.</p>
+      <p className="text-xs text-ink/50 mb-5 lg:hidden">Vista operativa para el equipo.{plan ? ` Plan ${NOMBRE_PLAN[plan] || plan}.` : ''}</p>
 
-      <div className="flex gap-1.5 mb-5 -mx-5 px-5 overflow-x-auto lg:hidden">
+      <div className="flex flex-wrap gap-1.5 mb-5 lg:hidden">
         {TABS.map((t) => (
           <button
             key={t.id}
             onClick={() => setTab(t.id)}
-            className="flex-shrink-0 whitespace-nowrap rounded-lg px-3.5 min-h-[44px] text-xs font-medium"
+            className="rounded-lg px-3 py-1.5 text-[10px] font-medium"
             style={
               tab === t.id
                 ? { background: 'var(--gradiente-primario)', color: '#FFFFFF', boxShadow: '0 2px 6px rgba(201,59,121,0.3)' }
                 : { background: 'var(--color-accent)', color: 'var(--color-ink)' }
             }
           >
-            {t.label}{t.id === 'canjes' && canjesPendientes > 0 ? ` (${canjesPendientes})` : ''}
+            {t.label}{t.id === 'canjes' && canjesPendientes > 0 ? ` (${canjesPendientes})` : ''}{sinPlan(t) && <Candado />}
           </button>
         ))}
       </div>
 
-      {tab === 'inicio' && <InicioAdmin clinicaId={perfil.clinica_id} canjesPendientes={canjesPendientes} onIr={setTab} />}
-      {/* Las demás pestañas conservan su ancho de lectura hasta rediseñarlas una por una. */}
-      <div className="lg:max-w-3xl">
-      {tab === 'citas' && <PanelCitas clinicaId={perfil.clinica_id} />}
+      {planCargado && sinPlan(tabActual) && <FuncionBloqueada funcion={tabActual.funcion} />}
+      {mostrar('citas') && <PanelCitas clinicaId={perfil.clinica_id} />}
       {/* El CRM recibe EscanerQR e HistorialCliente (definidos aquí) para reutilizarlos sin duplicar código. */}
-      {tab === 'pacientes' && <Crm clinicaId={perfil.clinica_id} HistorialCliente={HistorialCliente} EscanerQR={EscanerQR} onVerOportunidades={() => setTab('reactivar')} />}
-      {tab === 'reactivar' && <ClientesReactivar clinicaId={perfil.clinica_id} HistorialCliente={HistorialCliente} />}
-      {tab === 'canjes' && <Canjes onCambio={contarCanjesPendientes} />}
-      {tab === 'promociones' && <Promociones clinicaId={perfil.clinica_id} />}
-      {tab === 'empleados' && <PanelEmpleados clinicaId={perfil.clinica_id} />}
-      {tab === 'servicios' && <PanelServicios clinicaId={perfil.clinica_id} />}
-      {tab === 'productos' && <PanelProductos clinicaId={perfil.clinica_id} />}
-      {tab === 'caja' && <PanelCaja clinicaId={perfil.clinica_id} perfilId={perfil.id} />}
-      {tab === 'marca' && (
+      {mostrar('pacientes') && <Crm clinicaId={perfil.clinica_id} HistorialCliente={HistorialCliente} EscanerQR={EscanerQR} onVerOportunidades={() => setTab('reactivar')} />}
+      {mostrar('reactivar') && <ClientesReactivar clinicaId={perfil.clinica_id} HistorialCliente={HistorialCliente} />}
+      {mostrar('canjes') && <Canjes onCambio={contarCanjesPendientes} />}
+      {mostrar('promociones') && <Promociones clinicaId={perfil.clinica_id} />}
+      {mostrar('empleados') && <PanelEmpleados clinicaId={perfil.clinica_id} />}
+      {mostrar('servicios') && <PanelServicios clinicaId={perfil.clinica_id} />}
+      {mostrar('productos') && <PanelProductos clinicaId={perfil.clinica_id} />}
+      {mostrar('caja') && <PanelCaja clinicaId={perfil.clinica_id} perfilId={perfil.id} />}
+      {mostrar('marca') && (
         <div className="-mx-5">
           <Personalizacion />
         </div>
       )}
-      </div>
       </div>
     </div>
   )

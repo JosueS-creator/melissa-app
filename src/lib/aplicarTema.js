@@ -36,8 +36,11 @@ function inyectarTokens(clinica) {
 }
 
 export async function aplicarTemaDeClinica(slug) {
-  // Antes del login no se lee la tabla clinicas: la función devuelve solo la marca de ESE negocio.
-  const { data: clinica, error } = await supabase.rpc('clinica_publica_por_slug', { p_slug: slug })
+  const { data: clinica, error } = await supabase
+    .from('clinicas')
+    .select('*, temas_base(*)')
+    .eq('slug', slug)
+    .single()
 
   if (error || !clinica) {
     console.warn('No se pudo cargar la clínica, usando tema por defecto:', error)

@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { supabase } from '../lib/supabaseClient'
 import { obtenerPerfilActual, obtenerPacienteActual } from '../lib/auth'
 import { calcularNivelYProgreso, obtenerUmbrales } from '../lib/fidelidad'
+import { useFunciones } from '../lib/FuncionesContext'
 
 const PAISES_APP = [
   { codigo: 'HN', nombre: 'Honduras', moneda: 'Lempira · HNL' },
@@ -9,6 +10,7 @@ const PAISES_APP = [
 ]
 
 export default function Perfil({ onNavigate, onCerrarSesion, esSuperAdmin }) {
+  const { tiene } = useFunciones()
   const [perfil, setPerfil] = useState(null)
   const [paciente, setPaciente] = useState(null)
   const [nombre, setNombre] = useState('')
@@ -208,7 +210,7 @@ export default function Perfil({ onNavigate, onCerrarSesion, esSuperAdmin }) {
       </p>
       <div className="flex flex-col gap-2 mb-6">
         <FilaNavegacion etiqueta="Mi progreso y fotos" onClick={() => onNavigate?.('historial')} />
-        <FilaNavegacion etiqueta="Referidos" onClick={() => onNavigate?.('referidos')} />
+        {tiene('referidos') && <FilaNavegacion etiqueta="Referidos" onClick={() => onNavigate?.('referidos')} />}
         {esSuperAdmin && <FilaNavegacion etiqueta="Panel de Melissa" onClick={() => onNavigate?.('melissa')} />}
       </div>
 

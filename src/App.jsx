@@ -1,4 +1,6 @@
 import { useEffect, useState } from 'react'
+import { FuncionesProvider } from './lib/FuncionesContext'
+import RequiereFuncion from './components/RequiereFuncion'
 import Home from './pages/Home'
 import Agenda from './pages/Agenda'
 import Tienda from './pages/Tienda'
@@ -166,16 +168,25 @@ export default function App() {
   const mostrarTabBar = !esAdmin && PANTALLAS_CON_TABBAR.includes(pantalla)
 
   return (
+    <FuncionesProvider usuarioId={sesion.user.id}>
     <div className={esAdmin ? 'min-h-screen flex flex-col' : 'sm:max-w-app mx-auto min-h-screen flex flex-col'} style={{ background: 'var(--color-fondo-app)' }}>
       <div className="flex-1">
         {!esAdmin && pantalla === 'inicio' && (
           <Home nombrePaciente={perfil?.nombre || sesion.user.email} clinica={clinica} onNavigate={setPantalla} />
         )}
         {!esAdmin && pantalla === 'agenda' && <Agenda />}
-        {!esAdmin && pantalla === 'tienda' && <Tienda />}
+        {!esAdmin && pantalla === 'tienda' && (
+          <RequiereFuncion funcion="tienda" onVolver={() => setPantalla('inicio')}>
+            <Tienda />
+          </RequiereFuncion>
+        )}
         {!esAdmin && pantalla === 'tarjeta' && <TarjetaVIP onNavigate={setPantalla} />}
         {!esAdmin && pantalla === 'historial' && <Historial onVolver={() => setPantalla('perfil')} />}
-        {!esAdmin && pantalla === 'referidos' && <Referidos onVolver={() => setPantalla('perfil')} />}
+        {!esAdmin && pantalla === 'referidos' && (
+          <RequiereFuncion funcion="referidos" onVolver={() => setPantalla('inicio')}>
+            <Referidos onVolver={() => setPantalla('perfil')} />
+          </RequiereFuncion>
+        )}
         {!esAdmin && pantalla === 'perfil' && (
           <Perfil onNavigate={setPantalla} onCerrarSesion={cerrarSesion} esSuperAdmin={perfil?.es_super_admin} />
         )}
@@ -195,5 +206,6 @@ export default function App() {
         <TabBar activo={pantalla} onNavigate={setPantalla} mostrarAdmin={false} />
       )}
     </div>
+    </FuncionesProvider>
   )
 }
