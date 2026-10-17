@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import jsQR from 'jsqr'
 import { supabase } from '../lib/supabaseClient'
 import { obtenerPerfilActual } from '../lib/auth'
@@ -8,6 +8,12 @@ import { descargarDatosClinica } from '../lib/exportarDatosClinica'
 import { useFunciones } from '../lib/FuncionesContext'
 import { NOMBRE_PLAN } from '../lib/planes'
 import FuncionBloqueada from '../components/FuncionBloqueada'
+import CabeceraAdmin from '../components/admin/CabeceraAdmin'
+import NavInferior, { PRINCIPALES } from '../components/admin/NavInferior'
+import HojaMas from '../components/admin/HojaMas'
+import ResumenDelDia from '../components/admin/ResumenDelDia'
+import TarjetaCita from '../components/admin/TarjetaCita'
+import Candado from '../components/admin/Candado'
 import EscanerBarras from '../components/EscanerBarras'
 import Crm from './Crm'
 import ClientesReactivar from './ClientesReactivar'
@@ -30,12 +36,10 @@ const TABS = [
   { id: 'marca', label: 'Marca', funcion: 'marca' },
 ]
 
-const Candado = () => (
-  <svg className="inline-block ml-1.5 align-[-1px]" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" role="img" aria-label="No incluida en tu plan">
-    <rect x="4.5" y="10.5" width="15" height="10" rx="2.5" />
-    <path d="M8 10.5V8a4 4 0 0 1 8 0v2.5" />
-  </svg>
-)
+const primerNombre = (n) => {
+  const t = (n || '').trim()
+  return t.includes('@') ? '' : t.split(/\s+/)[0]
+}
 
 export default function AdminPanel({ onCerrarSesion, esSuperAdmin, onIrAMelissa }) {
   const [perfil, setPerfil] = useState(null)
@@ -43,6 +47,10 @@ export default function AdminPanel({ onCerrarSesion, esSuperAdmin, onIrAMelissa 
   const [cargando, setCargando] = useState(true)
   const [tab, setTab] = useState('citas')
   const [canjesPendientes, setCanjesPendientes] = useState(0)
+  const [masAbierto, setMasAbierto] = useState(false)
+  const masRef = useRef(null)
+  const habiaAbierto = useRef(false)
+  const cerrarMas = useCallback(() => setMasAbierto(false), [])
   const { cargado: planCargado, plan, tiene } = useFunciones()
   const sinPlan = (t) => planCargado && !tiene(t.funcion)
   const tabActual = TABS.find((t) => t.id === tab)
@@ -69,6 +77,12 @@ export default function AdminPanel({ onCerrarSesion, esSuperAdmin, onIrAMelissa 
     if (perfil?.rol === 'admin') contarCanjesPendientes()
   }, [perfil, tab])
 
+  // Al cerrar «Más», el foco vuelve al botón que la abrió.
+  useEffect(() => {
+    if (!masAbierto && habiaAbierto.current) masRef.current?.focus()
+    habiaAbierto.current = masAbierto
+  }, [masAbierto])
+
   if (cargando) return <p className="text-center pt-16 text-sm text-ink/60">Cargando...</p>
   if (!perfil) return <p className="text-center pt-16 text-sm text-ink/60">Inicia sesión para continuar.</p>
   if (perfil.rol !== 'admin') {
@@ -76,7 +90,7 @@ export default function AdminPanel({ onCerrarSesion, esSuperAdmin, onIrAMelissa 
   }
 
   return (
-    <div className="lg:flex lg:min-h-screen">
+    <div className="panel-admin lg:flex lg:min-h-screen max-lg:bg-[var(--admin-fondo)]">
       <aside
         className="hidden lg:flex lg:flex-col lg:w-[252px] lg:flex-shrink-0 lg:sticky lg:top-0 lg:h-screen px-5 py-6"
         style={{ background: 'var(--gradiente-fondo-oscuro)' }}
@@ -116,44 +130,8 @@ export default function AdminPanel({ onCerrarSesion, esSuperAdmin, onIrAMelissa 
         </div>
       </aside>
 
-      <div
-        className="sm:max-w-app mx-auto lg:max-w-3xl lg:mx-0 lg:flex-1 px-5 lg:px-10 pb-10 lg:py-10 font-body"
-        style={{ paddingTop: 'calc(env(safe-area-inset-top) + 32px)' }}
-      >
-      <div className="flex justify-between items-start mb-1">
-        <p className="font-display text-xl text-ink lg:hidden">Panel del negocio</p>
-        <div className="flex gap-2 lg:hidden">
-          {esSuperAdmin && (
-            <button onClick={onIrAMelissa} className="text-[11px] px-2.5 py-1.5 rounded-lg" style={{ background: 'var(--color-accent)', color: 'var(--color-ink)' }}>
-              Panel de Melissa
-            </button>
-          )}
-          <button onClick={() => descargarDatosClinica(perfil.clinica_id, nombreClinica)} className="text-[11px] px-2.5 py-1.5 rounded-lg" style={{ background: 'var(--color-accent)', color: 'var(--color-ink)' }}>
-            Mis datos
-          </button>
-          <button onClick={onCerrarSesion} className="text-[11px] px-2.5 py-1.5 rounded-lg" style={{ background: 'var(--color-accent)', color: 'var(--color-ink)' }}>
-            Salir
-          </button>
-        </div>
-      </div>
-      <p className="text-xs text-ink/50 mb-5 lg:hidden">Vista operativa para el equipo.{plan ? ` Plan ${NOMBRE_PLAN[plan] || plan}.` : ''}</p>
-
-      <div className="flex flex-wrap gap-1.5 mb-5 lg:hidden">
-        {TABS.map((t) => (
-          <button
-            key={t.id}
-            onClick={() => setTab(t.id)}
-            className="rounded-lg px-3 py-1.5 text-[10px] font-medium"
-            style={
-              tab === t.id
-                ? { background: 'var(--gradiente-primario)', color: '#FFFFFF', boxShadow: '0 2px 6px rgba(201,59,121,0.3)' }
-                : { background: 'var(--color-accent)', color: 'var(--color-ink)' }
-            }
-          >
-            {t.label}{t.id === 'canjes' && canjesPendientes > 0 ? ` (${canjesPendientes})` : ''}{sinPlan(t) && <Candado />}
-          </button>
-        ))}
-      </div>
+      <div className="sm:max-w-app mx-auto lg:max-w-3xl lg:mx-0 lg:flex-1 px-5 lg:px-10 pb-6 lg:pb-10 pt-[calc(env(safe-area-inset-top)+14px)] lg:pt-10 font-body">
+      <CabeceraAdmin nombre={primerNombre(perfil.nombre)} titulo={tabActual.label} plan={plan ? NOMBRE_PLAN[plan] || plan : null} />
 
       {planCargado && sinPlan(tabActual) && <FuncionBloqueada funcion={tabActual.funcion} />}
       {mostrar('citas') && <PanelCitas clinicaId={perfil.clinica_id} />}
@@ -172,6 +150,34 @@ export default function AdminPanel({ onCerrarSesion, esSuperAdmin, onIrAMelissa 
         </div>
       )}
       </div>
+
+      <NavInferior
+        tabs={TABS}
+        tab={tab}
+        onSelect={setTab}
+        sinPlan={sinPlan}
+        canjesPendientes={canjesPendientes}
+        masAbierto={masAbierto}
+        onMas={() => setMasAbierto(true)}
+        masRef={masRef}
+      />
+      <HojaMas
+        abierta={masAbierto}
+        onCerrar={cerrarMas}
+        tabs={TABS.filter((t) => !PRINCIPALES.includes(t.id))}
+        tab={tab}
+        onSelect={(id) => {
+          setTab(id)
+          setMasAbierto(false)
+        }}
+        sinPlan={sinPlan}
+        canjesPendientes={canjesPendientes}
+        cuenta={{
+          onDescargar: () => descargarDatosClinica(perfil.clinica_id, nombreClinica),
+          onSalir: onCerrarSesion,
+          onIrAMelissa: esSuperAdmin ? onIrAMelissa : null,
+        }}
+      />
     </div>
   )
 }
@@ -182,6 +188,7 @@ function PanelCitas({ clinicaId }) {
   const [mostrarForm, setMostrarForm] = useState(false)
   const [aviso, setAviso] = useState('')
   const [promos, setPromos] = useState({})
+  const listaRef = useRef(null)
 
   useEffect(() => {
     cargar()
@@ -212,19 +219,23 @@ function PanelCitas({ clinicaId }) {
     cargar()
   }
 
-  const colorEstado = {
-    pendiente: '#B08D3E',
-    confirmada: '#2D6E8E',
-    completada: '#6B8E5A',
-    cancelada: '#B0524A',
+  function verAgenda() {
+    const reducir = typeof window !== 'undefined' && window.matchMedia?.('(prefers-reduced-motion: reduce)').matches
+    listaRef.current?.scrollIntoView({ behavior: reducir ? 'auto' : 'smooth', block: 'start' })
   }
 
   return (
     <div>
+      {!cargando && <ResumenDelDia citas={citas} onVerAgenda={verAgenda} />}
+
       <button
         onClick={() => setMostrarForm((v) => !v)}
-        className="w-full rounded-xl py-2.5 text-sm font-medium mb-3"
-        style={{ background: mostrarForm ? 'var(--color-accent)' : 'var(--color-primary)', color: mostrarForm ? 'var(--color-ink)' : '#FFFFFF' }}
+        className="w-full rounded-xl text-sm font-semibold mb-3"
+        style={
+          mostrarForm
+            ? { minHeight: 48, background: 'var(--admin-superficie)', color: 'var(--admin-texto)', border: '1.5px solid var(--admin-acero-2)' }
+            : { minHeight: 48, color: 'var(--admin-sobre-accion)', background: 'linear-gradient(180deg, var(--admin-accion-2), var(--admin-accion))', boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.18)' }
+        }
       >
         {mostrarForm ? 'Cancelar' : '+ Agendar cita'}
       </button>
@@ -239,50 +250,19 @@ function PanelCitas({ clinicaId }) {
         />
       )}
 
-      {aviso && <p className="text-xs mb-3 rounded-lg px-3 py-2" style={{ background: 'var(--color-accent)', color: 'var(--color-ink)' }}>{aviso}</p>}
-      {cargando && <p className="text-sm text-ink/50">Cargando citas...</p>}
-      {!cargando && citas.length === 0 && <p className="text-sm text-ink/50">No hay citas registradas todavía.</p>}
+      {aviso && (
+        <p role="status" className="text-xs mb-3 rounded-lg px-3 py-2" style={{ background: 'var(--admin-superficie)', border: '1px solid var(--admin-borde)', color: 'var(--admin-texto)' }}>
+          {aviso}
+        </p>
+      )}
+      {cargando && <p className="text-sm" style={{ color: 'var(--admin-texto-2)' }}>Cargando citas...</p>}
+      {!cargando && citas.length === 0 && <p className="text-sm" style={{ color: 'var(--admin-texto-2)' }}>No hay citas registradas todavía.</p>}
 
-      <div className="flex flex-col gap-2.5">
+      <ul ref={listaRef} aria-label="Citas" className="flex flex-col gap-2.5 scroll-mt-3">
         {citas.map((c) => (
-          <div key={c.id} className="rounded-xl p-3" style={{ background: 'var(--color-accent)' }}>
-            <div className="flex justify-between items-start">
-              <div>
-                <p className="text-sm font-medium text-ink">{c.pacientes?.nombre ?? 'Cliente'}</p>
-                <p className="text-[11px] text-ink/50 mt-0.5">
-                  {new Date(c.fecha_hora).toLocaleString('es-HN', { day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit' })}
-                  {' · '}
-                  {c.especialistas?.nombre ?? 'Sin asignar'}
-                </p>
-                {c.promocion_id && promos[c.promocion_id] && (
-                  <p className="text-[11px] mt-0.5" style={{ color: 'var(--color-primary)' }}>
-                    🎁 Reservada con la promoción «{promos[c.promocion_id].titulo}» ({Number(promos[c.promocion_id].descuento_porcentaje)}%): aplícala en Promociones al cobrar.
-                  </p>
-                )}
-                {c.tratamiento && <p className="text-[11px] text-ink/50">{c.tratamiento}</p>}
-              </div>
-              <span className="text-[10px] font-medium px-2 py-1 rounded-full text-white" style={{ background: colorEstado[c.estado] }}>
-                {c.estado}
-              </span>
-            </div>
-            {c.estado === 'pendiente' && (
-              <div className="flex gap-2 mt-2">
-                <button onClick={() => cambiarEstado(c.id, 'confirmada')} className="text-[11px] px-3 py-1.5 rounded-lg text-white" style={{ background: 'var(--gradiente-primario)', boxShadow: '0 3px 8px rgba(201,59,121,0.3)' }}>
-                  Confirmar
-                </button>
-                <button onClick={() => cambiarEstado(c.id, 'cancelada')} className="text-[11px] px-3 py-1.5 rounded-lg text-ink/60 bg-white">
-                  Cancelar
-                </button>
-              </div>
-            )}
-            {c.estado === 'confirmada' && (
-              <button onClick={() => cambiarEstado(c.id, 'completada')} className="text-[11px] px-3 py-1.5 rounded-lg text-white mt-2" style={{ background: 'var(--gradiente-primario)', boxShadow: '0 3px 8px rgba(201,59,121,0.3)' }}>
-                Marcar completada
-              </button>
-            )}
-          </div>
+          <TarjetaCita key={c.id} cita={c} promo={c.promocion_id ? promos[c.promocion_id] : null} onEstado={cambiarEstado} />
         ))}
-      </div>
+      </ul>
     </div>
   )
 }

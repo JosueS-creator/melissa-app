@@ -60,3 +60,47 @@ input, select, textarea {
     100% { background-position: -200% 0; }
   }
 }
+
+/* ---------- Panel administrativo ----------
+   Variables acotadas a este contenedor. Por defecto se DERIVAN de las variables normales del tema, así una clínica con
+   identidad propia conserva sus colores; el tema de Melissa (o cualquier tema con tokens admin_*) las redefine
+   mediante --tema-admin-* (ver lib/temaAdmin.js y lib/aplicarTema.js). Los componentes solo usan --admin-* y --adm-*. */
+.panel-admin {
+  --admin-fondo: var(--tema-admin-fondo, color-mix(in srgb, var(--color-ink) 4%, var(--color-fondo-app)));
+  --admin-superficie: var(--tema-admin-superficie, #FFFFFF);
+  --admin-borde: var(--tema-admin-borde, color-mix(in srgb, var(--color-ink) 16%, var(--color-fondo-app)));
+  --admin-plata: var(--tema-admin-plata, color-mix(in srgb, var(--color-ink) 24%, var(--color-fondo-app)));
+  --admin-acero: var(--tema-admin-acero, var(--color-fondo-oscuro));
+  --admin-acero-2: var(--tema-admin-acero-2, color-mix(in srgb, var(--admin-acero) 78%, white));
+  --admin-accion: var(--tema-admin-accion, var(--color-primary));
+  --admin-accion-2: var(--tema-admin-accion-2, color-mix(in srgb, var(--admin-accion) 80%, white));
+  --admin-detalle: var(--tema-admin-detalle, var(--color-dorado));
+  --admin-texto: var(--tema-admin-texto, var(--color-ink));
+  --admin-texto-2: var(--tema-admin-texto-2, var(--color-texto-secundario));
+  --admin-sobre-color: #FFFFFF; /* texto sobre el azul acero */
+  --admin-sobre-accion: var(--tema-admin-sobre-accion, var(--admin-sobre-color)); /* texto sobre el color de acción: se elige por contraste */
+
+  /* Estados de cita (semánticos, iguales en todos los temas): texto oscuro sobre fondo suave del mismo tono (≥ 4,8:1). */
+  --adm-pendiente: #7B632B;  --adm-pendiente-bg: #F4EFE4;  --adm-pendiente-base: #B08D3E;
+  --adm-confirmada: #2B6A88; --adm-confirmada-bg: #E2EBEF; --adm-confirmada-base: #2D6E8E;
+  --adm-completada: #536F46; --adm-completada-bg: #EAEFE8; --adm-completada-base: #6B8E5A;
+  --adm-cancelada: #A24B44;  --adm-cancelada-bg: #F4E7E6;  --adm-cancelada-base: #B0524A;
+
+  color: var(--admin-texto);
+}
+.panel-admin button:focus-visible,
+.panel-admin a:focus-visible,
+.panel-admin [role='dialog']:focus-visible {
+  outline: 2px solid var(--admin-accion);
+  outline-offset: 2px;
+}
+.panel-admin .adm-sobre-acero :focus-visible {
+  outline-color: var(--admin-sobre-color);
+}
+@media (prefers-reduced-motion: no-preference) {
+  .adm-hoja { animation: adm-sube 0.18s ease-out; }
+  @keyframes adm-sube {
+    from { transform: translateY(24px); opacity: 0.6; }
+    to { transform: none; opacity: 1; }
+  }
+}

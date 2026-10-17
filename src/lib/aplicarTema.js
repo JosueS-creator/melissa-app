@@ -1,4 +1,5 @@
 import { supabase } from './supabaseClient'
+import { CLAVES_ADMIN, CLAVE_SOBRE_ACCION, tokensAdminDe, colorSobre } from './temaAdmin'
 
 /**
  * Resuelve la clínica activa (por slug de subdominio, por ahora recibido
@@ -33,6 +34,14 @@ function inyectarTokens(clinica) {
   if (tokens.borde_tarjeta) root.style.setProperty('--color-borde-tarjeta', tokens.borde_tarjeta)
   if (tokens.fuente_titulo) root.style.setProperty('--font-display', `'${tokens.fuente_titulo}', serif`)
   if (tokens.fuente_cuerpo) root.style.setProperty('--font-body', `'${tokens.fuente_cuerpo}', sans-serif`)
+
+  // Panel administrativo: primero se limpia lo de la clínica anterior y luego se aplican las variables de esta (--tema-admin-*).
+  for (const clave of [...CLAVES_ADMIN, CLAVE_SOBRE_ACCION]) root.style.removeProperty(`--tema-admin-${clave}`)
+  const tokensAdmin = tokensAdminDe(clinica)
+  for (const [clave, valor] of Object.entries(tokensAdmin)) root.style.setProperty(`--tema-admin-${clave}`, valor)
+  // Texto de los botones de acción: el de mayor contraste con el color de acción que quedó activo.
+  const accion = tokensAdmin.accion || clinica.color_primario || tema?.color_primario_default
+  root.style.setProperty(`--tema-admin-${CLAVE_SOBRE_ACCION}`, colorSobre(accion))
 }
 
 export async function aplicarTemaDeClinica(slug) {
