@@ -11,8 +11,8 @@ import FuncionBloqueada from '../components/FuncionBloqueada'
 import CabeceraAdmin from '../components/admin/CabeceraAdmin'
 import NavInferior, { PRINCIPALES } from '../components/admin/NavInferior'
 import HojaMas from '../components/admin/HojaMas'
-import ResumenDelDia from '../components/admin/ResumenDelDia'
-import TarjetaCita from '../components/admin/TarjetaCita'
+import PanelAgenda from '../components/admin/PanelAgenda'
+import { mensajeErrorCita } from '../lib/erroresCitas'
 import Candado from '../components/admin/Candado'
 import EscanerBarras from '../components/EscanerBarras'
 import Crm from './Crm'
@@ -130,11 +130,11 @@ export default function AdminPanel({ onCerrarSesion, esSuperAdmin, onIrAMelissa 
         </div>
       </aside>
 
-      <div className="sm:max-w-app mx-auto lg:max-w-3xl lg:mx-0 lg:flex-1 px-5 lg:px-10 pb-6 lg:pb-10 pt-[calc(env(safe-area-inset-top)+14px)] lg:pt-10 font-body">
+      <div className={`min-w-0 w-full sm:max-w-app mx-auto ${tab === 'citas' ? 'lg:max-w-none' : 'lg:max-w-3xl'} lg:mx-0 lg:flex-1 px-5 lg:px-10 pb-6 lg:pb-10 pt-[calc(env(safe-area-inset-top)+14px)] lg:pt-10 font-body`}>
       <CabeceraAdmin nombre={primerNombre(perfil.nombre)} titulo={tabActual.label} plan={plan ? NOMBRE_PLAN[plan] || plan : null} />
 
       {planCargado && sinPlan(tabActual) && <FuncionBloqueada funcion={tabActual.funcion} />}
-      {mostrar('citas') && <PanelCitas clinicaId={perfil.clinica_id} />}
+      {mostrar('citas') && <PanelCitas key={perfil.clinica_id} clinicaId={perfil.clinica_id} />}
       {/* El CRM recibe EscanerQR e HistorialCliente (definidos aquí) para reutilizarlos sin duplicar código. */}
       {mostrar('pacientes') && <Crm clinicaId={perfil.clinica_id} HistorialCliente={HistorialCliente} EscanerQR={EscanerQR} onVerOportunidades={() => setTab('reactivar')} />}
       {mostrar('reactivar') && <ClientesReactivar clinicaId={perfil.clinica_id} HistorialCliente={HistorialCliente} />}
@@ -183,207 +183,87 @@ export default function AdminPanel({ onCerrarSesion, esSuperAdmin, onIrAMelissa 
 }
 
 function PanelCitas({ clinicaId }) {
-  const [citas, setCitas] = useState([])
-  const [cargando, setCargando] = useState(true)
-  const [mostrarForm, setMostrarForm] = useState(false)
-  const [aviso, setAviso] = useState('')
-  const [promos, setPromos] = useState({})
-  const listaRef = useRef(null)
-
-  useEffect(() => {
-    cargar()
-  }, [])
-
-  async function cargar() {
-    const { data } = await supabase
-      .from('citas')
-      .select('*, especialistas(nombre), pacientes(nombre)')
-      .eq('clinica_id', clinicaId)
-      .order('fecha_hora', { ascending: true })
-    setCitas(data || [])
-    const { data: dataPromos } = await supabase.from('promociones').select('id, titulo, descuento_porcentaje').eq('clinica_id', clinicaId)
-    setPromos(Object.fromEntries((dataPromos || []).map((p) => [p.id, p])))
-    setCargando(false)
-  }
-
-  async function cambiarEstado(id, estado) {
-    setAviso('')
-    const { error } = await supabase.from('citas').update({ estado }).eq('id', id)
-    if (error) {
-      setAviso('No se pudo actualizar la cita: ' + error.message)
-    } else if (estado === 'completada') {
-      // Los puntos del servicio los otorga la base de datos al completar (una sola vez).
-      const { data: abono } = await supabase.from('puntos_movimientos').select('puntos').eq('origen_tipo', 'cita').eq('origen_id', id).maybeSingle()
-      setAviso(abono ? `Cita completada · +${abono.puntos} puntos para el cliente.` : 'Cita completada.')
-    }
-    cargar()
-  }
-
-  function verAgenda() {
-    const reducir = typeof window !== 'undefined' && window.matchMedia?.('(prefers-reduced-motion: reduce)').matches
-    listaRef.current?.scrollIntoView({ behavior: reducir ? 'auto' : 'smooth', block: 'start' })
-  }
-
-  return (
-    <div>
-      {!cargando && <ResumenDelDia citas={citas} onVerAgenda={verAgenda} />}
-
-      <button
-        onClick={() => setMostrarForm((v) => !v)}
-        className="w-full rounded-xl text-sm font-semibold mb-3"
-        style={
-          mostrarForm
-            ? { minHeight: 48, background: 'var(--admin-superficie)', color: 'var(--admin-texto)', border: '1.5px solid var(--admin-acero-2)' }
-            : { minHeight: 48, color: 'var(--admin-sobre-accion)', background: 'linear-gradient(180deg, var(--admin-accion-2), var(--admin-accion))', boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.18)' }
-        }
-      >
-        {mostrarForm ? 'Cancelar' : '+ Agendar cita'}
-      </button>
-
-      {mostrarForm && (
-        <FormularioNuevaCita
-          clinicaId={clinicaId}
-          onCreada={() => {
-            setMostrarForm(false)
-            cargar()
-          }}
-        />
-      )}
-
-      {aviso && (
-        <p role="status" className="text-xs mb-3 rounded-lg px-3 py-2" style={{ background: 'var(--admin-superficie)', border: '1px solid var(--admin-borde)', color: 'var(--admin-texto)' }}>
-          {aviso}
-        </p>
-      )}
-      {cargando && <p className="text-sm" style={{ color: 'var(--admin-texto-2)' }}>Cargando citas...</p>}
-      {!cargando && citas.length === 0 && <p className="text-sm" style={{ color: 'var(--admin-texto-2)' }}>No hay citas registradas todavía.</p>}
-
-      <ul ref={listaRef} aria-label="Citas" className="flex flex-col gap-2.5 scroll-mt-3">
-        {citas.map((c) => (
-          <TarjetaCita key={c.id} cita={c} promo={c.promocion_id ? promos[c.promocion_id] : null} onEstado={cambiarEstado} />
-        ))}
-      </ul>
-    </div>
-  )
+  return <PanelAgenda clinicaId={clinicaId} FormularioCita={FormularioNuevaCita} HistorialCliente={HistorialCliente} />
 }
 
-function FormularioNuevaCita({ clinicaId, onCreada }) {
+/** Compatible con el esquema desplegado: no envía duración ni finalización propuestas. */
+export function FormularioNuevaCita({ clinicaId, onCreada, inicial = {} }) {
   const [pacientes, setPacientes] = useState([])
   const [especialistas, setEspecialistas] = useState([])
   const [servicios, setServicios] = useState([])
   const [pacienteId, setPacienteId] = useState('')
-  const [especialistaId, setEspecialistaId] = useState('')
+  const [especialistaId, setEspecialistaId] = useState(inicial.especialistaId || '')
   const [servicioId, setServicioId] = useState('')
-  const [fecha, setFecha] = useState('')
-  const [hora, setHora] = useState('')
+  const [fecha, setFecha] = useState(inicial.fecha || '')
+  const [hora, setHora] = useState(inicial.hora || '')
   const [guardando, setGuardando] = useState(false)
+  const [cargandoListas, setCargandoListas] = useState(true)
+  const [errorListas, setErrorListas] = useState('')
+  const [recarga, setRecarga] = useState(0)
   const [error, setError] = useState('')
 
   useEffect(() => {
+    const controller = new AbortController()
+    setCargandoListas(true); setErrorListas('')
     async function cargarListas() {
-      const [{ data: p }, { data: e }, { data: s }] = await Promise.all([
-        supabase.from('pacientes').select('id, nombre').eq('clinica_id', clinicaId).order('nombre'),
-        supabase.from('especialistas').select('id, nombre').eq('clinica_id', clinicaId).eq('activo', true),
-        supabase.from('servicios').select('id, nombre, precio').eq('clinica_id', clinicaId).eq('activo', true),
-      ])
-      setPacientes(p || [])
-      setEspecialistas(e || [])
-      setServicios(s || [])
+      try {
+        const [p, e, s] = await Promise.all([
+          supabase.from('pacientes').select('id,nombre').eq('clinica_id', clinicaId).order('nombre').abortSignal(controller.signal),
+          supabase.from('especialistas').select('id,nombre').eq('clinica_id', clinicaId).eq('activo', true).abortSignal(controller.signal),
+          supabase.from('servicios').select('id,nombre,precio').eq('clinica_id', clinicaId).eq('activo', true).abortSignal(controller.signal),
+        ])
+        if (controller.signal.aborted) return
+        if (p.error || e.error || s.error) throw new Error('listas')
+        setPacientes(p.data || []); setEspecialistas(e.data || []); setServicios(s.data || [])
+      } catch { if (!controller.signal.aborted) setErrorListas('No se pudieron cargar los datos del formulario.') }
+      finally { if (!controller.signal.aborted) setCargandoListas(false) }
     }
     cargarListas()
-  }, [clinicaId])
+    return () => controller.abort()
+  }, [clinicaId, recarga])
 
   async function crearCita(e) {
     e.preventDefault()
-    if (!pacienteId || !fecha || !hora) return
-    setGuardando(true)
-    setError('')
-
-    const fechaHora = new Date(`${fecha}T${hora}:00`).toISOString()
-
-    const { error: errorInsert } = await supabase.from('citas').insert({
-      clinica_id: clinicaId,
-      paciente_id: pacienteId,
-      especialista_id: especialistaId || null,
-      fecha_hora: fechaHora,
-      estado: 'confirmada',
-      servicio_id: servicioId || null,
-      tratamiento: servicios.find((s) => s.id === servicioId)?.nombre || null,
-    })
-
-    if (errorInsert) {
-      setError('No se pudo agendar: ' + errorInsert.message)
-      setGuardando(false)
-    } else {
-      onCreada()
-    }
+    if (!pacienteId || !fecha || !hora || guardando) return
+    setGuardando(true); setError('')
+    try {
+      const { error: errorInsert } = await supabase.from('citas').insert({
+        clinica_id: clinicaId,
+        paciente_id: pacienteId,
+        especialista_id: especialistaId || null,
+        fecha_hora: new Date(`${fecha}T${hora}:00`).toISOString(),
+        estado: 'confirmada',
+        servicio_id: servicioId || null,
+        tratamiento: servicios.find(s => s.id === servicioId)?.nombre || null,
+      })
+      if (errorInsert) setError(mensajeErrorCita(errorInsert))
+      else onCreada()
+    } catch { setError('No se pudo guardar la cita. Revisa la conexión e intenta de nuevo.') }
+    finally { setGuardando(false) }
   }
 
-  return (
-    <form onSubmit={crearCita} className="flex flex-col gap-2 mb-5 rounded-xl p-3" style={{ background: 'var(--color-accent)' }}>
-      <select
-        className="rounded-lg px-3 py-2 text-sm bg-white"
-        value={pacienteId}
-        onChange={(e) => setPacienteId(e.target.value)}
-        required
-      >
-        <option value="" disabled>Selecciona un cliente</option>
-        {pacientes.map((p) => (
-          <option key={p.id} value={p.id}>{p.nombre}</option>
-        ))}
-      </select>
-
-      <select
-        className="rounded-lg px-3 py-2 text-sm bg-white"
-        value={especialistaId}
-        onChange={(e) => setEspecialistaId(e.target.value)}
-      >
-        <option value="">Sin especialista asignado</option>
-        {especialistas.map((esp) => (
-          <option key={esp.id} value={esp.id}>{esp.nombre}</option>
-        ))}
-      </select>
-
-      <select
-        className="rounded-lg px-3 py-2 text-sm bg-white"
-        value={servicioId}
-        onChange={(e) => setServicioId(e.target.value)}
-      >
-        <option value="">Sin servicio específico</option>
-        {servicios.map((s) => (
-          <option key={s.id} value={s.id}>{s.nombre} · L {Number(s.precio).toFixed(0)}</option>
-        ))}
-      </select>
-
-      <div className="flex gap-2">
-        <input
-          className="rounded-lg px-3 py-2 text-sm bg-white flex-1"
-          type="date"
-          value={fecha}
-          onChange={(e) => setFecha(e.target.value)}
-          required
-        />
-        <input
-          className="rounded-lg px-3 py-2 text-sm bg-white flex-1"
-          type="time"
-          value={hora}
-          onChange={(e) => setHora(e.target.value)}
-          required
-        />
-      </div>
-
-      {error && <p className="text-xs" style={{ color: '#B0524A' }}>{error}</p>}
-
-      <button
-        type="submit"
-        disabled={guardando}
-        className="rounded-lg py-2.5 text-white text-sm font-medium disabled:opacity-60"
-        style={{ background: 'var(--gradiente-primario)', boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.30), 0 6px 14px rgba(201,59,121,0.28)' }}
-      >
-        {guardando ? 'Agendando...' : 'Agendar cita'}
-      </button>
-    </form>
-  )
+  return <form onSubmit={crearCita} className="cal-form">
+    <label>Cliente<select aria-label="Cliente" value={pacienteId} onChange={e => setPacienteId(e.target.value)} required>
+      <option value="" disabled>Selecciona un cliente</option>
+      {pacientes.map(p => <option key={p.id} value={p.id}>{p.nombre}</option>)}
+    </select></label>
+    <label>Profesional<select aria-label="Profesional" value={especialistaId} onChange={e => setEspecialistaId(e.target.value)}>
+      <option value="">Sin especialista asignado</option>
+      {especialistas.map(p => <option key={p.id} value={p.id}>{p.nombre}</option>)}
+    </select></label>
+    <label>Servicio<select aria-label="Servicio" value={servicioId} onChange={e => setServicioId(e.target.value)}>
+      <option value="">Sin servicio específico</option>
+      {servicios.map(s => <option key={s.id} value={s.id}>{s.nombre} · L {Number(s.precio).toFixed(0)}</option>)}
+    </select></label>
+    <div className="cal-form-fechas">
+      <label>Fecha<input type="date" value={fecha} onChange={e => setFecha(e.target.value)} required /></label>
+      <label>Hora<input type="time" value={hora} onChange={e => setHora(e.target.value)} required /></label>
+    </div>
+    {cargandoListas && <p role="status">Cargando clientes y servicios…</p>}
+    {errorListas && <p role="alert">{errorListas} <button type="button" className="cal-boton" onClick={() => setRecarga(n => n + 1)}>Reintentar</button></p>}
+    {error && <p role="alert" className="cal-aviso">{error}</p>}
+    <button type="submit" disabled={guardando || cargandoListas || Boolean(errorListas)} className="cal-boton cal-boton-principal">{guardando ? 'Agendando...' : 'Agendar cita'}</button>
+  </form>
 }
 
 function PanelEmpleados({ clinicaId }) {

@@ -3,7 +3,7 @@ export const ETIQUETA_ESTADO = { pendiente: 'Pendiente', confirmada: 'Confirmada
 const ESTADOS_CONOCIDOS = Object.keys(ETIQUETA_ESTADO)
 
 /** Tarjeta de cita: hora y estado · cliente · servicio · profesional · acciones (solo las que corresponden al estado). */
-export default function TarjetaCita({ cita, promo, onEstado }) {
+export default function TarjetaCita({ cita, promo, onEstado, ocupada = false }) {
   const estado = cita.estado
   const conocido = ESTADOS_CONOCIDOS.includes(estado)
   const etiqueta = ETIQUETA_ESTADO[estado] || (estado ? estado[0].toUpperCase() + estado.slice(1) : 'Sin estado')
@@ -42,16 +42,16 @@ export default function TarjetaCita({ cita, promo, onEstado }) {
 
         {estado === 'pendiente' && (
           <div className="flex gap-2 mt-3">
-            <button onClick={() => onEstado(cita.id, 'confirmada')} className={boton} style={{ minHeight: 44, color: 'var(--admin-sobre-accion)', background: 'linear-gradient(180deg, var(--admin-accion-2), var(--admin-accion))' }}>
+            <button disabled={ocupada} onClick={() => onEstado(cita.id, 'confirmada')} className={boton} style={{ minHeight: 44, color: 'var(--admin-sobre-accion)', background: 'linear-gradient(180deg, var(--admin-accion-2), var(--admin-accion))' }}>
               Confirmar
             </button>
-            <button onClick={() => onEstado(cita.id, 'cancelada')} className={boton} style={{ minHeight: 44, color: 'var(--admin-texto)', background: 'var(--admin-superficie)', border: '1.5px solid var(--admin-acero-2)' }}>
+            <button disabled={ocupada} onClick={() => onEstado(cita.id, 'cancelada')} className={boton} style={{ minHeight: 44, color: 'var(--admin-texto)', background: 'var(--admin-superficie)', border: '1.5px solid var(--admin-acero-2)' }}>
               Cancelar
             </button>
           </div>
         )}
         {estado === 'confirmada' && (
-          <button onClick={() => onEstado(cita.id, 'completada')} className={`${boton} mt-3`} style={{ minHeight: 44, color: 'var(--admin-sobre-accion)', background: 'linear-gradient(180deg, var(--admin-accion-2), var(--admin-accion))' }}>
+          <button disabled={ocupada} onClick={() => onEstado(cita.id, 'completada')} className={`${boton} mt-3`} style={{ minHeight: 44, color: 'var(--admin-sobre-accion)', background: 'linear-gradient(180deg, var(--admin-accion-2), var(--admin-accion))' }}>
             Marcar completada
           </button>
         )}
