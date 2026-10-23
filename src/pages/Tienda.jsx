@@ -1,6 +1,8 @@
 import { useEffect, useMemo, useState } from 'react'
 import { supabase } from '../lib/supabaseClient'
 import { obtenerPacienteActual } from '../lib/auth'
+import FotoTarjeta from '../components/FotoTarjeta'
+import {imagenMuestra} from '../lib/imagenesMuestra'
 
 const CATEGORIAS = [
   { id: 'todo', nombre: 'Todo' },
@@ -137,14 +139,8 @@ export default function Tienda() {
 
       <div className="px-5 pt-4 grid grid-cols-2 gap-3">
         {productosFiltrados.map((p) => (
-          <div key={p.id} className="rounded-[14px] bg-white overflow-hidden border" style={{ borderColor: 'var(--color-borde-tarjeta)' }}>
-            <div className="h-24 flex items-center justify-center" style={{ background: '#FDEFF4' }}>
-              {p.imagen_url ? (
-                <img src={p.imagen_url} alt={p.nombre} className="w-full h-full object-cover" />
-              ) : (
-                <span className="text-[10px]" style={{ color: 'var(--color-texto-terciario)' }}>Foto producto</span>
-              )}
-            </div>
+          <div key={p.id} className="premium-producto rounded-[14px] bg-white overflow-hidden border" style={{ borderColor: 'var(--color-borde-tarjeta)' }}>
+            <FotoTarjeta src={p.imagen_url} muestra={imagenMuestra(p.nombre,'producto')} nombre={p.nombre} alto={150}/>
             <div className="p-2.5">
               <p className="text-[13px]" style={{ color: 'var(--color-ink)' }}>{p.nombre}</p>
               <div className="flex items-center justify-between mt-1.5">

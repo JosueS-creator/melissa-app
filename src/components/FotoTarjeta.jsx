@@ -11,9 +11,10 @@ export const TINTES = [
 
 const LINEA = '1px solid color-mix(in srgb, var(--color-ink) 14%, transparent)'
 
-export default function FotoTarjeta({ src, nombre = '', tinte = TINTES[0], alto, tamanoInicial = 64, inicialDerecha = false, prioridad = false, style }) {
-  const [fallo, setFallo] = useState(null)
-  const conFoto = Boolean(src) && fallo !== src
+export default function FotoTarjeta({ src, muestra, nombre = '', tinte = TINTES[0], alto, tamanoInicial = 64, inicialDerecha = false, prioridad = false, style }) {
+  const [fallos, setFallos] = useState([])
+  const foto = [src,muestra].find(url=>url && !fallos.includes(url))
+  const conFoto = Boolean(foto)
   const inicial = (nombre.trim()[0] || '').toUpperCase()
 
   return (
@@ -32,14 +33,15 @@ export default function FotoTarjeta({ src, nombre = '', tinte = TINTES[0], alto,
       )}
       {conFoto && (
         <img
-          src={src}
+          src={foto}
           alt=""
           loading={prioridad ? 'eager' : 'lazy'}
           decoding="async"
-          onError={() => setFallo(src)}
+          onError={() => setFallos(prev=>[...prev, foto])}
           className="absolute inset-0 w-full h-full object-cover"
         />
       )}
+      {conFoto && foto === muestra && foto !== src && <span className="foto-ilustrativa">Imagen ilustrativa</span>}
     </div>
   )
 }

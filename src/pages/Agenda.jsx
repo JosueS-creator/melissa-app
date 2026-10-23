@@ -3,7 +3,7 @@ import { leerReservaPromo, limpiarReservaPromo, formatearPorcentaje } from '../l
 import { supabase } from '../lib/supabaseClient'
 import { obtenerPacienteActual } from '../lib/auth'
 import { estadoDeCita, esProxima, aIsoLocal, fechaLocal, esHoraPasada, textoFechaHora } from '../lib/citas'
-import logoMelissaMarcaAgua from '../assets/melissa-logo-256.png'
+import MarcaNegocio from '../components/MarcaNegocio'
 import ContactoNegocio from '../components/ContactoNegocio'
 
 const HORAS_DISPONIBLES = ['09:00', '09:45', '10:30', '11:15', '14:00', '15:30']
@@ -81,7 +81,7 @@ function MisCitas({ pacienteId, refresco }) {
   )
 }
 
-export default function Agenda() {
+export default function Agenda({clinica}) {
   const [especialistas, setEspecialistas] = useState([])
   const [especialistaId, setEspecialistaId] = useState(null)
   const [servicios, setServicios] = useState([])
@@ -163,13 +163,7 @@ export default function Agenda() {
         className="relative overflow-hidden px-5 pb-5"
         style={{ background: 'var(--gradiente-fondo-oscuro)', paddingTop: 'calc(env(safe-area-inset-top) + 20px)' }}
       >
-        <img
-          src={logoMelissaMarcaAgua}
-          alt=""
-          aria-hidden="true"
-          className="absolute pointer-events-none"
-          style={{ top: -20, right: -30, width: 180, height: 180, opacity: 0.13, objectFit: 'contain' }}
-        />
+        <div className="absolute right-5 top-5"><MarcaNegocio clinica={clinica}/></div>
         <p style={{ font: "500 10px/1 var(--font-body)", letterSpacing: '0.2em', textTransform: 'uppercase', color: 'var(--color-dorado-claro)' }}>
           Solicitar cita
         </p>

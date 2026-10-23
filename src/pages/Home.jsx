@@ -7,8 +7,9 @@ import PromocionesCliente from '../components/PromocionesCliente'
 import ContactoNegocio from '../components/ContactoNegocio'
 import FotoTarjeta, { TINTES } from '../components/FotoTarjeta'
 import { useFunciones } from '../lib/FuncionesContext'
-import logoMelissa from '../assets/melissa-logo-64.png'
-import logoMelissaMarcaAgua from '../assets/melissa-logo-256.png'
+import MarcaNegocio from '../components/MarcaNegocio'
+import {imagenMuestra} from '../lib/imagenesMuestra'
+import '../components/clientePremium.css'
 
 const BORDE = '1px solid var(--color-borde-tarjeta)'
 const SOMBRA = '0 1px 2px rgba(74,14,43,0.04)'
@@ -38,13 +39,13 @@ function EnlaceSeccion({ children, onClick }) {
 
 function Cabecera({ nombre, clinica, onNavigate }) {
   return (
-    <header className="px-5" style={{ paddingTop: 'calc(env(safe-area-inset-top) + 12px)' }}>
+    <header className="premium-portada px-5" style={{ paddingTop: 'calc(env(safe-area-inset-top) + 12px)' }}>
       <div className="flex items-center justify-between">
         <span style={{ width: 44 }} />
         <div className="flex flex-col items-center gap-1.5">
-          <img src={clinica?.logo_url || logoMelissa} alt="" className="w-9 h-9 rounded-[10px] object-cover" />
+          <MarcaNegocio clinica={clinica}/>
           <span style={{ font: '500 13px/1.2 var(--font-body)', letterSpacing: '0.24em', textTransform: 'uppercase', color: 'var(--color-ink)' }}>
-            {clinica?.nombre || 'Melissa'}
+            {clinica?.nombre || 'Tu negocio'}
           </span>
         </div>
         <button onClick={() => onNavigate?.('perfil')} aria-label="Mi perfil" className="flex items-center justify-center" style={{ width: 44, height: 44 }}>
@@ -102,7 +103,7 @@ function ErrorCarga({ onReintentar }) {
       <div role="alert" className="mt-2 text-center" style={{ background: '#FFFFFF', border: BORDE, borderRadius: 22, padding: '28px 20px' }}>
         <p style={{ fontFamily: 'var(--font-display)', fontSize: 20, lineHeight: 1.25, color: 'var(--color-ink)' }}>No pudimos cargar tu información</p>
         <p className="mt-2" style={{ fontSize: 14, lineHeight: 1.5, color: 'var(--color-texto-secundario)' }}>Revisa tu conexión e inténtalo de nuevo.</p>
-        <button onClick={onReintentar} className="mt-4 rounded-xl px-6 text-sm font-medium text-white" style={{ minHeight: 48, background: 'var(--color-primary)' }}>
+        <button onClick={onReintentar} className="premium-boton mt-4 rounded-xl px-6 text-sm font-medium text-white" style={{ minHeight: 48, background: 'var(--color-primary)' }}>
           Reintentar
         </button>
       </div>
@@ -130,6 +131,7 @@ function ProximaVisita({ cita, servicio, indiceServicio, onNavigate }) {
       >
         <FotoTarjeta
           src={servicio?.imagen_url}
+          muestra={imagenMuestra(servicio?.nombre || cita.tratamiento)}
           nombre={titulo}
           tinte={TINTES[(indiceServicio >= 0 ? indiceServicio : 0) % TINTES.length]}
           tamanoInicial={96}
@@ -190,7 +192,7 @@ function SinCita({ onNavigate }) {
           <p style={{ fontSize: 13, color: 'var(--color-texto-secundario)' }}>Tu próxima visita</p>
           <p className="mt-1" style={{ fontFamily: 'var(--font-display)', fontSize: 22, lineHeight: 1.2, color: 'var(--color-ink)' }}>Aún no tienes citas próximas</p>
           <p className="mt-2" style={{ fontSize: 14, lineHeight: 1.5, color: 'var(--color-texto-secundario)' }}>Elige un servicio y solicita tu cita. El negocio te la confirmará.</p>
-          <button onClick={() => onNavigate?.('agenda')} className="mt-4 rounded-xl px-6 text-[15px] font-medium text-white" style={{ minHeight: 48, background: 'var(--color-primary)' }}>
+          <button onClick={() => onNavigate?.('agenda')} className="premium-boton mt-4 rounded-xl px-6 text-[15px] font-medium text-white" style={{ minHeight: 48, background: 'var(--color-primary)' }}>
             Solicitar cita
           </button>
         </div>
@@ -214,10 +216,10 @@ function Servicios({ servicios, onNavigate }) {
               key={s.id}
               href="#agenda"
               onClick={(e) => { e.preventDefault(); onNavigate?.('agenda') }}
-              className="flex-none block overflow-hidden"
+              className="premium-servicio flex-none block overflow-hidden"
               style={{ width: 164, background: '#FFFFFF', border: BORDE, borderRadius: 18, boxShadow: SOMBRA }}
             >
-              <FotoTarjeta src={s.imagen_url} nombre={s.nombre} tinte={TINTES[i % TINTES.length]} alto={118} />
+              <FotoTarjeta src={s.imagen_url} muestra={imagenMuestra(s.nombre)} nombre={s.nombre} tinte={TINTES[i % TINTES.length]} alto={178} />
               <div style={{ padding: '12px 14px 14px' }}>
                 <p style={{ fontFamily: 'var(--font-display)', fontSize: 17, lineHeight: 1.2, color: 'var(--color-ink)' }}>{s.nombre}</p>
                 {s.descripcion && (
@@ -254,19 +256,12 @@ function TarjetaPuntos({ puntos, umbrales, onNavigate, conNiveles }) {
         href="#tarjeta"
         onClick={(e) => { e.preventDefault(); onNavigate?.('tarjeta') }}
         aria-label="Ver mi tarjeta de Beauty Points y beneficios"
-        className="relative flex items-center overflow-hidden gap-3.5"
+        className="premium-fidelidad relative flex items-center overflow-hidden gap-3.5"
         style={{ background: 'var(--gradiente-puntos)', borderRadius: 22, padding: 20, color: '#FFFFFF', isolation: 'isolate' }}
       >
-        <img
-          src={logoMelissaMarcaAgua}
-          alt=""
-          aria-hidden="true"
-          className="absolute pointer-events-none"
-          style={{ top: -20, right: -30, width: 180, height: 180, opacity: 0.13, objectFit: 'contain', zIndex: -1 }}
-        />
         <div className="flex-1 min-w-0">
           <p style={{ fontFamily: 'var(--font-display)', fontSize: 16, lineHeight: 1.2 }}>Beauty Points</p>
-          <p className="mt-1.5" style={{ fontFamily: 'var(--font-display)', fontSize: 36, lineHeight: 1 }}>{puntos.toLocaleString()}</p>
+          <p className="premium-saldo mt-1.5" style={{ fontFamily: 'var(--font-display)', fontSize: 36, lineHeight: 1 }}>{puntos.toLocaleString()}</p>
           <p className="mt-1.5" style={{ fontSize: 13, lineHeight: 1.3 }}>Puntos acumulados</p>
         </div>
         {conNiveles && <div aria-hidden="true" className="self-stretch" style={{ width: 1, background: 'rgba(255,255,255,0.28)' }} />}
@@ -310,10 +305,10 @@ function Productos({ productos, onNavigate }) {
             key={p.id}
             href="#tienda"
             onClick={(e) => { e.preventDefault(); onNavigate?.('tienda') }}
-            className="block overflow-hidden"
+            className="premium-producto block overflow-hidden"
             style={{ background: '#FFFFFF', border: BORDE, borderRadius: 18, boxShadow: SOMBRA }}
           >
-            <FotoTarjeta src={p.imagen_url} nombre={p.nombre} tinte={TINTES[(i + 2) % TINTES.length]} alto={110} tamanoInicial={56} />
+            <FotoTarjeta src={p.imagen_url} muestra={imagenMuestra(p.nombre,'producto')} nombre={p.nombre} tinte={TINTES[(i + 2) % TINTES.length]} alto={150} tamanoInicial={56} />
             <div style={{ padding: '12px 14px 14px' }}>
               <p style={{ font: '500 14px/1.3 var(--font-body)', color: 'var(--color-ink)' }}>{p.nombre}</p>
               {precio(p.precio) && <p className="mt-1.5" style={{ font: '500 14px/1.2 var(--font-body)', color: 'var(--color-primary)' }}>{precio(p.precio)}</p>}
@@ -377,7 +372,7 @@ export default function Home({ nombrePaciente = 'Cliente', clinica, onNavigate }
   const indiceServicio = proximaCita ? servicios.findIndex((s) => s === servicioDeCita(proximaCita, servicios)) : -1
 
   return (
-    <div style={{ background: 'var(--color-fondo-app)' }}>
+    <div className="cliente-premium">
       <Cabecera nombre={nombrePaciente} clinica={clinica} onNavigate={onNavigate} />
 
       {cargando ? (
@@ -386,6 +381,14 @@ export default function Home({ nombrePaciente = 'Cliente', clinica, onNavigate }
         <ErrorCarga onReintentar={cargar} />
       ) : (
         <div className="px-5 pt-5 pb-8 flex flex-col gap-7">
+          <section className="premium-hero premium-panel" aria-label="Tu espacio de bienestar">
+            <FotoTarjeta src={servicios.find(s=>s.imagen_url)?.imagen_url} muestra={imagenMuestra(servicios[0]?.nombre) || '/images/muestras/instalaciones.webp'} nombre={clinica?.nombre} alto={310} prioridad/>
+            <div className="premium-hero-contenido">
+              <p className="premium-eyebrow">Tu momento, tu espacio</p>
+              <h2>El arte de cuidarte.</h2>
+              <button type="button" className="premium-boton" onClick={()=>onNavigate?.('agenda')}>Explorar servicios <Flecha/></button>
+            </div>
+          </section>
           {proximaCita ? (
             <ProximaVisita
               cita={proximaCita}
@@ -400,6 +403,7 @@ export default function Home({ nombrePaciente = 'Cliente', clinica, onNavigate }
           <TarjetaPuntos puntos={puntos} umbrales={umbrales} onNavigate={onNavigate} conNiveles={tiene('membresias')} />
           {tiene('promociones') && <PromocionesCliente onNavigate={onNavigate} />}
           {productos.length > 0 && <Productos productos={productos} onNavigate={onNavigate} />}
+          <p className="premium-proveedor">Tecnología para tu negocio por Melissa</p>
         </div>
       )}
     </div>

@@ -4,8 +4,8 @@ import QRCode from 'qrcode'
 import { supabase } from '../lib/supabaseClient'
 import { obtenerPacienteActual } from '../lib/auth'
 import { calcularNivelYProgreso, obtenerUmbrales } from '../lib/fidelidad'
-import logoMelissa from '../assets/melissa-logo-64.png'
-import logoMelissaMarcaAgua from '../assets/melissa-logo-256.png'
+import MarcaNegocio from '../components/MarcaNegocio'
+import '../components/clientePremium.css'
 
 /** Prefijo que usamos para reconocer nuestros propios QR al escanearlos
  * (así el escáner del admin no confunde un QR de Melissa con cualquier
@@ -19,7 +19,7 @@ const ESTADOS_CANJE = {
   cancelado: { texto: 'Cancelado', color: 'var(--color-texto-terciario)' },
 }
 
-export default function TarjetaVIP({ onNavigate }) {
+export default function TarjetaVIP({ onNavigate, clinica }) {
   const { tiene } = useFunciones()
   const [paciente, setPaciente] = useState(null)
   const [puntos, setPuntos] = useState(0)
@@ -28,6 +28,7 @@ export default function TarjetaVIP({ onNavigate }) {
   const [canjes, setCanjes] = useState([])
   const [qrDataUrl, setQrDataUrl] = useState(null)
   const [cargando, setCargando] = useState(true)
+  const [errorCarga, setErrorCarga] = useState('')
   const [mostrarCanje, setMostrarCanje] = useState(false)
   const [canjeando, setCanjeando] = useState(false)
   const [mensaje, setMensaje] = useState('')
@@ -37,29 +38,35 @@ export default function TarjetaVIP({ onNavigate }) {
   }, [])
 
   async function cargar() {
+    setCargando(true)
+    setErrorCarga('')
+    try {
     const p = await obtenerPacienteActual()
     setPaciente(p)
     if (!p) {
       setCargando(false)
       return
     }
-    const { data: movimientos } = await supabase.from('puntos_movimientos').select('puntos').eq('paciente_id', p.id)
+    const { data: movimientos, error: errorPuntos } = await supabase.from('puntos_movimientos').select('puntos').eq('paciente_id', p.id)
+    if (errorPuntos) throw errorPuntos
     setPuntos((movimientos || []).reduce((sum, m) => sum + m.puntos, 0))
     setUmbrales(await obtenerUmbrales(p.clinica_id))
 
-    const { data: dataRecompensas } = await supabase
+    const { data: dataRecompensas, error: errorRecompensas } = await supabase
       .from('recompensas')
       .select('id, nombre, costo_puntos')
       .eq('clinica_id', p.clinica_id)
       .eq('activa', true)
       .order('orden')
+    if (errorRecompensas) throw errorRecompensas
     setRecompensas(dataRecompensas || [])
 
-    const { data: dataCanjes } = await supabase
+    const { data: dataCanjes, error: errorCanjes } = await supabase
       .from('canjes')
       .select('id, recompensa_nombre, puntos, codigo, estado, fecha_solicitud, nota')
       .order('fecha_solicitud', { ascending: false })
       .limit(8)
+    if (errorCanjes) throw errorCanjes
     setCanjes(dataCanjes || [])
 
     const url = await QRCode.toDataURL(`${PREFIJO_QR_CLIENTE}${p.id}`, {
@@ -69,7 +76,8 @@ export default function TarjetaVIP({ onNavigate }) {
     })
     setQrDataUrl(url)
 
-    setCargando(false)
+    } catch { setErrorCarga('No pudimos consultar tus puntos y beneficios. Intenta nuevamente.') }
+    finally { setCargando(false) }
   }
 
   async function canjear(recompensa) {
@@ -108,6 +116,7 @@ export default function TarjetaVIP({ onNavigate }) {
   }
 
   if (cargando) return <p className="text-center pt-16 text-sm text-ink/60">Cargando tarjeta...</p>
+  if (errorCarga) return <div className="cliente-premium p-5"><p role="alert" className="premium-vacio">{errorCarga}</p><button type="button" className="premium-boton mt-4" onClick={cargar}>Reintentar</button></div>
   if (!paciente) return <p className="text-center pt-16 text-sm text-ink/60">Inicia sesión para ver tu tarjeta.</p>
 
   const { nivelActual } = calcularNivelYProgreso(puntos, umbrales)
@@ -115,11 +124,12 @@ export default function TarjetaVIP({ onNavigate }) {
 
   return (
     <div
-      className="font-body px-5 pb-10"
+      className="cliente-premium font-body px-5 pb-10"
       style={{ background: 'var(--color-fondo-app)', paddingTop: 'calc(env(safe-area-inset-top) + 32px)' }}
     >
       <div className="flex flex-col items-center mb-5">
-        <img src={logoMelissa} alt="Melissa" className="w-16 h-16 rounded-2xl" />
+        <MarcaNegocio clinica={clinica} grande/>
+        <p className="mt-2 text-sm">{clinica?.nombre || 'Tu negocio'}</p>
         {tiene('membresias') && (
           <p className="mt-2" style={{ font: "500 10px/1 var(--font-body)", letterSpacing: '0.16em', textTransform: 'uppercase', color: 'var(--color-dorado)' }}>
             Miembro {nivelActual.nombre}
@@ -127,21 +137,14 @@ export default function TarjetaVIP({ onNavigate }) {
         )}
       </div>
 
-      <div className="rounded-2xl p-5 shadow-tarjeta-oscura relative overflow-hidden" style={{ background: 'var(--gradiente-fondo-oscuro)', border: '1px solid var(--color-dorado)' }}>
-        <img
-          src={logoMelissaMarcaAgua}
-          alt=""
-          aria-hidden="true"
-          className="absolute pointer-events-none"
-          style={{ top: -20, right: -30, width: 180, height: 180, opacity: 0.13, objectFit: 'contain' }}
-        />
+      <div className="premium-fidelidad rounded-2xl p-5 shadow-tarjeta-oscura relative overflow-hidden" style={{ background: 'var(--gradiente-fondo-oscuro)', border: '1px solid var(--color-dorado)' }}>
         <p style={{ fontFamily: 'var(--font-display)', fontSize: 18, color: '#FFFFFF' }}>{paciente.nombre}</p>
         <p className="text-[11px] mt-0.5" style={{ color: 'rgba(233,169,193,0.75)' }}>{codigoInterno}</p>
 
         <div className="h-px my-4" style={{ background: 'rgba(235,203,134,0.3)' }} />
 
         <p style={{ font: "500 10px/1 var(--font-body)", letterSpacing: '0.16em', textTransform: 'uppercase', color: 'var(--color-dorado-claro)' }}>Saldo</p>
-        <p className="mt-1" style={{ fontFamily: 'var(--font-display)', fontSize: 30, color: 'var(--color-dorado)' }}>{puntos.toLocaleString()}</p>
+        <p className="premium-saldo mt-1" style={{ fontFamily: 'var(--font-display)', fontSize: 30, color: 'var(--color-dorado)' }}>{puntos.toLocaleString()}</p>
 
         <div className="bg-white rounded-lg mx-auto mt-5 p-2" style={{ width: 96, height: 96 }}>
           {qrDataUrl && <img src={qrDataUrl} alt="Código QR de tu tarjeta" className="w-full h-full object-contain" />}
@@ -153,7 +156,7 @@ export default function TarjetaVIP({ onNavigate }) {
         {tiene('canjes') && (
         <button
           onClick={() => setMostrarCanje((v) => !v)}
-          className="flex-1 rounded-[10px] py-2.5 text-sm"
+          className="premium-boton flex-1 rounded-[10px] py-2.5 text-sm"
           style={{ background: 'var(--gradiente-dorado)', color: 'var(--color-ink)', font: "500 12px/1 var(--font-body)" }}
         >
           Canjear puntos
@@ -176,7 +179,7 @@ export default function TarjetaVIP({ onNavigate }) {
             Al pedir un canje, tus puntos quedan reservados y el negocio lo aprueba y aplica el descuento en tu compra.
           </p>
           {recompensas.length === 0 && (
-            <p className="text-center text-xs" style={{ color: 'var(--color-texto-secundario)' }}>Tu negocio aún no tiene recompensas configuradas.</p>
+            <p className="premium-vacio text-center text-xs" style={{ color: 'var(--color-texto-secundario)' }}>Tu negocio aún no tiene recompensas configuradas. Tus puntos se conservan; consulta las novedades en tu próxima visita.</p>
           )}
           {recompensas.map((r) => {
             const alcanza = puntos >= r.costo_puntos

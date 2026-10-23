@@ -21,6 +21,7 @@ import { aplicarTemaDeClinica, aplicarTemaDeClinicaPorId } from './lib/aplicarTe
 import { obtenerSesionActual, obtenerPerfilActual, cerrarSesion } from './lib/auth'
 import { supabase } from './lib/supabaseClient'
 import { resolverSlugClinica } from './lib/tenant'
+import { esClinicaDemo } from './lib/imagenesMuestra'
 
 // Pantallas visibles en el tab bar principal. Historial y Referidos se
 // alcanzan desde Perfil (ver Perfil.jsx), no ocupan un ícono propio.
@@ -169,18 +170,19 @@ export default function App() {
 
   return (
     <FuncionesProvider usuarioId={sesion.user.id}>
-    <div className={esAdmin ? 'min-h-screen flex flex-col' : 'sm:max-w-app mx-auto min-h-screen flex flex-col'} style={{ background: 'var(--color-fondo-app)' }}>
+    <div className={esAdmin ? 'min-h-screen flex flex-col' : 'cliente-premium sm:max-w-app mx-auto min-h-screen flex flex-col'} style={{ background: 'var(--color-fondo-app)' }}>
+      {!esAdmin && esClinicaDemo(clinica) && <p className="premium-demo">Entorno de demostración · fotografías ilustrativas</p>}
       <div className="flex-1">
         {!esAdmin && pantalla === 'inicio' && (
           <Home nombrePaciente={perfil?.nombre || sesion.user.email} clinica={clinica} onNavigate={setPantalla} />
         )}
-        {!esAdmin && pantalla === 'agenda' && <Agenda />}
+        {!esAdmin && pantalla === 'agenda' && <Agenda clinica={clinica}/>}
         {!esAdmin && pantalla === 'tienda' && (
           <RequiereFuncion funcion="tienda" onVolver={() => setPantalla('inicio')}>
             <Tienda />
           </RequiereFuncion>
         )}
-        {!esAdmin && pantalla === 'tarjeta' && <TarjetaVIP onNavigate={setPantalla} />}
+        {!esAdmin && pantalla === 'tarjeta' && <TarjetaVIP clinica={clinica} onNavigate={setPantalla} />}
         {!esAdmin && pantalla === 'historial' && <Historial onVolver={() => setPantalla('perfil')} />}
         {!esAdmin && pantalla === 'referidos' && (
           <RequiereFuncion funcion="referidos" onVolver={() => setPantalla('inicio')}>

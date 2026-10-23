@@ -54,7 +54,7 @@ export default function TabBar({ activo, onNavigate, mostrarAdmin }) {
   return (
     <nav
       aria-label="Navegación principal"
-      className="flex px-2 pt-2 sticky bottom-0 z-30"
+      className="premium-nav flex px-2 pt-2 sticky bottom-0 z-30"
       style={{
         background: '#FFFFFF',
         borderTop: '1px solid var(--color-borde-tarjeta)',

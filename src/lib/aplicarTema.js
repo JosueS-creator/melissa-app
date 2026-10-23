@@ -15,6 +15,8 @@ function inyectarTokens(clinica) {
   const tema = clinica.temas_base
   const tokens = tema?.tokens || {}
   const root = document.documentElement
+  // No heredar gradientes o tipografías de la clínica vista anteriormente.
+  for (const key of ['color-fondo-app','color-fondo-oscuro','gradiente-fondo-oscuro','gradiente-primario','color-dorado','color-dorado-claro','gradiente-dorado','gradiente-puntos','color-texto-secundario','color-texto-terciario','color-borde-tarjeta','color-ink','font-display','font-body']) root.style.removeProperty(`--${key}`)
 
   root.style.setProperty('--color-primary', clinica.color_primario || tema?.color_primario_default)
   root.style.setProperty('--color-secondary', clinica.color_secundario || tema?.color_secundario_default)
