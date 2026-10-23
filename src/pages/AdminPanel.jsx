@@ -9,6 +9,8 @@ import { useFunciones } from '../lib/FuncionesContext'
 import { NOMBRE_PLAN } from '../lib/planes'
 import FuncionBloqueada from '../components/FuncionBloqueada'
 import CabeceraAdmin from '../components/admin/CabeceraAdmin'
+import SeccionAdmin from '../components/admin/SeccionAdmin'
+import '../components/admin/sistemaAdmin.css'
 import NavInferior, { PRINCIPALES } from '../components/admin/NavInferior'
 import HojaMas from '../components/admin/HojaMas'
 import PanelAgenda from '../components/admin/PanelAgenda'
@@ -90,7 +92,7 @@ export default function AdminPanel({ onCerrarSesion, esSuperAdmin, onIrAMelissa 
   }
 
   return (
-    <div className="panel-admin lg:flex lg:min-h-screen max-lg:bg-[var(--admin-fondo)]">
+    <div className={`panel-admin ${tab !== 'citas' ? 'admin-shell-unificado' : ''} lg:flex lg:min-h-screen max-lg:bg-[var(--admin-fondo)]`}>
       <aside
         className="hidden lg:flex lg:flex-col lg:w-[252px] lg:flex-shrink-0 lg:sticky lg:top-0 lg:h-screen px-5 py-6"
         style={{ background: 'var(--gradiente-fondo-oscuro)' }}
@@ -131,23 +133,23 @@ export default function AdminPanel({ onCerrarSesion, esSuperAdmin, onIrAMelissa 
       </aside>
 
       <div className={`min-w-0 w-full sm:max-w-app mx-auto ${tab === 'citas' ? 'lg:max-w-none' : 'lg:max-w-3xl'} lg:mx-0 lg:flex-1 px-5 lg:px-10 pb-6 lg:pb-10 pt-[calc(env(safe-area-inset-top)+14px)] lg:pt-10 font-body`}>
-      <CabeceraAdmin nombre={primerNombre(perfil.nombre)} titulo={tabActual.label} plan={plan ? NOMBRE_PLAN[plan] || plan : null} />
+      {(tab === 'citas' || sinPlan(tabActual)) && <CabeceraAdmin nombre={primerNombre(perfil.nombre)} titulo={tabActual.label} plan={plan ? NOMBRE_PLAN[plan] || plan : null} />}
 
       {planCargado && sinPlan(tabActual) && <FuncionBloqueada funcion={tabActual.funcion} />}
       {mostrar('citas') && <PanelCitas key={perfil.clinica_id} clinicaId={perfil.clinica_id} />}
       {/* El CRM recibe EscanerQR e HistorialCliente (definidos aquí) para reutilizarlos sin duplicar código. */}
-      {mostrar('pacientes') && <Crm clinicaId={perfil.clinica_id} HistorialCliente={HistorialCliente} EscanerQR={EscanerQR} onVerOportunidades={() => setTab('reactivar')} />}
-      {mostrar('reactivar') && <ClientesReactivar clinicaId={perfil.clinica_id} HistorialCliente={HistorialCliente} />}
-      {mostrar('canjes') && <Canjes onCambio={contarCanjesPendientes} />}
-      {mostrar('promociones') && <Promociones clinicaId={perfil.clinica_id} />}
-      {mostrar('empleados') && <PanelEmpleados clinicaId={perfil.clinica_id} />}
-      {mostrar('servicios') && <PanelServicios clinicaId={perfil.clinica_id} />}
-      {mostrar('productos') && <PanelProductos clinicaId={perfil.clinica_id} />}
-      {mostrar('caja') && <PanelCaja clinicaId={perfil.clinica_id} perfilId={perfil.id} />}
+      {mostrar('pacientes') && <SeccionAdmin titulo="Clientes" descripcion="Directorio y relación con tus clientes"><Crm clinicaId={perfil.clinica_id} HistorialCliente={HistorialCliente} EscanerQR={EscanerQR} onVerOportunidades={() => setTab('reactivar')} /></SeccionAdmin>}
+      {mostrar('reactivar') && <SeccionAdmin titulo="Por reactivar" descripcion="Oportunidades de seguimiento"><ClientesReactivar clinicaId={perfil.clinica_id} HistorialCliente={HistorialCliente} /></SeccionAdmin>}
+      {mostrar('canjes') && <SeccionAdmin titulo="Canjes" descripcion="Solicitudes y recompensas"><Canjes onCambio={contarCanjesPendientes} /></SeccionAdmin>}
+      {mostrar('promociones') && <SeccionAdmin titulo="Promociones" descripcion="Ofertas de tu clínica"><Promociones clinicaId={perfil.clinica_id} /></SeccionAdmin>}
+      {mostrar('empleados') && <SeccionAdmin titulo="Empleados" descripcion="Tu equipo de profesionales"><PanelEmpleados clinicaId={perfil.clinica_id} /></SeccionAdmin>}
+      {mostrar('servicios') && <SeccionAdmin titulo="Servicios" descripcion="Catálogo de tratamientos"><PanelServicios clinicaId={perfil.clinica_id} /></SeccionAdmin>}
+      {mostrar('productos') && <SeccionAdmin titulo="Productos" descripcion="Catálogo de tu tienda"><PanelProductos clinicaId={perfil.clinica_id} /></SeccionAdmin>}
+      {mostrar('caja') && <SeccionAdmin titulo="Caja" descripcion="Movimientos y control diario"><PanelCaja clinicaId={perfil.clinica_id} perfilId={perfil.id} /></SeccionAdmin>}
       {mostrar('marca') && (
-        <div className="-mx-5">
+        <SeccionAdmin titulo="Marca" descripcion="Identidad y personalización de tu clínica">
           <Personalizacion />
-        </div>
+        </SeccionAdmin>
       )}
       </div>
 
@@ -321,7 +323,7 @@ function PanelEmpleados({ clinicaId }) {
     <div>
       <button
         onClick={() => setMostrarForm((v) => !v)}
-        className="w-full rounded-xl py-2.5 text-sm font-medium mb-3"
+        className="admin-action w-full rounded-xl py-2.5 text-sm font-medium mb-3"
         style={{ background: mostrarForm ? 'var(--color-accent)' : 'var(--gradiente-primario)', color: mostrarForm ? 'var(--color-ink)' : '#FFFFFF', boxShadow: mostrarForm ? 'none' : '0 3px 8px rgba(201,59,121,0.3)' }}
       >
         {mostrarForm ? 'Cancelar' : '+ Agregar empleado'}
@@ -346,7 +348,7 @@ function PanelEmpleados({ clinicaId }) {
           <button
             type="submit"
             disabled={guardando}
-            className="rounded-lg py-2.5 text-white text-sm font-medium disabled:opacity-60"
+            className="admin-action rounded-lg py-2.5 text-white text-sm font-medium disabled:opacity-60"
             style={{ background: 'var(--gradiente-primario)' }}
           >
             {guardando ? 'Guardando...' : 'Guardar empleado'}
@@ -355,11 +357,11 @@ function PanelEmpleados({ clinicaId }) {
       )}
 
       {cargando && <p className="text-sm text-ink/50">Cargando empleados...</p>}
-      {!cargando && empleados.length === 0 && <p className="text-sm text-ink/50">Todavía no tienes empleados registrados.</p>}
+      {!cargando && empleados.length === 0 && <p className="admin-empty text-sm text-ink/50">Todavía no tienes empleados registrados.</p>}
 
       <div className="flex flex-col gap-2">
         {empleados.map((e) => (
-          <div key={e.id} className="rounded-xl p-3 flex items-center gap-3" style={{ background: 'var(--color-accent)', opacity: e.activo ? 1 : 0.5 }}>
+          <div key={e.id} className="admin-card admin-catalog-record rounded-xl p-3 flex items-center gap-3" style={{ background: 'var(--color-accent)', opacity: e.activo ? 1 : 0.5 }}>
             <div className="w-9 h-9 rounded-full flex-shrink-0" style={{ background: 'var(--gradiente-dorado)' }} />
             <div className="flex-1">
               <p className="text-sm font-medium text-ink">{e.nombre}</p>
@@ -444,7 +446,7 @@ function PanelServicios({ clinicaId }) {
     <div>
       <button
         onClick={() => setMostrarForm((v) => !v)}
-        className="w-full rounded-xl py-2.5 text-sm font-medium mb-3"
+        className="admin-action w-full rounded-xl py-2.5 text-sm font-medium mb-3"
         style={{ background: mostrarForm ? 'var(--color-accent)' : 'var(--color-primary)', color: mostrarForm ? 'var(--color-ink)' : '#FFFFFF' }}
       >
         {mostrarForm ? 'Cancelar' : '+ Agregar servicio'}
@@ -490,7 +492,7 @@ function PanelServicios({ clinicaId }) {
           <button
             type="submit"
             disabled={guardando}
-            className="rounded-lg py-2.5 text-white text-sm font-medium disabled:opacity-60"
+            className="admin-action rounded-lg py-2.5 text-white text-sm font-medium disabled:opacity-60"
             style={{ background: 'var(--gradiente-primario)', boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.30), 0 6px 14px rgba(201,59,121,0.28)' }}
           >
             {guardando ? 'Guardando...' : 'Guardar servicio'}
@@ -499,11 +501,11 @@ function PanelServicios({ clinicaId }) {
       )}
 
       {cargando && <p className="text-sm text-ink/50">Cargando servicios...</p>}
-      {!cargando && servicios.length === 0 && <p className="text-sm text-ink/50">Todavía no tienes servicios registrados.</p>}
+      {!cargando && servicios.length === 0 && <p className="admin-empty text-sm text-ink/50">Todavía no tienes servicios registrados.</p>}
 
       <div className="flex flex-col gap-2">
         {servicios.map((s) => (
-          <div key={s.id} className="rounded-xl p-3 flex items-center justify-between" style={{ background: 'var(--color-accent)', opacity: s.activo ? 1 : 0.5 }}>
+          <div key={s.id} className="admin-card admin-catalog-record rounded-xl p-3 flex items-center justify-between" style={{ background: 'var(--color-accent)', opacity: s.activo ? 1 : 0.5 }}>
             <div>
               <p className="text-sm font-medium text-ink">{s.nombre}</p>
               <p className="text-[11px] text-ink/50">L {Number(s.precio).toFixed(2)} · {s.duracion_minutos} min</p>
@@ -978,7 +980,7 @@ function PanelProductos({ clinicaId }) {
     <div>
       <button
         onClick={() => setMostrarForm((v) => !v)}
-        className="w-full rounded-xl py-2.5 text-sm font-medium mb-3"
+        className="admin-action w-full rounded-xl py-2.5 text-sm font-medium mb-3"
         style={{ background: mostrarForm ? 'var(--color-accent)' : 'var(--color-primary)', color: mostrarForm ? 'var(--color-ink)' : '#FFFFFF' }}
       >
         {mostrarForm ? 'Cancelar' : '+ Agregar producto'}
@@ -1042,7 +1044,7 @@ function PanelProductos({ clinicaId }) {
           {escaneandoCampo && (
             <EscanerBarras onDetectado={(c) => { setCodigoBarras(c); setEscaneandoCampo(false) }} />
           )}
-          <label className="text-xs px-3 py-2 rounded-lg bg-white cursor-pointer text-center" style={{ color: 'var(--color-texto-secundario)' }}>
+          <label className="admin-upload text-xs px-3 py-2 rounded-lg bg-white cursor-pointer text-center" style={{ color: 'var(--color-texto-secundario)' }}>
             {archivo ? archivo.name : 'Elegir foto (opcional)'}
             <input type="file" accept="image/*" onChange={(e) => setArchivo(e.target.files?.[0] || null)} className="hidden" />
           </label>
@@ -1052,7 +1054,7 @@ function PanelProductos({ clinicaId }) {
           <button
             type="submit"
             disabled={guardando}
-            className="rounded-lg py-2.5 text-white text-sm font-medium disabled:opacity-60"
+            className="admin-action rounded-lg py-2.5 text-white text-sm font-medium disabled:opacity-60"
             style={{ background: 'var(--gradiente-primario)', boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.30), 0 6px 14px rgba(201,59,121,0.28)' }}
           >
             {guardando ? 'Guardando...' : 'Guardar producto'}
@@ -1061,7 +1063,7 @@ function PanelProductos({ clinicaId }) {
       )}
 
       {cargando && <p className="text-sm text-ink/50">Cargando productos...</p>}
-      {!cargando && productos.length === 0 && <p className="text-sm text-ink/50">Todavía no tienes productos en tu tienda.</p>}
+      {!cargando && productos.length === 0 && <p className="admin-empty text-sm text-ink/50">Todavía no tienes productos en tu tienda.</p>}
 
       {asignando && (
         <div className="mb-3">
@@ -1075,7 +1077,7 @@ function PanelProductos({ clinicaId }) {
 
       <div className="flex flex-col gap-2">
         {productos.map((p) => (
-          <div key={p.id} className="rounded-xl p-3 flex items-center gap-3" style={{ background: 'var(--color-accent)', opacity: p.activo ? 1 : 0.5 }}>
+          <div key={p.id} className="admin-card admin-catalog-record rounded-xl p-3 flex items-center gap-3" style={{ background: 'var(--color-accent)', opacity: p.activo ? 1 : 0.5 }}>
             <div className="w-12 h-12 rounded-lg flex-shrink-0 bg-white overflow-hidden flex items-center justify-center">
               {p.imagen_url ? <img src={p.imagen_url} alt={p.nombre} className="w-full h-full object-cover" /> : <span className="text-[8px] text-ink/30">Sin foto</span>}
             </div>
@@ -1356,7 +1358,7 @@ function PanelCaja({ clinicaId, perfilId }) {
     <div>
       <button
         onClick={() => setMostrarForm((v) => !v)}
-        className="w-full rounded-xl py-2.5 text-sm font-medium mb-3"
+        className="admin-action w-full rounded-xl py-2.5 text-sm font-medium mb-3"
         style={{ background: mostrarForm ? 'var(--color-accent)' : 'var(--gradiente-primario)', color: mostrarForm ? 'var(--color-ink)' : '#FFFFFF', boxShadow: mostrarForm ? 'none' : '0 3px 8px rgba(201,59,121,0.3)' }}
       >
         {mostrarForm ? 'Cancelar' : '+ Registrar ingreso / gasto'}
@@ -1420,7 +1422,7 @@ function PanelCaja({ clinicaId, perfilId }) {
           <button
             type="submit"
             disabled={guardando}
-            className="rounded-lg py-2.5 text-white text-sm font-medium disabled:opacity-60"
+            className="admin-action rounded-lg py-2.5 text-white text-sm font-medium disabled:opacity-60"
             style={{ background: 'var(--gradiente-primario)' }}
           >
             {guardando ? 'Guardando...' : direccion === 'ingreso' ? 'Registrar ingreso' : 'Registrar gasto'}
@@ -1430,7 +1432,7 @@ function PanelCaja({ clinicaId, perfilId }) {
 
       <button
         onClick={() => { setMensajeVenta(''); setVentaProducto(null); setEscaneando((v) => !v) }}
-        className="w-full rounded-xl py-2.5 text-sm font-medium mb-3"
+        className="admin-action w-full rounded-xl py-2.5 text-sm font-medium mb-3"
         style={{ background: 'var(--color-accent)', color: 'var(--color-ink)' }}
       >
         {escaneando ? 'Cerrar escáner' : '📷 Vender producto (escanear código de barras)'}
@@ -1471,7 +1473,7 @@ function PanelCaja({ clinicaId, perfilId }) {
               Suma {Number(ventaProducto.puntos_otorga) * Math.max(1, parseInt(cantidadVenta, 10) || 1)} puntos al cliente.
             </p>
           )}
-          <button onClick={registrarVenta} disabled={registrandoVenta} className="rounded-lg py-2.5 text-white text-sm font-medium disabled:opacity-60" style={{ background: 'var(--gradiente-primario)' }}>
+          <button onClick={registrarVenta} disabled={registrandoVenta} className="admin-action rounded-lg py-2.5 text-white text-sm font-medium disabled:opacity-60" style={{ background: 'var(--gradiente-primario)' }}>
             {registrandoVenta ? 'Registrando...' : `Registrar venta · L ${(Number(ventaProducto.precio) * Math.max(1, parseInt(cantidadVenta, 10) || 1)).toFixed(2)}`}
           </button>
         </div>
@@ -1479,7 +1481,7 @@ function PanelCaja({ clinicaId, perfilId }) {
 
       {mensajeVenta && <p className="text-xs mb-3" style={{ color: 'var(--color-primary)' }}>{mensajeVenta}</p>}
 
-      <div className="rounded-xl p-4 mb-4" style={{ background: 'var(--gradiente-fondo-oscuro)' }}>
+      <div className="admin-summary rounded-xl p-4 mb-4" style={{ background: 'var(--gradiente-fondo-oscuro)' }}>
         <p className="text-[11px]" style={{ color: 'var(--color-dorado-claro)' }}>Resultado de hoy (ingresos − egresos)</p>
         <p className="text-xl text-white font-medium mt-1">L {netoHoy.toFixed(2)}</p>
         <div className="flex flex-wrap gap-x-4 gap-y-1 mt-2">
@@ -1494,7 +1496,7 @@ function PanelCaja({ clinicaId, perfilId }) {
         </div>
       </div>
 
-      <div className="rounded-xl p-3 mb-4 bg-white border" style={{ borderColor: 'var(--color-borde-tarjeta)' }}>
+      <div className="admin-card rounded-xl p-3 mb-4 bg-white border" style={{ borderColor: 'var(--color-borde-tarjeta)' }}>
         <p className="text-sm font-medium mb-1" style={{ color: 'var(--color-ink)' }}>Cierre de caja (efectivo)</p>
         <p className="text-xs mb-2" style={{ color: 'var(--color-texto-secundario)' }}>
           Efectivo esperado en caja hoy: <strong>L {efectivoEsperado.toFixed(2)}</strong> (ingresos en efectivo − gastos en efectivo)
@@ -1576,7 +1578,7 @@ function PanelCaja({ clinicaId, perfilId }) {
             {pedidos
               .filter((p) => !['entregado', 'cancelado'].includes(p.estado))
               .map((p) => (
-                <div key={p.id} className="rounded-xl p-3 flex items-center justify-between gap-2" style={{ background: 'var(--color-accent)' }}>
+                <div key={p.id} className="admin-card admin-catalog-record rounded-xl p-3 flex items-center justify-between gap-2" style={{ background: 'var(--color-accent)' }}>
                   <div>
                     <p className="text-sm font-medium text-ink">{p.pacientes?.nombre ?? 'Cliente'} · L {Number(p.total).toFixed(2)}</p>
                     <p className="text-[11px] text-ink/50">
@@ -1594,10 +1596,10 @@ function PanelCaja({ clinicaId, perfilId }) {
       )}
 
       <p className="text-sm font-medium mb-2" style={{ color: 'var(--color-ink)' }}>Movimientos de hoy</p>
-      {movimientosHoy.length === 0 && <p className="text-sm text-ink/50">Todavía no hay movimientos hoy.</p>}
+      {movimientosHoy.length === 0 && <p className="admin-empty text-sm text-ink/50">Todavía no hay movimientos hoy.</p>}
       <div className="flex flex-col gap-2">
         {movimientosHoy.map((m) => (
-          <div key={m.id} className="rounded-xl p-3 flex justify-between items-center" style={{ background: 'var(--color-accent)' }}>
+          <div key={m.id} className="admin-card admin-catalog-record rounded-xl p-3 flex justify-between items-center" style={{ background: 'var(--color-accent)' }}>
             <div>
               <p className="text-sm font-medium text-ink">{m.concepto}</p>
               {m.descuento > 0 && (

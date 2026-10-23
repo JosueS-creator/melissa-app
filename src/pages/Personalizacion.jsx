@@ -112,7 +112,7 @@ export default function Personalizacion() {
   }
 
   return (
-    <div className="sm:max-w-app mx-auto px-5 pt-8 pb-10 font-body">
+    <div className="admin-brand sm:max-w-app mx-auto px-5 pt-8 pb-10 font-body">
       <p className="font-display text-xl text-ink mb-1">Personaliza tu app</p>
       <p className="text-xs text-ink/50 mb-6">Así se verá la app para tus clientes.</p>
 
@@ -125,7 +125,7 @@ export default function Personalizacion() {
             <span className="text-[10px] text-ink/30">Sin logo</span>
           )}
         </div>
-        <label className="text-xs font-medium px-4 py-2 rounded-lg cursor-pointer" style={{ background: 'var(--color-accent)', color: 'var(--color-ink)' }}>
+        <label className="admin-upload text-xs font-medium px-4 py-2 rounded-lg cursor-pointer" style={{ background: 'var(--color-accent)', color: 'var(--color-ink)' }}>
           Subir logo
           <input type="file" accept="image/*" onChange={elegirLogo} className="hidden" />
         </label>

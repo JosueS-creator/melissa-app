@@ -184,11 +184,11 @@ export default function Promociones({ clinicaId }) {
         Prepara beneficios para grupos de clientes (los mismos segmentos del CRM). El cliente la ve dentro de la app; el descuento lo aplicas tú al cobrar.
       </p>
 
-      {mensaje && <p className="text-xs mb-3 rounded-lg px-3 py-2" style={{ background: 'var(--color-accent)', color: 'var(--color-ink)' }}>{mensaje}</p>}
+      {mensaje && <p className="admin-notice text-xs mb-3 rounded-lg px-3 py-2" style={{ background: 'var(--color-accent)', color: 'var(--color-ink)' }}>{mensaje}</p>}
 
       <button
         onClick={() => setMostrarForm((v) => !v)}
-        className="w-full rounded-xl py-2.5 text-sm font-medium mb-3"
+        className="admin-action w-full rounded-xl py-2.5 text-sm font-medium mb-3"
         style={{ background: mostrarForm ? 'var(--color-accent)' : 'var(--gradiente-primario)', color: mostrarForm ? 'var(--color-ink)' : '#FFFFFF' }}
       >
         {mostrarForm ? 'Cancelar' : '+ Nueva promoción'}
@@ -227,21 +227,21 @@ export default function Promociones({ clinicaId }) {
             <option value="borrador">Guardar como borrador (nadie la ve)</option>
             <option value="activa">Activar ya</option>
           </select>
-          <button type="submit" disabled={guardando} className="rounded-lg py-2.5 text-white text-sm font-medium disabled:opacity-60" style={{ background: 'var(--gradiente-primario)' }}>
+          <button type="submit" disabled={guardando} className="admin-action rounded-lg py-2.5 text-white text-sm font-medium disabled:opacity-60" style={{ background: 'var(--gradiente-primario)' }}>
             {guardando ? 'Guardando...' : 'Guardar promoción'}
           </button>
         </form>
       )}
 
       {cargando && <p className="text-sm text-ink/50">Cargando promociones...</p>}
-      {!cargando && promos.length === 0 && <p className="text-sm text-ink/50 mb-4">Todavía no tienes promociones.</p>}
+      {!cargando && promos.length === 0 && <p className="admin-empty text-sm text-ink/50 mb-4">Todavía no tienes promociones.</p>}
 
       <div className="flex flex-col gap-2 mb-6">
         {promos.map((p) => {
           const est = estadoVisible(p)
           const r = resumen[p.id] || {}
           return (
-            <div key={p.id} className="rounded-xl p-3" style={{ background: 'var(--color-accent)' }}>
+            <div key={p.id} className="admin-card rounded-xl p-3" style={{ background: 'var(--color-accent)' }}>
               <div className="flex items-start justify-between gap-2">
                 <div>
                   <p className="text-sm font-medium text-ink">{p.titulo}</p>
@@ -298,7 +298,7 @@ export default function Promociones({ clinicaId }) {
                 ? <>Descuento {formatearPorcentaje(promoElegida.descuento_porcentaje)}: <strong>{dinero(descuentoVista)}</strong> · el cliente paga <strong>{dinero(Number(bruto) - descuentoVista)}</strong></>
                 : <span style={{ color: 'var(--color-texto-terciario)' }}>Escribe el monto para ver el descuento (lo calcula el sistema).</span>}
             </p>
-            <button type="submit" disabled={aplicando} className="rounded-lg py-2.5 text-white text-sm font-medium disabled:opacity-60" style={{ background: 'var(--gradiente-primario)' }}>
+            <button type="submit" disabled={aplicando} className="admin-action rounded-lg py-2.5 text-white text-sm font-medium disabled:opacity-60" style={{ background: 'var(--gradiente-primario)' }}>
               {aplicando ? 'Registrando...' : 'Aplicar y cobrar'}
             </button>
           </>

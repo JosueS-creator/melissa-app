@@ -6,7 +6,7 @@ import { obtenerResumenReactivacion } from '../lib/reactivacion'
 
 function Indicador({ etiqueta, valor, nota }) {
   return (
-    <div className="rounded-xl px-3 py-2.5 bg-white" style={{ border: '1px solid var(--color-borde-tarjeta)' }}>
+    <div className="admin-metric rounded-xl px-3 py-2.5 bg-white" style={{ border: '1px solid var(--color-borde-tarjeta)' }}>
       <p className="text-[10px]" style={{ color: 'var(--color-texto-secundario)' }}>{etiqueta}</p>
       <p style={{ fontFamily: 'var(--font-display)', fontSize: 22, lineHeight: 1.2, color: 'var(--color-ink)' }}>{valor}</p>
       {nota && <p className="text-[9px]" style={{ color: 'var(--color-texto-terciario)' }}>{nota}</p>}
@@ -18,7 +18,7 @@ export function FilaCliente({ cliente, onAbrir, detalle }) {
   return (
     <button
       onClick={() => onAbrir(cliente.paciente_id)}
-      className="w-full text-left rounded-xl p-3"
+      className="admin-card w-full text-left rounded-xl p-3"
       style={{ background: 'var(--color-accent)' }}
     >
       <div className="flex items-start justify-between gap-2">
@@ -121,7 +121,7 @@ export default function Crm({ clinicaId, HistorialCliente, EscanerQR, onVerOport
         <>
           <button
             onClick={() => setMostrarEscaner((v) => !v)}
-            className="w-full rounded-xl py-2.5 text-sm font-medium mb-3"
+            className="admin-action w-full rounded-xl py-2.5 text-sm font-medium mb-3"
             style={{ background: mostrarEscaner ? 'var(--color-accent)' : 'var(--gradiente-primario)', color: mostrarEscaner ? 'var(--color-ink)' : '#FFFFFF', boxShadow: mostrarEscaner ? 'none' : '0 3px 8px rgba(201,59,121,0.3)' }}
           >
             {mostrarEscaner ? 'Cerrar escáner' : '📷 Escanear QR de un cliente'}
@@ -151,7 +151,7 @@ export default function Crm({ clinicaId, HistorialCliente, EscanerQR, onVerOport
           <button
             key={s.id}
             onClick={() => setSegmento(s.id)}
-            className="rounded-full px-3 py-1.5 text-[11px]"
+            className="admin-filter rounded-full px-3 py-1.5 text-[11px]"
             style={
               segmento === s.id
                 ? { background: 'var(--gradiente-primario)', color: '#FFFFFF', boxShadow: '0 2px 6px rgba(201,59,121,0.3)' }

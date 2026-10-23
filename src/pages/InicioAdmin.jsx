@@ -32,7 +32,7 @@ function Chip({ estado, vencida }) {
 
 function Seccion({ titulo, accion, children }) {
   return (
-    <section className="rounded-2xl bg-white border border-borde-tarjeta">
+    <section className="admin-card rounded-2xl bg-white border border-borde-tarjeta">
       <div className="flex items-center justify-between gap-3 px-5 pt-4 pb-3">
         <h2 className="font-display text-lg text-ink">{titulo}</h2>
         {accion}
@@ -98,14 +98,14 @@ export default function InicioAdmin({ clinicaId, canjesPendientes, onIr }) {
   ]
 
   return (
-    <div className="flex flex-col gap-5">
+    <div className="admin-screen flex flex-col gap-5">
       <header>
         <h1 className="font-display text-2xl lg:text-3xl text-ink">Inicio</h1>
         <p className="mt-1 text-sm text-texto-secundario">{hoyTexto.charAt(0).toUpperCase() + hoyTexto.slice(1)}</p>
       </header>
 
       {/* Indicadores del día: una sola franja, cada celda lleva a su pestaña. */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 rounded-2xl bg-white border border-borde-tarjeta overflow-hidden">
+      <div className="admin-card grid grid-cols-2 lg:grid-cols-4 rounded-2xl bg-white border border-borde-tarjeta overflow-hidden">
         {indicadores.map((it, i) => (
           <button
             key={it.titulo}

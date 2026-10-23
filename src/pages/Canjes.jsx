@@ -129,14 +129,14 @@ export default function Canjes({ onCambio }) {
         Cuando un cliente pide un canje, sus puntos quedan reservados. Aquí lo apruebas y aplicas el descuento en el cobro, o lo rechazas y se le devuelven.
       </p>
 
-      {mensaje && <p className="text-xs mb-3 rounded-lg px-3 py-2" style={{ background: 'var(--color-accent)', color: 'var(--color-ink)' }}>{mensaje}</p>}
+      {mensaje && <p className="admin-notice text-xs mb-3 rounded-lg px-3 py-2" style={{ background: 'var(--color-accent)', color: 'var(--color-ink)' }}>{mensaje}</p>}
       {cargando && <p className="text-sm text-ink/50">Cargando canjes...</p>}
       {error && <p className="text-sm" style={{ color: '#B0524A' }}>No se pudieron cargar los canjes: {error}</p>}
-      {!cargando && !error && pendientes.length === 0 && <p className="text-sm text-ink/50 mb-4">No hay canjes pendientes de aprobar.</p>}
+      {!cargando && !error && pendientes.length === 0 && <p className="admin-empty text-sm text-ink/50 mb-4">No hay canjes pendientes de aprobar.</p>}
 
       <div className="flex flex-col gap-3 mb-6">
         {pendientes.map((c) => (
-          <div key={c.id} className="rounded-xl p-3" style={{ background: 'var(--color-accent)' }}>
+          <div key={c.id} className="admin-card rounded-xl p-3" style={{ background: 'var(--color-accent)' }}>
             <div className="flex items-start justify-between gap-2">
               <div>
                 <p className="text-sm font-medium text-ink">{c.pacientes?.nombre || 'Cliente'}</p>
@@ -151,7 +151,7 @@ export default function Canjes({ onCambio }) {
 
             {abierto?.id !== c.id && (
               <div className="flex gap-2 mt-3">
-                <button onClick={() => abrir(c, 'aplicar')} className="flex-1 rounded-lg py-2 text-xs font-medium text-white" style={{ background: 'var(--gradiente-primario)' }}>
+                <button onClick={() => abrir(c, 'aplicar')} className="admin-action flex-1 rounded-lg py-2 text-xs font-medium text-white" style={{ background: 'var(--gradiente-primario)' }}>
                   Aprobar y aplicar en Caja
                 </button>
                 <button onClick={() => abrir(c, 'rechazar')} className="rounded-lg px-4 py-2 text-xs bg-white" style={{ color: '#B0524A' }}>
@@ -214,7 +214,7 @@ export default function Canjes({ onCambio }) {
             {historial.map((c) => {
               const estado = ESTADOS[c.estado] || ESTADOS.cancelado
               return (
-                <div key={c.id} className="rounded-xl p-3 bg-white" style={{ border: '1px solid var(--color-borde-tarjeta)' }}>
+                <div key={c.id} className="admin-card rounded-xl p-3 bg-white" style={{ border: '1px solid var(--color-borde-tarjeta)' }}>
                   <div className="flex items-start justify-between gap-2">
                     <p className="text-sm text-ink">{c.pacientes?.nombre || 'Cliente'} · {c.recompensa_nombre}</p>
                     <span className="text-[11px] font-medium flex-shrink-0" style={{ color: estado.color }}>{estado.texto}</span>
