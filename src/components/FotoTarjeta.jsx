@@ -12,8 +12,8 @@ export const TINTES = [
 const LINEA = '1px solid color-mix(in srgb, var(--color-ink) 14%, transparent)'
 
 export default function FotoTarjeta({ src, nombre = '', tinte = TINTES[0], alto, tamanoInicial = 64, inicialDerecha = false, prioridad = false, style }) {
-  const [fallo, setFallo] = useState(false)
-  const conFoto = Boolean(src) && !fallo
+  const [fallo, setFallo] = useState(null)
+  const conFoto = Boolean(src) && fallo !== src
   const inicial = (nombre.trim()[0] || '').toUpperCase()
 
   return (
@@ -36,7 +36,7 @@ export default function FotoTarjeta({ src, nombre = '', tinte = TINTES[0], alto,
           alt=""
           loading={prioridad ? 'eager' : 'lazy'}
           decoding="async"
-          onError={() => setFallo(true)}
+          onError={() => setFallo(src)}
           className="absolute inset-0 w-full h-full object-cover"
         />
       )}

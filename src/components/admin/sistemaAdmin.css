@@ -38,6 +38,12 @@
 .admin-screen .admin-metric p:last-child { font-size:11px; }
 .admin-screen .admin-filter { border:1px solid var(--admin-borde); background:var(--admin-superficie); border-radius:999px; }
 .admin-shell-unificado { min-height:100dvh; background:var(--admin-fondo); }
+.admin-screen .foto-servicio { flex:1 0 100% !important; width:100%; }
+.foto-servicio-selector { display:flex; flex-direction:column; gap:8px; margin:12px 0; }
+.foto-servicio-selector label { display:flex; flex-direction:column; gap:8px; font-size:13px; font-weight:600; }
+.foto-servicio-selector input { max-width:100%; min-height:44px; font-size:13px; }
+.foto-servicio-selector p,.foto-servicio>p { font-size:12px; overflow-wrap:anywhere; }
+.foto-servicio-selector img { width:100%; max-height:220px; object-fit:contain; border:1px solid var(--admin-borde); border-radius:12px; }
 @media (max-width:1023px) {
   .admin-shell-unificado>nav { position:fixed; bottom:0; left:0; right:0; }
   .admin-shell-unificado>div:first-of-type { padding-bottom:calc(90px + env(safe-area-inset-bottom)); }

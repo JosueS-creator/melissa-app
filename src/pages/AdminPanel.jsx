@@ -10,6 +10,8 @@ import { NOMBRE_PLAN } from '../lib/planes'
 import FuncionBloqueada from '../components/FuncionBloqueada'
 import CabeceraAdmin from '../components/admin/CabeceraAdmin'
 import SeccionAdmin from '../components/admin/SeccionAdmin'
+import FotoServicio, { SelectorFotoServicio } from '../components/admin/FotoServicio'
+import { guardarFotoServicio, prepararFotoServicio } from '../lib/fotosServicios'
 import '../components/admin/sistemaAdmin.css'
 import NavInferior, { PRINCIPALES } from '../components/admin/NavInferior'
 import HojaMas from '../components/admin/HojaMas'
@@ -393,6 +395,10 @@ function PanelServicios({ clinicaId }) {
   const config = useConfigPuntos(clinicaId)
   const [guardando, setGuardando] = useState(false)
   const [error, setError] = useState('')
+  const [archivoFoto, setArchivoFoto] = useState(null)
+  const [fotoPendiente, setFotoPendiente] = useState(null)
+  const [avisoFoto, setAvisoFoto] = useState('')
+  const guardandoRef = useRef(false)
 
   useEffect(() => {
     cargar()
@@ -410,10 +416,15 @@ function PanelServicios({ clinicaId }) {
 
   async function crearServicio(e) {
     e.preventDefault()
+    if (guardandoRef.current) return
+    guardandoRef.current = true
     setGuardando(true)
     setError('')
-
+    try {
+    const blob = archivoFoto ? await prepararFotoServicio(archivoFoto) : null
+    const nuevoId = crypto.randomUUID()
     const { error: errorInsert } = await supabase.from('servicios').insert({
+      id: nuevoId,
       clinica_id: clinicaId,
       nombre,
       descripcion,
@@ -426,6 +437,16 @@ function PanelServicios({ clinicaId }) {
     if (errorInsert) {
       setError('No se pudo guardar: ' + errorInsert.message)
     } else {
+      setAvisoFoto('')
+      if (blob) {
+        try {
+          await guardarFotoServicio({client:supabase,baseUrl:import.meta.env.VITE_SUPABASE_URL,clinicaId,servicio:{id:nuevoId,imagen_url:null},blob})
+        } catch (err) {
+          setFotoPendiente({id:nuevoId,archivo:archivoFoto})
+          setAvisoFoto('El servicio se creó, pero su foto no se guardó. Puedes reintentar en su tarjeta. '+err.message)
+        }
+      }
+      setArchivoFoto(null)
       setNombre('')
       setDescripcion('')
       setPrecio('')
@@ -434,7 +455,8 @@ function PanelServicios({ clinicaId }) {
       setMostrarForm(false)
       cargar()
     }
-    setGuardando(false)
+    } catch (err) { setError(err.message || 'No se pudo guardar el servicio.') }
+    finally { setGuardando(false); guardandoRef.current = false }
   }
 
   async function alternarActivo(servicio) {
@@ -486,6 +508,7 @@ function PanelServicios({ clinicaId }) {
             />
           </div>
           <CampoPuntos valor={puntos} onCambio={setPuntos} precio={precio} tipo="servicio" config={config} />
+          <SelectorFotoServicio archivo={archivoFoto} onCambio={setArchivoFoto} disabled={guardando} />
 
           {error && <p className="text-xs" style={{ color: '#B0524A' }}>{error}</p>}
 
@@ -500,12 +523,14 @@ function PanelServicios({ clinicaId }) {
         </form>
       )}
 
+      {avisoFoto && <p role="status" className="admin-notice">{avisoFoto}</p>}
       {cargando && <p className="text-sm text-ink/50">Cargando servicios...</p>}
       {!cargando && servicios.length === 0 && <p className="admin-empty text-sm text-ink/50">Todavía no tienes servicios registrados.</p>}
 
       <div className="flex flex-col gap-2">
         {servicios.map((s) => (
           <div key={s.id} className="admin-card admin-catalog-record rounded-xl p-3 flex items-center justify-between" style={{ background: 'var(--color-accent)', opacity: s.activo ? 1 : 0.5 }}>
+            <FotoServicio servicio={s} clinicaId={clinicaId} archivoInicial={fotoPendiente?.id === s.id ? fotoPendiente.archivo : null} onCambio={url=>setServicios(actual=>actual.map(item=>item.id===s.id?{...item,imagen_url:url}:item))} />
             <div>
               <p className="text-sm font-medium text-ink">{s.nombre}</p>
               <p className="text-[11px] text-ink/50">L {Number(s.precio).toFixed(2)} · {s.duracion_minutos} min</p>
