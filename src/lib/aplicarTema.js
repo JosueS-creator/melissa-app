@@ -2,14 +2,9 @@ import { supabase } from './supabaseClient'
 import { CLAVES_ADMIN, CLAVE_SOBRE_ACCION, tokensAdminDe, colorSobre } from './temaAdmin'
 
 /**
- * Resuelve la clínica activa (por slug de subdominio, por ahora recibido
- * como parámetro) e inyecta sus colores como variables CSS en :root.
- * Si la clínica no definió un color propio, usa el default de su tema_base.
- *
- * Temas simples (3 colores) siguen funcionando igual. Temas con tokens
- * extendidos (ej. "Rosa y Oro": fondo oscuro, dorado, tipografías propias)
- * inyectan variables adicionales; los temas que no las definen usan los
- * valores por defecto de index.css sin romperse.
+ * Resuelve la clínica activa mediante su slug usando la función pública
+ * autorizada. No consulta directamente la tabla clinicas, cuya lectura
+ * pública está cerrada por las políticas multi-tenant.
  */
 function inyectarTokens(clinica) {
   const tema = clinica.temas_base
@@ -47,14 +42,13 @@ function inyectarTokens(clinica) {
 }
 
 export async function aplicarTemaDeClinica(slug) {
+  if (!slug) return null
+
   const { data: clinica, error } = await supabase
-    .from('clinicas')
-    .select('*, temas_base(*)')
-    .eq('slug', slug)
-    .single()
+    .rpc('clinica_publica_por_slug', { p_slug: slug })
 
   if (error || !clinica) {
-    console.warn('No se pudo cargar la clínica, usando tema por defecto:', error)
+    console.warn('No se pudo cargar la clínica por slug:', error)
     return null
   }
 
