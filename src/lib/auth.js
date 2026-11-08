@@ -9,8 +9,9 @@ import { supabase } from './supabaseClient'
  * insertar directamente, pero el trigger corre con privilegios de sistema).
  *
  * `slugClinica` lo resuelve lib/tenant.js desde el link o QR que cada negocio
- * comparte con sus clientes. Sin negocio no hay registro (no existe un negocio
- * por defecto).
+ * comparte con sus clientes. La identificación pública se hace mediante RPC;
+ * no se consulta directamente la tabla clinicas, cuya lectura pública está
+ * cerrada por las políticas multi-tenant.
  */
 export async function registrarPaciente({ email, password, nombre, telefono, pais, slugClinica, fechaNacimiento }) {
   if (!slugClinica) {
@@ -18,12 +19,10 @@ export async function registrarPaciente({ email, password, nombre, telefono, pai
   }
 
   const { data: clinica, error: errorClinica } = await supabase
-    .from('clinicas')
-    .select('id')
-    .eq('slug', slugClinica)
-    .single()
+    .rpc('clinica_publica_por_slug', { p_slug: slugClinica })
 
-  if (errorClinica || !clinica) {
+  if (errorClinica || !clinica?.id) {
+    console.warn('No se pudo identificar la clínica por slug:', errorClinica)
     throw new Error('No se pudo identificar la clínica. Verifica el link que usaste para registrarte.')
   }
 
