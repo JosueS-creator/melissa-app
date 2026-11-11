@@ -8,9 +8,10 @@
 ### Repositorio y despliegues
 
 - Producción de Vercel sigue desplegando `main` (commit `214d9fe`).
-- `feature/melissa-multisector` contiene la configuración sectorial y este plan; está 7 commits por delante de `main`.
-- `feature/notificaciones-push-citas` está 8 commits por delante de `main` y contiene el trabajo de push.
+- `feature/melissa-multisector` contiene la configuración sectorial y este plan; está 8 commits por delante de `main`.
+- `feature/notificaciones-push-citas` está 12 commits por delante de `main` y contiene el trabajo de push y correcciones recientes de su PWA.
 - Las dos ramas parten de `main`, pero están divergidas entre sí. No se debe fusionar una esperando que la otra esté incluida. La integración debe hacerse en una rama nueva o mediante una fusión explícita y revisada.
+- Los previews de ambas ramas compilan, pero no tienen configuradas `VITE_SUPABASE_URL` ni `VITE_SUPABASE_ANON_KEY` para Preview. Por tanto, no permiten probar autenticación ni operaciones contra Supabase. No copiar las variables de producción al Preview sin definir antes un tenant y datos de prueba seguros.
 
 ### Supabase
 
