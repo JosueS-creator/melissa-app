@@ -182,7 +182,7 @@ export default function Personalizacion() {
         <div className="p-4" style={{ background: previewAcento }}>
           <div className="flex items-center gap-2">
             {logoPreview && <img src={logoPreview} alt="" className="w-6 h-6 rounded-full object-cover" />}
-            <p className="text-xs text-ink/60">Bienvenida a tu {sustantivoNegocio(clinica?.tipo_negocio)}</p>
+            <p className="text-xs text-ink/60">Bienvenida a tu {sustantivoNegocio(tipoNegocio)}</p>
           </div>
           <button className="mt-3 text-xs text-white px-4 py-2 rounded-lg" style={{ background: previewPrimario }}>
             Reservar cita
