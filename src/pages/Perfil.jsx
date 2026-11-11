@@ -3,6 +3,7 @@ import { supabase } from '../lib/supabaseClient'
 import { obtenerPerfilActual, obtenerPacienteActual } from '../lib/auth'
 import { calcularNivelYProgreso, obtenerUmbrales } from '../lib/fidelidad'
 import { useFunciones } from '../lib/FuncionesContext'
+import PushRecordatorios from '../components/PushRecordatorios'
 
 const PAISES_APP = [
   { codigo: 'HN', nombre: 'Honduras', moneda: 'Lempira · HNL' },
@@ -200,7 +201,8 @@ export default function Perfil({ onNavigate, onCerrarSesion, esSuperAdmin }) {
         Preferencias
       </p>
       <div className="flex flex-col gap-2 mb-6">
-        <FilaToggle etiqueta="Recordatorios de cita" ayuda="Aún no enviamos recordatorios. Guardamos tu preferencia para cuando estén disponibles." valor={preferencias.recordatorios_citas} onChange={() => togglePreferencia('recordatorios_citas')} />
+        <FilaToggle etiqueta="Recordatorios de cita" ayuda="Permite que Melissa te avise automáticamente antes de tus citas confirmadas." valor={preferencias.recordatorios_citas} onChange={() => togglePreferencia('recordatorios_citas')} />
+        <PushRecordatorios perfil={perfil} paciente={paciente} habilitado={preferencias.recordatorios_citas} />
         <FilaToggle etiqueta="Promociones y ofertas" ayuda="Si la apagas, no verás avisos de promociones en la app y el negocio no te incluirá en sus mensajes para que vuelvas." valor={preferencias.promociones_ofertas} onChange={() => togglePreferencia('promociones_ofertas')} />
         <FilaToggle etiqueta="Compartir fotos de progreso" ayuda="Tu negocio siempre ve las fotos que subes a tu historial. Esta opción es solo para permitir que las use con otros fines (por ejemplo, difusión); hoy Melissa no las usa para eso." valor={preferencias.compartir_fotos_progreso} onChange={() => togglePreferencia('compartir_fotos_progreso')} />
       </div>

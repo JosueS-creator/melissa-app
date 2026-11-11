@@ -1,6 +1,6 @@
 // Service worker de Melissa: hace la app instalable y abre aunque la red falle.
 // No guarda datos de Supabase ni de otros dominios: solo archivos propios de la app.
-const CACHE = 'melissa-v1';
+const CACHE = 'melissa-v2';
 const SHELL = ['/', '/manifest.webmanifest', '/icons/icon-192.png', '/icons/icon-512.png'];
 
 self.addEventListener('install', (e) => {
@@ -50,4 +50,34 @@ self.addEventListener('fetch', (e) => {
       )
     );
   }
+});
+
+
+// Notificaciones push de recordatorios de citas.
+self.addEventListener('push', (event) => {
+  let data = {};
+  try { data = event.data ? event.data.json() : {}; }
+  catch { data = { body: event.data?.text() || 'Tienes una notificación de Melissa.' }; }
+  const fecha = data.fechaHora ? new Date(data.fechaHora).toLocaleString('es', { dateStyle: 'medium', timeStyle: 'short' }) : '';
+  const body = data.body || (fecha ? 'Recuerda tu cita: ' + fecha : 'Tienes una notificación de Melissa.');
+  event.waitUntil(self.registration.showNotification(data.title || 'Melissa', {
+    body, icon: '/icons/icon-192.png', badge: '/icons/icon-192.png',
+    tag: data.tag || 'melissa-notificacion', renotify: false,
+    data: { url: data.url || '/' },
+  }));
+});
+
+self.addEventListener('notificationclick', (event) => {
+  event.notification.close();
+  const destino = new URL(event.notification.data?.url || '/', self.location.origin).href;
+  event.waitUntil((async () => {
+    const clientes = await self.clients.matchAll({ type: 'window', includeUncontrolled: true });
+    for (const cliente of clientes) {
+      if (cliente.url.startsWith(self.location.origin) && 'focus' in cliente) {
+        await cliente.navigate(destino);
+        return cliente.focus();
+      }
+    }
+    return self.clients.openWindow(destino);
+  })());
 });
