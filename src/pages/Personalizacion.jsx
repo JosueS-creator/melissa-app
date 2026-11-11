@@ -121,7 +121,7 @@ export default function Personalizacion() {
       <p className="font-display text-xl text-ink mb-1">Personaliza tu app</p>
       <p className="text-xs text-ink/50 mb-6">Así se verá la app para tus clientes.</p>
 
-      <p className="text-sm font-medium text-ink mb-2">Logo de tu {sustantivoNegocio(clinica?.tipo_negocio)}</p>
+      <p className="text-sm font-medium text-ink mb-2">Logo de tu {sustantivoNegocio(tipoNegocio)}</p>
       <div className="flex items-center gap-4 mb-6">
         <div className="w-16 h-16 rounded-xl bg-gray-100 flex items-center justify-center overflow-hidden flex-shrink-0">
           {logoPreview ? (
