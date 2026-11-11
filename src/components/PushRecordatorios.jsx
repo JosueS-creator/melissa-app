@@ -1,10 +1,12 @@
 import { useEffect, useState } from 'react'
 import { activarPush, desactivarPush, obtenerEstadoPush } from '../lib/pushNotifications'
+import { supabase } from '../lib/supabaseClient'
 
 export default function PushRecordatorios({ perfil, paciente, habilitado }) {
   const [estado, setEstado] = useState({ compatible: true, permiso: 'default', suscripcion: null })
   const [cargando, setCargando] = useState(true)
   const [guardando, setGuardando] = useState(false)
+  const [enviandoPrueba, setEnviandoPrueba] = useState(false)
   const [mensaje, setMensaje] = useState('')
 
   async function revisar() {
@@ -49,6 +51,22 @@ export default function PushRecordatorios({ perfil, paciente, habilitado }) {
     }
   }
 
+  async function enviarPrueba() {
+    if (!estado.suscripcion || enviandoPrueba) return
+    setEnviandoPrueba(true)
+    setMensaje('')
+    try {
+      const { data, error } = await supabase.functions.invoke('send-push-test', { body: {} })
+      if (error) throw error
+      if (!data?.sent) throw new Error('Melissa no pudo confirmar la entrega de la notificación.')
+      setMensaje('Prueba enviada. Revisa las notificaciones de este dispositivo.')
+    } catch (error) {
+      setMensaje(error.message || 'No se pudo enviar la notificación de prueba.')
+    } finally {
+      setEnviandoPrueba(false)
+    }
+  }
+
   if (!perfil || !paciente || cargando) return null
 
   return (
@@ -61,7 +79,10 @@ export default function PushRecordatorios({ perfil, paciente, habilitado }) {
       ) : estado.suscripcion ? (
         <>
           <p className="text-[10px] mt-1" style={{ color: 'var(--color-texto-secundario)' }}>Este dispositivo está autorizado para recibir recordatorios.</p>
-          <button type="button" onClick={desactivar} disabled={guardando} className="text-xs mt-2 disabled:opacity-50" style={{ color: 'var(--color-primary)' }}>
+          <button type="button" onClick={enviarPrueba} disabled={enviandoPrueba || guardando} className="rounded-lg px-3 py-2 mt-2 text-xs text-white disabled:opacity-50" style={{ background: 'var(--gradiente-primario)' }}>
+            {enviandoPrueba ? 'Enviando prueba...' : 'Enviar notificación de prueba'}
+          </button>
+          <button type="button" onClick={desactivar} disabled={guardando || enviandoPrueba} className="block text-xs mt-3 disabled:opacity-50" style={{ color: 'var(--color-primary)' }}>
             {guardando ? 'Guardando...' : 'Desactivar en este dispositivo'}
           </button>
         </>
