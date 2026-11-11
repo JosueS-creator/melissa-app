@@ -3,6 +3,9 @@ export const TIPOS_NEGOCIO = [
   { valor: 'salon_belleza', etiqueta: 'Salón de belleza', sustantivo: 'salón' },
   { valor: 'salon_unas', etiqueta: 'Salón de uñas', sustantivo: 'salón' },
   { valor: 'spa', etiqueta: 'Spa', sustantivo: 'spa' },
+  { valor: 'barberia', etiqueta: 'Barbería', sustantivo: 'barbería' },
+  { valor: 'veterinaria', etiqueta: 'Clínica veterinaria', sustantivo: 'clínica veterinaria' },
+  { valor: 'clinica_medica', etiqueta: 'Clínica médica', sustantivo: 'clínica médica' },
   { valor: 'otro', etiqueta: 'Otro', sustantivo: 'negocio' },
 ]
 
