@@ -2,19 +2,22 @@ import { useEffect, useState } from 'react'
 import QRCode from 'qrcode'
 import { supabase } from '../lib/supabaseClient'
 import { obtenerPerfilActual } from '../lib/auth'
-import { sustantivoNegocio } from '../lib/tiposNegocio'
+import { TIPOS_NEGOCIO, sustantivoNegocio } from '../lib/tiposNegocio'
 
 const TEMAS = [
   { id: 'rosa_oro', nombre: 'Rosa y Oro', primario: '#C93B79', secundario: '#FFFFFF', acento: '#F6C2D6' },
   { id: 'elegante_dorado', nombre: 'Elegante Dorado', primario: '#C9A24B', secundario: '#FFFFFF', acento: '#F5EFE6' },
   { id: 'clinico_minimal', nombre: 'Clínico Minimal', primario: '#2D6E8E', secundario: '#FFFFFF', acento: '#EAF2F5' },
   { id: 'spa_natural', nombre: 'Spa Natural', primario: '#6B8E5A', secundario: '#FFFFFF', acento: '#EFF3E8' },
+  { id: 'barber_grafito', nombre: 'Barber · Grafito y acero', primario: '#263238', secundario: '#FFFFFF', acento: '#E8EDF0' },
+  { id: 'barber_azul_noche', nombre: 'Barber · Azul noche y plata', primario: '#172554', secundario: '#FFFFFF', acento: '#E8EDF5' },
 ]
 
 export default function Personalizacion() {
   const [perfil, setPerfil] = useState(null)
   const [clinica, setClinica] = useState(null)
   const [temaSeleccionado, setTemaSeleccionado] = useState('elegante_dorado')
+  const [tipoNegocio, setTipoNegocio] = useState('clinica_estetica')
   const [colorPrimario, setColorPrimario] = useState('')
   const [colorSecundario, setColorSecundario] = useState('')
   const [colorAcento, setColorAcento] = useState('')
@@ -36,6 +39,7 @@ export default function Personalizacion() {
       if (data) {
         setClinica(data)
         setTemaSeleccionado(data.tema_base_id || 'elegante_dorado')
+        setTipoNegocio(data.tipo_negocio || 'clinica_estetica')
         setColorPrimario(data.color_primario || '')
         setColorSecundario(data.color_secundario || '')
         setColorAcento(data.color_acento || '')
@@ -84,6 +88,7 @@ export default function Personalizacion() {
       .from('clinicas')
       .update({
         tema_base_id: temaSeleccionado,
+        tipo_negocio: tipoNegocio,
         color_primario: colorPrimario || null,
         color_secundario: colorSecundario || null,
         color_acento: colorAcento || null,
@@ -131,6 +136,10 @@ export default function Personalizacion() {
         </label>
       </div>
 
+      <p className="text-sm font-medium text-ink mb-2">Tipo de establecimiento</p>
+      <select value={tipoNegocio} onChange={(e) => setTipoNegocio(e.target.value)} className="w-full rounded-xl border border-ink/10 bg-white px-3 py-3 text-sm mb-6">
+        {TIPOS_NEGOCIO.map((tipo) => <option key={tipo.valor} value={tipo.valor}>{tipo.etiqueta}</option>)}
+      </select>
       <p className="text-sm font-medium text-ink mb-2">Elige un tema base</p>
       <div className="flex flex-col gap-2 mb-6">
         {TEMAS.map((t) => (
