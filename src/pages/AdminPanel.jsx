@@ -96,13 +96,13 @@ export default function AdminPanel({ onCerrarSesion, esSuperAdmin, onIrAMelissa 
   return (
     <div className={`panel-admin ${tab !== 'citas' ? 'admin-shell-unificado' : ''} lg:flex lg:min-h-screen max-lg:bg-[var(--admin-fondo)]`}>
       <aside
-        className="hidden lg:flex lg:flex-col lg:w-[252px] lg:flex-shrink-0 lg:sticky lg:top-0 lg:h-screen px-5 py-6"
+        className="hidden lg:flex lg:flex-col lg:w-[252px] lg:flex-shrink-0 lg:sticky lg:top-0 lg:h-screen lg:overflow-hidden px-5 py-6"
         style={{ background: 'var(--gradiente-fondo-oscuro)' }}
       >
         <p className="font-display text-lg text-white mb-1">Panel del negocio</p>
         <p className="text-[11px] mb-6" style={{ color: 'rgba(254,250,248,.62)' }}>Vista operativa{plan ? ` · Plan ${NOMBRE_PLAN[plan] || plan}` : ''}</p>
 
-        <nav className="flex flex-col gap-1 flex-1">
+        <nav className="flex min-h-0 flex-1 flex-col gap-1 overflow-y-auto overscroll-contain pr-1">
           {TABS.map((t) => (
             <button
               key={t.id}
@@ -119,7 +119,7 @@ export default function AdminPanel({ onCerrarSesion, esSuperAdmin, onIrAMelissa 
           ))}
         </nav>
 
-        <div className="pt-4 mt-4" style={{ borderTop: '1px solid rgba(235,203,134,.2)' }}>
+        <div className="mt-4 flex-shrink-0 pt-4" style={{ borderTop: '1px solid rgba(235,203,134,.2)' }}>
           {esSuperAdmin && (
             <button onClick={onIrAMelissa} className="w-full text-left text-xs py-2" style={{ color: 'rgba(254,250,248,.74)' }}>
               Panel de Melissa
