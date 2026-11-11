@@ -3,6 +3,7 @@ import { supabase } from '../lib/supabaseClient'
 import { obtenerPerfilActual, obtenerPacienteActual } from '../lib/auth'
 import { calcularNivelYProgreso, obtenerUmbrales } from '../lib/fidelidad'
 import { useFunciones } from '../lib/FuncionesContext'
+import PushRecordatorios from '../components/PushRecordatorios'
 
 const PAISES_APP = [
   { codigo: 'HN', nombre: 'Honduras', moneda: 'Lempira · HNL' },
