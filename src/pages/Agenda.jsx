@@ -91,6 +91,8 @@ export default function Agenda({clinica}) {
   const [refresco, setRefresco] = useState(0)
   const [hora, setHora] = useState(null)
   const [paciente, setPaciente] = useState(null)
+  const [mascotas, setMascotas] = useState([])
+  const [mascotaId, setMascotaId] = useState('')
   const [cargando, setCargando] = useState(true)
   const [enviando, setEnviando] = useState(false)
   const [confirmacion, setConfirmacion] = useState('')
@@ -112,6 +114,11 @@ export default function Agenda({clinica}) {
         setEspecialistas(dataEsp || [])
         if (dataEsp && dataEsp.length > 0) setEspecialistaId(dataEsp[0].id)
         setServicios(dataServ || [])
+        if (clinica?.tipo_negocio === 'veterinaria') {
+          const { data: dataMascotas } = await supabase.from('mascotas').select('id,nombre,especie,raza').eq('clinica_id', pacienteActual.clinica_id).eq('propietario_paciente_id', pacienteActual.id).eq('activo', true).order('nombre')
+          setMascotas(dataMascotas || [])
+          if (dataMascotas?.length === 1) setMascotaId(dataMascotas[0].id)
+        }
         const preferido = promo?.servicio_id && dataServ?.some((s) => s.id === promo.servicio_id) ? promo.servicio_id : dataServ?.[0]?.id
         if (preferido) setServicioId(preferido)
       }
@@ -126,7 +133,7 @@ export default function Agenda({clinica}) {
   const quedanHorasHoy = HORAS_DISPONIBLES.some((h) => !esHoraPasada(diaSeleccionado, h))
 
   async function confirmarCita() {
-    if (!especialistaId || !horaEfectiva || !paciente) return
+    if (!especialistaId || !horaEfectiva || !paciente || (clinica?.tipo_negocio === 'veterinaria' && mascotas.length > 0 && !mascotaId)) return
     setEnviando(true)
     setError('')
 
@@ -141,6 +148,7 @@ export default function Agenda({clinica}) {
       servicio_id: servicioSeleccionado?.id || null,
       promocion_id: promo?.id || null,
       tratamiento: servicioSeleccionado?.nombre || 'Consulta general',
+      ...(clinica?.tipo_negocio === 'veterinaria' ? { mascota_id: mascotaId || null } : {}),
     })
 
     if (errorInsert) {
@@ -196,6 +204,7 @@ export default function Agenda({clinica}) {
         ) : (
           <>
             <p className="text-sm font-medium mb-3 pt-1" style={{ color: 'var(--color-ink)', borderTop: '1px solid var(--color-borde-tarjeta)', paddingTop: 16 }}>Solicitar una cita nueva</p>
+            {clinica?.tipo_negocio === 'veterinaria' && <div className="mb-4"><p className="text-sm font-medium mb-2" style={{color:'var(--color-ink)'}}>Mascota</p><select value={mascotaId} onChange={e=>setMascotaId(e.target.value)} className="w-full rounded-xl px-3 py-3 text-sm bg-white" style={{border:'1px solid var(--color-borde-tarjeta)'}}><option value="">{mascotas.length ? 'Selecciona tu mascota' : 'La clínica registrará tu mascota'}</option>{mascotas.map(m=><option key={m.id} value={m.id}>{m.nombre} · {m.especie}</option>)}</select></div>}
             <p className="text-sm font-medium mb-2" style={{ color: 'var(--color-ink)' }}>Servicio</p>
             {servicios.length === 0 && (
               <p className="text-sm mb-4" style={{ color: 'var(--color-texto-secundario)' }}>
@@ -308,7 +317,7 @@ export default function Agenda({clinica}) {
 
             <button
               onClick={confirmarCita}
-              disabled={!especialistaId || !horaEfectiva || enviando}
+              disabled={!especialistaId || !horaEfectiva || enviando || (clinica?.tipo_negocio === 'veterinaria' && mascotas.length > 0 && !mascotaId)}
               className="w-full rounded-[10px] py-3 text-white shadow-boton-primario disabled:opacity-50"
               style={{ background: 'var(--gradiente-primario)', font: "500 13px/1 var(--font-body)", letterSpacing: '0.04em' }}
             >

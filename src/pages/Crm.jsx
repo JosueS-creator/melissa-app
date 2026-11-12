@@ -33,7 +33,7 @@ export function FilaCliente({ cliente, onAbrir, detalle }) {
   )
 }
 
-export default function Crm({ clinicaId, HistorialCliente, EscanerQR, onVerOportunidades }) {
+export default function Crm({ clinicaId, HistorialCliente, EscanerQR, onVerOportunidades, mascotasEnabled = false }) {
   const [clientes, setClientes] = useState([])
   const [resumen, setResumen] = useState(null)
   const [reactivacion, setReactivacion] = useState(null)

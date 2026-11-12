@@ -9,6 +9,7 @@ import Historial from './pages/Historial'
 import Referidos from './pages/Referidos'
 import Perfil from './pages/Perfil'
 import AdminPanel from './pages/AdminPanel'
+import MisMascotas from './pages/MisMascotas'
 import PanelMelissa from './pages/PanelMelissa'
 import Login from './pages/Login'
 import Registro from './pages/Registro'
@@ -177,6 +178,7 @@ export default function App() {
           <Home nombrePaciente={perfil?.nombre || sesion.user.email} clinica={clinica} onNavigate={setPantalla} />
         )}
         {!esAdmin && pantalla === 'agenda' && <Agenda clinica={clinica}/>}
+        {!esAdmin && pantalla === 'mascotas' && <MisMascotas onVolver={() => setPantalla('inicio')} />}
         {!esAdmin && pantalla === 'tienda' && (
           <RequiereFuncion funcion="tienda" onVolver={() => setPantalla('inicio')}>
             <Tienda />

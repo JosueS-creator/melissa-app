@@ -3,6 +3,9 @@ import jsQR from 'jsqr'
 import { supabase } from '../lib/supabaseClient'
 import { obtenerPerfilActual } from '../lib/auth'
 import Personalizacion from './Personalizacion'
+import Mascotas from './Mascotas'
+import PetsAtmosphere from '../components/admin/PetsAtmosphere'
+import { DEMO_CLINICA_ID } from '../lib/imagenesMuestra'
 import { PREFIJO_QR_CLIENTE } from './TarjetaVIP'
 import { descargarDatosClinica } from '../lib/exportarDatosClinica'
 import { useFunciones } from '../lib/FuncionesContext'
@@ -30,6 +33,7 @@ import { useConfigPuntos, nuevaClaveOperacion } from '../lib/puntos'
 const TABS = [
   { id: 'citas', label: 'Citas', funcion: 'agenda' },
   { id: 'pacientes', label: 'Clientes', funcion: 'clientes' },
+  { id: 'mascotas', label: 'Mascotas', funcion: 'clientes' },
   { id: 'reactivar', label: 'Por reactivar', funcion: 'reactivacion' },
   { id: 'canjes', label: 'Canjes', funcion: 'canjes' },
   { id: 'promociones', label: 'Promociones', funcion: 'promociones' },
@@ -48,6 +52,8 @@ const primerNombre = (n) => {
 export default function AdminPanel({ onCerrarSesion, esSuperAdmin, onIrAMelissa }) {
   const [perfil, setPerfil] = useState(null)
   const [nombreClinica, setNombreClinica] = useState('')
+  const [tipoNegocio, setTipoNegocio] = useState('clinica_estetica')
+  const [vistaPetsDemo, setVistaPetsDemo] = useState(false)
   const [cargando, setCargando] = useState(true)
   const [tab, setTab] = useState('citas')
   const [canjesPendientes, setCanjesPendientes] = useState(0)
@@ -57,15 +63,19 @@ export default function AdminPanel({ onCerrarSesion, esSuperAdmin, onIrAMelissa 
   const cerrarMas = useCallback(() => setMasAbierto(false), [])
   const { cargado: planCargado, plan, tiene } = useFunciones()
   const sinPlan = (t) => planCargado && !tiene(t.funcion)
-  const tabActual = TABS.find((t) => t.id === tab)
+  const puedePrevisualizarPets = perfil?.clinica_id === DEMO_CLINICA_ID
+  const petsVisible = tipoNegocio === 'veterinaria' || (puedePrevisualizarPets && vistaPetsDemo)
+  const tabsVisibles = petsVisible ? TABS : TABS.filter((t) => t.id !== 'mascotas')
+  const tabActual = tabsVisibles.find((t) => t.id === tab)
   const mostrar = (id) => tab === id && !sinPlan(tabActual)
 
   useEffect(() => {
     obtenerPerfilActual().then(async (p) => {
       setPerfil(p)
       if (p?.clinica_id) {
-        const { data } = await supabase.from('clinicas').select('nombre').eq('id', p.clinica_id).single()
+        const { data } = await supabase.from('clinicas').select('nombre,tipo_negocio').eq('id', p.clinica_id).single()
         setNombreClinica(data?.nombre || '')
+        setTipoNegocio(data?.tipo_negocio || 'clinica_estetica')
       }
       setCargando(false)
     })
@@ -94,16 +104,28 @@ export default function AdminPanel({ onCerrarSesion, esSuperAdmin, onIrAMelissa 
   }
 
   return (
-    <div className={`panel-admin ${tab !== 'citas' ? 'admin-shell-unificado' : ''} lg:flex lg:min-h-screen max-lg:bg-[var(--admin-fondo)]`}>
+    <div className={`panel-admin ${petsVisible ? 'pets-theme' : ''} ${tab !== 'citas' ? 'admin-shell-unificado' : ''} lg:flex lg:min-h-screen max-lg:bg-[var(--admin-fondo)]`}>
+      {petsVisible && <PetsAtmosphere />}
       <aside
         className="hidden lg:flex lg:flex-col lg:w-[252px] lg:flex-shrink-0 lg:sticky lg:top-0 lg:h-screen px-5 py-6"
         style={{ background: 'var(--gradiente-fondo-oscuro)' }}
       >
         <p className="font-display text-lg text-white mb-1">Panel del negocio</p>
-        <p className="text-[11px] mb-6" style={{ color: 'rgba(254,250,248,.62)' }}>Vista operativa{plan ? ` · Plan ${NOMBRE_PLAN[plan] || plan}` : ''}</p>
+        {puedePrevisualizarPets && <button onClick={() => { setVistaPetsDemo(v => !v); setTab(vistaPetsDemo ? 'citas' : 'mascotas') }} className="mb-4 rounded-lg px-3 py-2 text-left text-xs" style={{background:'rgba(255,255,255,.12)',color:'#fff'}}>{vistaPetsDemo ? '← Volver a Melissa Beauty' : '🐾 Previsualizar Melissa Pets'}</button>}
+        <p className="text-[11px] mb-4" style={{ color: 'rgba(254,250,248,.62)' }}>Vista operativa{plan ? ` · Plan ${NOMBRE_PLAN[plan] || plan}` : ''}</p>
+        <button
+          type="button"
+          onClick={onCerrarSesion}
+          aria-label="Cerrar sesión"
+          className="w-full flex items-center gap-2 text-left text-sm font-semibold mb-5 px-3 py-3 rounded-xl flex-shrink-0"
+          style={{ color: '#FFFFFF', background: 'rgba(190,65,65,.24)', border: '1px solid rgba(255,180,180,.48)', minHeight: 48 }}
+        >
+          <span aria-hidden="true">↪</span>
+          Cerrar sesión
+        </button>
 
-        <nav className="flex flex-col gap-1 flex-1">
-          {TABS.map((t) => (
+        <nav className="flex flex-col gap-1 flex-1 min-h-0 overflow-y-auto">
+          {tabsVisibles.map((t) => (
             <button
               key={t.id}
               onClick={() => setTab(t.id)}
@@ -119,28 +141,28 @@ export default function AdminPanel({ onCerrarSesion, esSuperAdmin, onIrAMelissa 
           ))}
         </nav>
 
-        <div className="pt-4 mt-4" style={{ borderTop: '1px solid rgba(235,203,134,.2)' }}>
+        <div className="pt-4 mt-auto flex-shrink-0" style={{ borderTop: '1px solid rgba(235,203,134,.28)' }}>
           {esSuperAdmin && (
-            <button onClick={onIrAMelissa} className="w-full text-left text-xs py-2" style={{ color: 'rgba(254,250,248,.74)' }}>
+            <button onClick={onIrAMelissa} className="w-full text-left text-xs py-2.5" style={{ color: 'rgba(254,250,248,.78)' }}>
               Panel de Melissa
             </button>
           )}
-          <button onClick={() => descargarDatosClinica(perfil.clinica_id, nombreClinica)} className="w-full text-left text-xs py-2" style={{ color: 'rgba(254,250,248,.74)' }}>
+          <button onClick={() => descargarDatosClinica(perfil.clinica_id, nombreClinica)} className="w-full text-left text-xs py-2.5" style={{ color: 'rgba(254,250,248,.78)' }}>
             Descargar mis datos
           </button>
-          <button onClick={onCerrarSesion} className="w-full text-left text-xs py-2" style={{ color: 'rgba(254,250,248,.74)' }}>
-            Salir
-          </button>
+          
         </div>
       </aside>
 
       <div className={`min-w-0 w-full sm:max-w-app mx-auto ${tab === 'citas' ? 'lg:max-w-none' : 'lg:max-w-3xl'} lg:mx-0 lg:flex-1 px-5 lg:px-10 pb-6 lg:pb-10 pt-[calc(env(safe-area-inset-top)+14px)] lg:pt-10 font-body`}>
+      {puedePrevisualizarPets && <button onClick={() => { setVistaPetsDemo(v => !v); setTab(vistaPetsDemo ? 'citas' : 'mascotas') }} className="lg:hidden w-full mb-4 rounded-xl px-3 py-3 text-left text-xs" style={{background:'var(--gradiente-fondo-oscuro)',color:'#fff'}}>{vistaPetsDemo ? '← Volver a Melissa Beauty' : '🐾 Previsualizar Melissa Pets'}</button>}
       {(tab === 'citas' || sinPlan(tabActual)) && <CabeceraAdmin nombre={primerNombre(perfil.nombre)} titulo={tabActual.label} plan={plan ? NOMBRE_PLAN[plan] || plan : null} />}
 
       {planCargado && sinPlan(tabActual) && <FuncionBloqueada funcion={tabActual.funcion} />}
-      {mostrar('citas') && <PanelCitas key={perfil.clinica_id} clinicaId={perfil.clinica_id} />}
+      {mostrar('citas') && <PanelCitas key={perfil.clinica_id} clinicaId={perfil.clinica_id} mascotasEnabled={petsVisible} />}
       {/* El CRM recibe EscanerQR e HistorialCliente (definidos aquí) para reutilizarlos sin duplicar código. */}
-      {mostrar('pacientes') && <SeccionAdmin titulo="Clientes" descripcion="Directorio y relación con tus clientes"><Crm clinicaId={perfil.clinica_id} HistorialCliente={HistorialCliente} EscanerQR={EscanerQR} onVerOportunidades={() => setTab('reactivar')} /></SeccionAdmin>}
+      {mostrar('pacientes') && <SeccionAdmin titulo="Clientes" descripcion="Directorio y relación con tus clientes"><Crm clinicaId={perfil.clinica_id} mascotasEnabled={petsVisible} HistorialCliente={HistorialCliente} EscanerQR={EscanerQR} onVerOportunidades={() => setTab('reactivar')} /></SeccionAdmin>}
+      {mostrar('mascotas') && <><div className="mb-3 rounded-xl px-3 py-2 text-xs" style={{background:'var(--color-accent)',color:'var(--color-ink)'}}>{tipoNegocio === 'veterinaria' ? 'Melissa Pets · clínica veterinaria' : 'Vista previa de Melissa Pets en la clínica Demo. No cambia el sector ni los datos de Melissa Beauty.'}</div><SeccionAdmin titulo="Mascotas" descripcion="Fichas y expedientes veterinarios"><Mascotas clinicaId={perfil.clinica_id} perfilId={perfil.id} modoDemo={vistaPetsDemo && tipoNegocio !== 'veterinaria'} /></SeccionAdmin></>}
       {mostrar('reactivar') && <SeccionAdmin titulo="Por reactivar" descripcion="Oportunidades de seguimiento"><ClientesReactivar clinicaId={perfil.clinica_id} HistorialCliente={HistorialCliente} /></SeccionAdmin>}
       {mostrar('canjes') && <SeccionAdmin titulo="Canjes" descripcion="Solicitudes y recompensas"><Canjes onCambio={contarCanjesPendientes} /></SeccionAdmin>}
       {mostrar('promociones') && <SeccionAdmin titulo="Promociones" descripcion="Ofertas de tu clínica"><Promociones clinicaId={perfil.clinica_id} /></SeccionAdmin>}
@@ -168,7 +190,7 @@ export default function AdminPanel({ onCerrarSesion, esSuperAdmin, onIrAMelissa 
       <HojaMas
         abierta={masAbierto}
         onCerrar={cerrarMas}
-        tabs={TABS.filter((t) => !PRINCIPALES.includes(t.id))}
+        tabs={tabsVisibles.filter((t) => !PRINCIPALES.includes(t.id))}
         tab={tab}
         onSelect={(id) => {
           setTab(id)
@@ -186,16 +208,19 @@ export default function AdminPanel({ onCerrarSesion, esSuperAdmin, onIrAMelissa 
   )
 }
 
-function PanelCitas({ clinicaId }) {
-  return <PanelAgenda clinicaId={clinicaId} FormularioCita={FormularioNuevaCita} HistorialCliente={HistorialCliente} />
+function PanelCitas({ clinicaId, mascotasEnabled = false }) {
+  return <PanelAgenda clinicaId={clinicaId} mascotasEnabled={mascotasEnabled} FormularioCita={FormularioNuevaCita} HistorialCliente={HistorialCliente} />
 }
 
 /** Compatible con el esquema desplegado: no envía duración ni finalización propuestas. */
-export function FormularioNuevaCita({ clinicaId, onCreada, inicial = {} }) {
+export function FormularioNuevaCita({ clinicaId, onCreada, inicial = {}, mascotasEnabled = false }) {
   const [pacientes, setPacientes] = useState([])
   const [especialistas, setEspecialistas] = useState([])
   const [servicios, setServicios] = useState([])
   const [pacienteId, setPacienteId] = useState('')
+  const [mascotas, setMascotas] = useState([])
+  const [mascotaId, setMascotaId] = useState('')
+  const [errorMascotas, setErrorMascotas] = useState('')
   const [especialistaId, setEspecialistaId] = useState(inicial.especialistaId || '')
   const [servicioId, setServicioId] = useState('')
   const [fecha, setFecha] = useState(inicial.fecha || '')
@@ -211,29 +236,35 @@ export function FormularioNuevaCita({ clinicaId, onCreada, inicial = {} }) {
     setCargandoListas(true); setErrorListas('')
     async function cargarListas() {
       try {
-        const [p, e, s] = await Promise.all([
+        const [p, e, s, m] = await Promise.all([
           supabase.from('pacientes').select('id,nombre').eq('clinica_id', clinicaId).order('nombre').abortSignal(controller.signal),
           supabase.from('especialistas').select('id,nombre').eq('clinica_id', clinicaId).eq('activo', true).abortSignal(controller.signal),
           supabase.from('servicios').select('id,nombre,precio').eq('clinica_id', clinicaId).eq('activo', true).abortSignal(controller.signal),
+          mascotasEnabled ? supabase.from('mascotas').select('id,nombre,especie,propietario_paciente_id').eq('clinica_id', clinicaId).eq('activo', true).order('nombre').abortSignal(controller.signal) : Promise.resolve({ data: [], error: null }),
         ])
         if (controller.signal.aborted) return
         if (p.error || e.error || s.error) throw new Error('listas')
         setPacientes(p.data || []); setEspecialistas(e.data || []); setServicios(s.data || [])
+        if (mascotasEnabled) {
+          if (m.error) { setMascotas([]); setErrorMascotas('No se pudieron cargar las mascotas. Verifica que la migración de Melissa Pets esté instalada.') }
+          else { setMascotas(m.data || []); setErrorMascotas('') }
+        }
       } catch { if (!controller.signal.aborted) setErrorListas('No se pudieron cargar los datos del formulario.') }
       finally { if (!controller.signal.aborted) setCargandoListas(false) }
     }
     cargarListas()
     return () => controller.abort()
-  }, [clinicaId, recarga])
+  }, [clinicaId, recarga, mascotasEnabled])
 
   async function crearCita(e) {
     e.preventDefault()
-    if (!pacienteId || !fecha || !hora || guardando) return
+    if (!pacienteId || !fecha || !hora || (mascotasEnabled && (!mascotaId || errorMascotas)) || guardando) return
     setGuardando(true); setError('')
     try {
       const { error: errorInsert } = await supabase.from('citas').insert({
         clinica_id: clinicaId,
         paciente_id: pacienteId,
+        ...(mascotasEnabled ? { mascota_id: mascotaId } : {}),
         especialista_id: especialistaId || null,
         fecha_hora: new Date(`${fecha}T${hora}:00`).toISOString(),
         estado: 'confirmada',
@@ -247,10 +278,14 @@ export function FormularioNuevaCita({ clinicaId, onCreada, inicial = {} }) {
   }
 
   return <form onSubmit={crearCita} className="cal-form">
-    <label>Cliente<select aria-label="Cliente" value={pacienteId} onChange={e => setPacienteId(e.target.value)} required>
+    <label>Cliente<select aria-label="Cliente" value={pacienteId} onChange={e => { setPacienteId(e.target.value); setMascotaId('') }} required>
       <option value="" disabled>Selecciona un cliente</option>
       {pacientes.map(p => <option key={p.id} value={p.id}>{p.nombre}</option>)}
     </select></label>
+    {mascotasEnabled && <label>Mascota<select aria-label="Mascota" value={mascotaId} onChange={e => setMascotaId(e.target.value)} required disabled={!pacienteId || Boolean(errorMascotas)}>
+      <option value="">{pacienteId ? 'Selecciona la mascota' : 'Primero selecciona un cliente'}</option>
+      {mascotas.filter(m => m.propietario_paciente_id === pacienteId).map(m => <option key={m.id} value={m.id}>{m.nombre} · {m.especie}</option>)}
+    </select>{errorMascotas && <p role="alert" className="cal-aviso">{errorMascotas}</p>}{pacienteId && !errorMascotas && !mascotas.some(m => m.propietario_paciente_id === pacienteId) && <p className="cal-nota">Este cliente aún no tiene mascotas registradas. Regístrala en la sección Mascotas.</p>}</label>}
     <label>Profesional<select aria-label="Profesional" value={especialistaId} onChange={e => setEspecialistaId(e.target.value)}>
       <option value="">Sin especialista asignado</option>
       {especialistas.map(p => <option key={p.id} value={p.id}>{p.nombre}</option>)}
@@ -266,7 +301,7 @@ export function FormularioNuevaCita({ clinicaId, onCreada, inicial = {} }) {
     {cargandoListas && <p role="status">Cargando clientes y servicios…</p>}
     {errorListas && <p role="alert">{errorListas} <button type="button" className="cal-boton" onClick={() => setRecarga(n => n + 1)}>Reintentar</button></p>}
     {error && <p role="alert" className="cal-aviso">{error}</p>}
-    <button type="submit" disabled={guardando || cargandoListas || Boolean(errorListas)} className="cal-boton cal-boton-principal">{guardando ? 'Agendando...' : 'Agendar cita'}</button>
+    <button type="submit" disabled={guardando || cargandoListas || Boolean(errorListas) || (mascotasEnabled && (!mascotaId || Boolean(errorMascotas)))} className="cal-boton cal-boton-principal">{guardando ? 'Agendando...' : 'Agendar cita'}</button>
   </form>
 }
 

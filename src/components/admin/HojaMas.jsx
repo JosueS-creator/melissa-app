@@ -84,7 +84,7 @@ export default function HojaMas({ abierta, onCerrar, tabs, tab, onSelect, sinPla
             <button onClick={cuenta.onIrAMelissa} className={fila} style={{ minHeight: 48, fontSize: 15 }}>Panel de Melissa</button>
           )}
           <button onClick={cuenta.onDescargar} className={fila} style={{ minHeight: 48, fontSize: 15 }}>Mis datos</button>
-          <button onClick={cuenta.onSalir} className={fila} style={{ minHeight: 48, fontSize: 15, color: 'var(--adm-cancelada)' }}>Salir</button>
+          <button onClick={cuenta.onSalir} className={fila} style={{ minHeight: 52, marginTop: 6, fontSize: 15, fontWeight: 700, color: 'var(--adm-cancelada)', background: 'var(--admin-fondo)', border: '1px solid var(--admin-borde)' }}>Cerrar sesión</button>
         </div>
       </div>
     </div>

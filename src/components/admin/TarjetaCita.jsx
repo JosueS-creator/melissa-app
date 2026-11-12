@@ -31,6 +31,7 @@ export default function TarjetaCita({ cita, promo, onEstado, ocupada = false }) 
         </div>
 
         <p className="mt-2" style={{ font: '600 15px/1.3 var(--font-body)', color: 'var(--admin-texto)' }}>{cita.pacientes?.nombre ?? 'Cliente'}</p>
+        {cita.mascotas && <p style={{ fontSize: 13, lineHeight: 1.4, color: 'var(--admin-accion)', fontWeight: 600 }}>🐾 {cita.mascotas.nombre} · {cita.mascotas.especie}</p>}
         {cita.tratamiento && <p style={{ fontSize: 13, lineHeight: 1.4, color: 'var(--admin-texto-2)' }}>{cita.tratamiento}</p>}
         <p style={{ fontSize: 13, lineHeight: 1.4, color: 'var(--admin-texto-2)' }}>{cita.especialistas?.nombre ?? 'Sin asignar'}</p>
 

@@ -8,7 +8,8 @@ import TarjetaCita from './TarjetaCita'
 import Cliente360 from '../../pages/Cliente360'
 import './calendario.css'
 
-export default function PanelAgenda({ clinicaId, FormularioCita, HistorialCliente }) {
+export default function PanelAgenda({ clinicaId, FormularioCita, HistorialCliente, mascotasEnabled = false }) {
+  const columnasAgenda = mascotasEnabled ? `${COLUMNAS_AGENDA},mascotas(nombre,especie)` : COLUMNAS_AGENDA
   const [dia, setDia] = useState(() => aIsoLocal(new Date()))
   const [filtro, setFiltro] = useState('todos')
   const [datos, setDatos] = useState({ clave: '', citas: [], profesionales: [], pendientes: 0 })
@@ -36,7 +37,7 @@ export default function PanelAgenda({ clinicaId, FormularioCita, HistorialClient
     async function leerSemana() {
       const lista = []
       for (let inicio = 0; !controller.signal.aborted; inicio += 500) {
-        const respuesta = await supabase.from('citas').select(COLUMNAS_AGENDA).eq('clinica_id', clinicaId)
+        const respuesta = await supabase.from('citas').select(columnasAgenda).eq('clinica_id', clinicaId)
           .gte('fecha_hora', desde).lt('fecha_hora', hasta).order('fecha_hora').order('id')
           .range(inicio, inicio + 499).abortSignal(controller.signal)
         if (respuesta.error) return respuesta
@@ -115,7 +116,7 @@ export default function PanelAgenda({ clinicaId, FormularioCita, HistorialClient
     finally { mutacion.current = false; setOcupada(false) }
   }
 
-  if (cliente) return <Cliente360 pacienteId={cliente} clinicaId={clinicaId} HistorialCliente={HistorialCliente} onVolver={() => setCliente(null)} />
+  if (cliente) return <Cliente360 pacienteId={cliente} clinicaId={clinicaId} mascotasEnabled={mascotasEnabled} HistorialCliente={HistorialCliente} onVolver={() => setCliente(null)} />
   return <section className="calendario" aria-label="Calendario de citas">
     <header className="cal-cabecera adm-sobre-acero">
       <div className="cal-fila"><div><p className="cal-eyebrow">Agenda de la clínica</p><h2>Calendario</h2><p className="cal-subtitulo">Tu semana, en un vistazo.</p></div>
@@ -152,7 +153,7 @@ export default function PanelAgenda({ clinicaId, FormularioCita, HistorialClient
     </HojaCalendario>}
     {nueva && <HojaCalendario titulo="Nueva cita" onCerrar={() => setNueva(null)}>
       <p className="cal-nota">{nombreDia(nueva.fecha)} · {nueva.hora}. Revisa el horario con el profesional: el calendario no garantiza disponibilidad.</p>
-      <FormularioCita clinicaId={clinicaId} inicial={nueva} onCreada={() => { setDia(nueva.fecha); setNueva(null); setAviso('Cita creada.'); setRefresco(n => n + 1) }} />
+      <FormularioCita clinicaId={clinicaId} inicial={nueva} mascotasEnabled={mascotasEnabled} onCreada={() => { setDia(nueva.fecha); setNueva(null); setAviso('Cita creada.'); setRefresco(n => n + 1) }} />
     </HojaCalendario>}
   </section>
 }
