@@ -4,6 +4,7 @@ import { supabase } from '../lib/supabaseClient'
 import { obtenerPerfilActual } from '../lib/auth'
 import Personalizacion from './Personalizacion'
 import Mascotas from './Mascotas'
+import { DEMO_CLINICA_ID } from '../lib/imagenesMuestra'
 import { PREFIJO_QR_CLIENTE } from './TarjetaVIP'
 import { descargarDatosClinica } from '../lib/exportarDatosClinica'
 import { useFunciones } from '../lib/FuncionesContext'
@@ -51,6 +52,7 @@ export default function AdminPanel({ onCerrarSesion, esSuperAdmin, onIrAMelissa 
   const [perfil, setPerfil] = useState(null)
   const [nombreClinica, setNombreClinica] = useState('')
   const [tipoNegocio, setTipoNegocio] = useState('clinica_estetica')
+  const [vistaPetsDemo, setVistaPetsDemo] = useState(false)
   const [cargando, setCargando] = useState(true)
   const [tab, setTab] = useState('citas')
   const [canjesPendientes, setCanjesPendientes] = useState(0)
@@ -60,7 +62,9 @@ export default function AdminPanel({ onCerrarSesion, esSuperAdmin, onIrAMelissa 
   const cerrarMas = useCallback(() => setMasAbierto(false), [])
   const { cargado: planCargado, plan, tiene } = useFunciones()
   const sinPlan = (t) => planCargado && !tiene(t.funcion)
-  const tabsVisibles = tipoNegocio === 'veterinaria' ? TABS : TABS.filter((t) => t.id !== 'mascotas')
+  const puedePrevisualizarPets = esSuperAdmin && perfil?.clinica_id === DEMO_CLINICA_ID
+  const petsVisible = tipoNegocio === 'veterinaria' || (puedePrevisualizarPets && vistaPetsDemo)
+  const tabsVisibles = petsVisible ? TABS : TABS.filter((t) => t.id !== 'mascotas')
   const tabActual = tabsVisibles.find((t) => t.id === tab)
   const mostrar = (id) => tab === id && !sinPlan(tabActual)
 
@@ -105,6 +109,7 @@ export default function AdminPanel({ onCerrarSesion, esSuperAdmin, onIrAMelissa 
         style={{ background: 'var(--gradiente-fondo-oscuro)' }}
       >
         <p className="font-display text-lg text-white mb-1">Panel del negocio</p>
+        {puedePrevisualizarPets && <button onClick={() => { setVistaPetsDemo(v => !v); setTab(vistaPetsDemo ? 'citas' : 'mascotas') }} className="mb-4 rounded-lg px-3 py-2 text-left text-xs" style={{background:'rgba(255,255,255,.12)',color:'#fff'}}>{vistaPetsDemo ? '← Volver a Melissa Beauty' : '🐾 Previsualizar Melissa Pets'}</button>}
         <p className="text-[11px] mb-6" style={{ color: 'rgba(254,250,248,.62)' }}>Vista operativa{plan ? ` · Plan ${NOMBRE_PLAN[plan] || plan}` : ''}</p>
 
         <nav className="flex flex-col gap-1 flex-1">
@@ -146,7 +151,7 @@ export default function AdminPanel({ onCerrarSesion, esSuperAdmin, onIrAMelissa 
       {mostrar('citas') && <PanelCitas key={perfil.clinica_id} clinicaId={perfil.clinica_id} />}
       {/* El CRM recibe EscanerQR e HistorialCliente (definidos aquí) para reutilizarlos sin duplicar código. */}
       {mostrar('pacientes') && <SeccionAdmin titulo="Clientes" descripcion="Directorio y relación con tus clientes"><Crm clinicaId={perfil.clinica_id} HistorialCliente={HistorialCliente} EscanerQR={EscanerQR} onVerOportunidades={() => setTab('reactivar')} /></SeccionAdmin>}
-      {mostrar('mascotas') && <SeccionAdmin titulo="Mascotas" descripcion="Fichas y expedientes veterinarios"><Mascotas clinicaId={perfil.clinica_id} perfilId={perfil.id} /></SeccionAdmin>}
+      {mostrar('mascotas') && <><div className="mb-3 rounded-xl px-3 py-2 text-xs" style={{background:'var(--color-accent)',color:'var(--color-ink)'}}>{tipoNegocio === 'veterinaria' ? 'Melissa Pets · clínica veterinaria' : 'Vista previa de Melissa Pets en la clínica Demo. No cambia el sector ni los datos de Melissa Beauty.'}</div><SeccionAdmin titulo="Mascotas" descripcion="Fichas y expedientes veterinarios"><Mascotas clinicaId={perfil.clinica_id} perfilId={perfil.id} /></SeccionAdmin></>}
       {mostrar('reactivar') && <SeccionAdmin titulo="Por reactivar" descripcion="Oportunidades de seguimiento"><ClientesReactivar clinicaId={perfil.clinica_id} HistorialCliente={HistorialCliente} /></SeccionAdmin>}
       {mostrar('canjes') && <SeccionAdmin titulo="Canjes" descripcion="Solicitudes y recompensas"><Canjes onCambio={contarCanjesPendientes} /></SeccionAdmin>}
       {mostrar('promociones') && <SeccionAdmin titulo="Promociones" descripcion="Ofertas de tu clínica"><Promociones clinicaId={perfil.clinica_id} /></SeccionAdmin>}
