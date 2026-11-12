@@ -9,9 +9,9 @@ const huellas = [
   ['75%', '12%', '20deg', '-10s'], ['55%', '72%', '-16deg', '-11s'],
 ]
 
-function Huella({ className = '' }) {
+function Huella({ className = '', style = {} }) {
   return (
-    <svg className={className} viewBox="0 0 48 48" fill="currentColor" aria-hidden="true">
+    <svg className={className} style={style} viewBox="0 0 48 48" fill="currentColor" aria-hidden="true">
       <ellipse cx="24" cy="31" rx="10" ry="8" />
       <ellipse cx="10.5" cy="18" rx="5.2" ry="7" transform="rotate(-24 10.5 18)" />
       <ellipse cx="21" cy="11" rx="5.1" ry="7" transform="rotate(-7 21 11)" />
