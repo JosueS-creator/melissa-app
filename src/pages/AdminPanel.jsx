@@ -159,7 +159,7 @@ export default function AdminPanel({ onCerrarSesion, esSuperAdmin, onIrAMelissa 
       {(tab === 'citas' || sinPlan(tabActual)) && <CabeceraAdmin nombre={primerNombre(perfil.nombre)} titulo={tabActual.label} plan={plan ? NOMBRE_PLAN[plan] || plan : null} />}
 
       {planCargado && sinPlan(tabActual) && <FuncionBloqueada funcion={tabActual.funcion} />}
-      {mostrar('citas') && <PanelCitas key={perfil.clinica_id} clinicaId={perfil.clinica_id} />}
+      {mostrar('citas') && <PanelCitas key={perfil.clinica_id} clinicaId={perfil.clinica_id} mascotasEnabled={petsVisible} />}
       {/* El CRM recibe EscanerQR e HistorialCliente (definidos aquí) para reutilizarlos sin duplicar código. */}
       {mostrar('pacientes') && <SeccionAdmin titulo="Clientes" descripcion="Directorio y relación con tus clientes"><Crm clinicaId={perfil.clinica_id} HistorialCliente={HistorialCliente} EscanerQR={EscanerQR} onVerOportunidades={() => setTab('reactivar')} /></SeccionAdmin>}
       {mostrar('mascotas') && <><div className="mb-3 rounded-xl px-3 py-2 text-xs" style={{background:'var(--color-accent)',color:'var(--color-ink)'}}>{tipoNegocio === 'veterinaria' ? 'Melissa Pets · clínica veterinaria' : 'Vista previa de Melissa Pets en la clínica Demo. No cambia el sector ni los datos de Melissa Beauty.'}</div><SeccionAdmin titulo="Mascotas" descripcion="Fichas y expedientes veterinarios"><Mascotas clinicaId={perfil.clinica_id} perfilId={perfil.id} modoDemo={vistaPetsDemo && tipoNegocio !== 'veterinaria'} /></SeccionAdmin></>}
@@ -208,12 +208,12 @@ export default function AdminPanel({ onCerrarSesion, esSuperAdmin, onIrAMelissa 
   )
 }
 
-function PanelCitas({ clinicaId }) {
-  return <PanelAgenda clinicaId={clinicaId} FormularioCita={FormularioNuevaCita} HistorialCliente={HistorialCliente} />
+function PanelCitas({ clinicaId, mascotasEnabled = false }) {
+  return <PanelAgenda clinicaId={clinicaId} mascotasEnabled={mascotasEnabled} FormularioCita={FormularioNuevaCita} HistorialCliente={HistorialCliente} />
 }
 
 /** Compatible con el esquema desplegado: no envía duración ni finalización propuestas. */
-export function FormularioNuevaCita({ clinicaId, onCreada, inicial = {} }) {
+export function FormularioNuevaCita({ clinicaId, onCreada, inicial = {}, mascotasEnabled = false }) {
   const [pacientes, setPacientes] = useState([])
   const [especialistas, setEspecialistas] = useState([])
   const [servicios, setServicios] = useState([])
