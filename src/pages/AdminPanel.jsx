@@ -105,6 +105,7 @@ export default function AdminPanel({ onCerrarSesion, esSuperAdmin, onIrAMelissa 
 
   return (
     <div className={`panel-admin ${petsVisible ? 'pets-theme' : ''} ${tab !== 'citas' ? 'admin-shell-unificado' : ''} lg:flex lg:min-h-screen max-lg:bg-[var(--admin-fondo)]`}>
+      {petsVisible && <PetsAtmosphere />}
       <aside
         className="hidden lg:flex lg:flex-col lg:w-[252px] lg:flex-shrink-0 lg:sticky lg:top-0 lg:h-screen px-5 py-6"
         style={{ background: 'var(--gradiente-fondo-oscuro)' }}
