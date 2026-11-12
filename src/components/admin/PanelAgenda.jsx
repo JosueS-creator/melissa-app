@@ -116,7 +116,7 @@ export default function PanelAgenda({ clinicaId, FormularioCita, HistorialClient
     finally { mutacion.current = false; setOcupada(false) }
   }
 
-  if (cliente) return <Cliente360 pacienteId={cliente} clinicaId={clinicaId} HistorialCliente={HistorialCliente} onVolver={() => setCliente(null)} />
+  if (cliente) return <Cliente360 pacienteId={cliente} clinicaId={clinicaId} mascotasEnabled={mascotasEnabled} HistorialCliente={HistorialCliente} onVolver={() => setCliente(null)} />
   return <section className="calendario" aria-label="Calendario de citas">
     <header className="cal-cabecera adm-sobre-acero">
       <div className="cal-fila"><div><p className="cal-eyebrow">Agenda de la clínica</p><h2>Calendario</h2><p className="cal-subtitulo">Tu semana, en un vistazo.</p></div>
