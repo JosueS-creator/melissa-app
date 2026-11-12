@@ -11,6 +11,8 @@ const TEMAS = [
   { id: 'spa_natural', nombre: 'Spa Natural', primario: '#6B8E5A', secundario: '#FFFFFF', acento: '#EFF3E8' },
   { id: 'barber_grafito', nombre: 'Barber · Grafito y acero', primario: '#263238', secundario: '#FFFFFF', acento: '#E8EDF0' },
   { id: 'barber_azul_noche', nombre: 'Barber · Azul noche y plata', primario: '#172554', secundario: '#FFFFFF', acento: '#E8EDF5' },
+  { id: 'pets_verde', nombre: 'Pets · Verde natural', primario: '#287C68', secundario: '#FFFFFF', acento: '#E5F2ED' },
+  { id: 'pets_azul', nombre: 'Pets · Azul confianza', primario: '#245A86', secundario: '#FFFFFF', acento: '#E8F0F7' },
 ]
 
 export default function Personalizacion() {
