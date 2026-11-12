@@ -110,9 +110,19 @@ export default function AdminPanel({ onCerrarSesion, esSuperAdmin, onIrAMelissa 
       >
         <p className="font-display text-lg text-white mb-1">Panel del negocio</p>
         {puedePrevisualizarPets && <button onClick={() => { setVistaPetsDemo(v => !v); setTab(vistaPetsDemo ? 'citas' : 'mascotas') }} className="mb-4 rounded-lg px-3 py-2 text-left text-xs" style={{background:'rgba(255,255,255,.12)',color:'#fff'}}>{vistaPetsDemo ? '← Volver a Melissa Beauty' : '🐾 Previsualizar Melissa Pets'}</button>}
-        <p className="text-[11px] mb-6" style={{ color: 'rgba(254,250,248,.62)' }}>Vista operativa{plan ? ` · Plan ${NOMBRE_PLAN[plan] || plan}` : ''}</p>
+        <p className="text-[11px] mb-4" style={{ color: 'rgba(254,250,248,.62)' }}>Vista operativa{plan ? ` · Plan ${NOMBRE_PLAN[plan] || plan}` : ''}</p>
+        <button
+          type="button"
+          onClick={onCerrarSesion}
+          aria-label="Cerrar sesión"
+          className="w-full flex items-center gap-2 text-left text-sm font-semibold mb-5 px-3 py-3 rounded-xl flex-shrink-0"
+          style={{ color: '#FFFFFF', background: 'rgba(190,65,65,.24)', border: '1px solid rgba(255,180,180,.48)', minHeight: 48 }}
+        >
+          <span aria-hidden="true">↪</span>
+          Cerrar sesión
+        </button>
 
-        <nav className="flex flex-col gap-1 flex-1">
+        <nav className="flex flex-col gap-1 flex-1 min-h-0 overflow-y-auto">
           {tabsVisibles.map((t) => (
             <button
               key={t.id}
@@ -138,9 +148,7 @@ export default function AdminPanel({ onCerrarSesion, esSuperAdmin, onIrAMelissa 
           <button onClick={() => descargarDatosClinica(perfil.clinica_id, nombreClinica)} className="w-full text-left text-xs py-2.5" style={{ color: 'rgba(254,250,248,.78)' }}>
             Descargar mis datos
           </button>
-          <button onClick={onCerrarSesion} className="w-full flex items-center text-left text-sm font-semibold mt-2 px-3 py-3 rounded-xl" style={{ color: '#FFFFFF', background: 'rgba(255,255,255,.13)', border: '1px solid rgba(255,255,255,.24)', minHeight: 48 }}>
-            Cerrar sesión
-          </button>
+          
         </div>
       </aside>
 
