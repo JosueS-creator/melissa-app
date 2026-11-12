@@ -12,7 +12,16 @@ const TIPOS_HISTORIAL = [
 
 const VACIO = { nombre: '', especie: 'perro', raza: '', sexo: '', fecha_nacimiento: '', peso: '', microchip: '', observaciones: '' }
 
-export default function Mascotas({ clinicaId, perfilId }) {
+const MASCOTAS_PREVIEW = [
+  { id:'pets-demo-luna', nombre:'Luna', especie:'perro', raza:'Golden Retriever', sexo:'hembra', fecha_nacimiento:'2022-04-12', peso:24.5, microchip:null, observaciones:'Ejemplo ilustrativo', activo:true, pacientes:{nombre:'María Demo',telefono:'9999-0000'} },
+  { id:'pets-demo-milo', nombre:'Milo', especie:'gato', raza:'Mestizo', sexo:'macho', fecha_nacimiento:'2023-09-03', peso:4.2, microchip:null, observaciones:'Ejemplo ilustrativo', activo:true, pacientes:{nombre:'Carlos Demo',telefono:'9888-0000'} },
+]
+const HISTORIAL_PREVIEW = [
+  {id:'pets-hist-demo-1',tipo:'vacuna',fecha:'2026-10-18',motivo:'Vacunación anual',notas:'Ejemplo de registro. No corresponde a una atención real.',peso:24.5,proxima_fecha:'2027-10-18'},
+  {id:'pets-hist-demo-2',tipo:'consulta',fecha:'2026-09-02',motivo:'Consulta general',notas:'Ejemplo de evolución clínica.',peso:24.1,proxima_fecha:null},
+]
+
+export default function Mascotas({ clinicaId, perfilId, modoDemo = false }) {
   const [mascotas, setMascotas] = useState([])
   const [propietarios, setPropietarios] = useState([])
   const [propietarioId, setPropietarioId] = useState('')
@@ -26,6 +35,7 @@ export default function Mascotas({ clinicaId, perfilId }) {
   const [guardando, setGuardando] = useState(false)
   const [error, setError] = useState('')
   const [mensaje, setMensaje] = useState('')
+  const [datosDemo, setDatosDemo] = useState(false)
 
   useEffect(() => { cargarDatos() }, [clinicaId])
 
@@ -36,8 +46,10 @@ export default function Mascotas({ clinicaId, perfilId }) {
       supabase.from('mascotas').select('*, pacientes(nombre, telefono)').eq('clinica_id', clinicaId).eq('activo', true).order('nombre'),
       supabase.from('pacientes').select('id,nombre,telefono').eq('clinica_id', clinicaId).order('nombre'),
     ])
-    if (m.error || p.error) setError('No se pudieron cargar las mascotas. Verifica que la migración de Melissa Pets esté instalada.')
-    setMascotas(m.data || [])
+    if (m.error || p.error) {
+      if (modoDemo) { setMascotas(MASCOTAS_PREVIEW); setDatosDemo(true); setError('Vista previa con datos ilustrativos. No son registros reales y no se guardan en la clínica Demo.') }
+      else setError('No se pudieron cargar las mascotas. Verifica que la migración de Melissa Pets esté instalada.')
+    } else { setMascotas(m.data || []); setDatosDemo(false) }
     setPropietarios(p.data || [])
     setCargando(false)
   }
@@ -70,6 +82,7 @@ export default function Mascotas({ clinicaId, perfilId }) {
 
   async function abrirHistorial(mascota) {
     setSeleccionada(mascota); setMostrarHistorial(true); setError('')
+    if (datosDemo) { setHistorial(HISTORIAL_PREVIEW); return }
     const { data, error: eHistorial } = await supabase.from('historial_veterinario')
       .select('*').eq('clinica_id', clinicaId).eq('mascota_id', mascota.id)
       .order('fecha', { ascending: false })
@@ -111,11 +124,12 @@ export default function Mascotas({ clinicaId, perfilId }) {
 
   return (
     <div className="space-y-4">
+      {modoDemo && datosDemo && <p className="rounded-xl px-3 py-2 text-xs mb-2" style={{background:'var(--color-accent)',color:'var(--color-ink)'}}>Modo demostración · puedes explorar fichas e historiales ilustrativos; los cambios están deshabilitados.</p>}
       {error && <p role="alert" className="rounded-xl p-3 text-sm bg-red-50 text-red-700">{error}</p>}
       {mensaje && <p role="status" className="rounded-xl p-3 text-sm bg-emerald-50 text-emerald-800">{mensaje}</p>}
-      <button onClick={() => { setMostrarForm(v => !v); setMostrarHistorial(false) }} className="w-full rounded-xl py-3 text-sm font-semibold text-white" style={{ background: 'var(--gradiente-primario)' }}>
+      {!datosDemo && <button onClick={() => { setMostrarForm(v => !v); setMostrarHistorial(false) }} className="w-full rounded-xl py-3 text-sm font-semibold text-white" style={{ background: 'var(--gradiente-primario)' }}>
         {mostrarForm ? 'Cancelar' : '+ Registrar mascota'}
-      </button>
+      </button>}
 
       {mostrarForm && <form onSubmit={guardarMascota} className="rounded-2xl border border-ink/10 p-4 space-y-3 bg-white">
         <h3 className="font-semibold text-sm">Nueva ficha de mascota</h3>
@@ -175,7 +189,7 @@ export default function Mascotas({ clinicaId, perfilId }) {
           <div className="w-11 h-11 rounded-full flex items-center justify-center text-xl" style={{background:'var(--color-accent)'}}>🐾</div>
           <div className="min-w-0 flex-1"><p className="font-semibold text-sm truncate">{m.nombre}</p><p className="text-xs text-ink/50">{m.especie}{m.raza ? ` · ${m.raza}` : ''}</p><p className="text-xs text-ink/50 truncate">Tutor: {m.pacientes?.nombre || 'Sin nombre'}</p></div>
           <button onClick={() => abrirHistorial(m)} className="text-xs font-semibold px-3 py-2 rounded-lg" style={{background:'var(--color-accent)'}}>Expediente</button>
-          <button onClick={() => desactivar(m)} aria-label={`Desactivar ${m.nombre}`} className="text-xs text-ink/40 px-1">•••</button>
+          {!datosDemo && <button onClick={() => desactivar(m)} aria-label={`Desactivar ${m.nombre}`} className="text-xs text-ink/40 px-1">•••</button>}
         </article>)}
       </div>}
     </div>
