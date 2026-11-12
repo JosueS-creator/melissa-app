@@ -62,7 +62,7 @@ export default function AdminPanel({ onCerrarSesion, esSuperAdmin, onIrAMelissa 
   const cerrarMas = useCallback(() => setMasAbierto(false), [])
   const { cargado: planCargado, plan, tiene } = useFunciones()
   const sinPlan = (t) => planCargado && !tiene(t.funcion)
-  const puedePrevisualizarPets = esSuperAdmin && perfil?.clinica_id === DEMO_CLINICA_ID
+  const puedePrevisualizarPets = perfil?.clinica_id === DEMO_CLINICA_ID
   const petsVisible = tipoNegocio === 'veterinaria' || (puedePrevisualizarPets && vistaPetsDemo)
   const tabsVisibles = petsVisible ? TABS : TABS.filter((t) => t.id !== 'mascotas')
   const tabActual = tabsVisibles.find((t) => t.id === tab)
