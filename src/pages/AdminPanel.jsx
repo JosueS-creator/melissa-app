@@ -129,17 +129,17 @@ export default function AdminPanel({ onCerrarSesion, esSuperAdmin, onIrAMelissa 
           ))}
         </nav>
 
-        <div className="pt-4 mt-4" style={{ borderTop: '1px solid rgba(235,203,134,.2)' }}>
+        <div className="pt-4 mt-auto flex-shrink-0" style={{ borderTop: '1px solid rgba(235,203,134,.28)' }}>
           {esSuperAdmin && (
-            <button onClick={onIrAMelissa} className="w-full text-left text-xs py-2" style={{ color: 'rgba(254,250,248,.74)' }}>
+            <button onClick={onIrAMelissa} className="w-full text-left text-xs py-2.5" style={{ color: 'rgba(254,250,248,.78)' }}>
               Panel de Melissa
             </button>
           )}
-          <button onClick={() => descargarDatosClinica(perfil.clinica_id, nombreClinica)} className="w-full text-left text-xs py-2" style={{ color: 'rgba(254,250,248,.74)' }}>
+          <button onClick={() => descargarDatosClinica(perfil.clinica_id, nombreClinica)} className="w-full text-left text-xs py-2.5" style={{ color: 'rgba(254,250,248,.78)' }}>
             Descargar mis datos
           </button>
-          <button onClick={onCerrarSesion} className="w-full text-left text-xs py-2" style={{ color: 'rgba(254,250,248,.74)' }}>
-            Salir
+          <button onClick={onCerrarSesion} className="w-full flex items-center text-left text-sm font-semibold mt-2 px-3 py-3 rounded-xl" style={{ color: '#FFFFFF', background: 'rgba(255,255,255,.13)', border: '1px solid rgba(255,255,255,.24)', minHeight: 48 }}>
+            Cerrar sesión
           </button>
         </div>
       </aside>
