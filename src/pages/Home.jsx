@@ -389,6 +389,13 @@ export default function Home({ nombrePaciente = 'Cliente', clinica, onNavigate }
               <button type="button" className="premium-boton" onClick={()=>onNavigate?.('agenda')}>Explorar servicios <Flecha/></button>
             </div>
           </section>
+          {clinica?.tipo_negocio === 'veterinaria' && (
+            <button onClick={() => onNavigate?.('mascotas')} className="w-full rounded-2xl p-4 text-left flex items-center gap-3" style={{background:'#FFFFFF',border:BORDE,boxShadow:SOMBRA}}>
+              <span className="flex items-center justify-center rounded-full text-2xl" style={{width:48,height:48,background:'var(--color-accent)'}}>🐾</span>
+              <span className="flex-1"><strong className="block text-sm" style={{color:'var(--color-ink)'}}>Mis mascotas</strong><small style={{color:'var(--color-texto-secundario)'}}>Fichas y seguimiento veterinario</small></span>
+              <Flecha color="var(--color-primary)"/>
+            </button>
+          )}
           {proximaCita ? (
             <ProximaVisita
               cita={proximaCita}
