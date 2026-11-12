@@ -218,6 +218,9 @@ export function FormularioNuevaCita({ clinicaId, onCreada, inicial = {}, mascota
   const [especialistas, setEspecialistas] = useState([])
   const [servicios, setServicios] = useState([])
   const [pacienteId, setPacienteId] = useState('')
+  const [mascotas, setMascotas] = useState([])
+  const [mascotaId, setMascotaId] = useState('')
+  const [errorMascotas, setErrorMascotas] = useState('')
   const [especialistaId, setEspecialistaId] = useState(inicial.especialistaId || '')
   const [servicioId, setServicioId] = useState('')
   const [fecha, setFecha] = useState(inicial.fecha || '')
@@ -233,29 +236,35 @@ export function FormularioNuevaCita({ clinicaId, onCreada, inicial = {}, mascota
     setCargandoListas(true); setErrorListas('')
     async function cargarListas() {
       try {
-        const [p, e, s] = await Promise.all([
+        const [p, e, s, m] = await Promise.all([
           supabase.from('pacientes').select('id,nombre').eq('clinica_id', clinicaId).order('nombre').abortSignal(controller.signal),
           supabase.from('especialistas').select('id,nombre').eq('clinica_id', clinicaId).eq('activo', true).abortSignal(controller.signal),
           supabase.from('servicios').select('id,nombre,precio').eq('clinica_id', clinicaId).eq('activo', true).abortSignal(controller.signal),
+          mascotasEnabled ? supabase.from('mascotas').select('id,nombre,especie,propietario_paciente_id').eq('clinica_id', clinicaId).eq('activo', true).order('nombre').abortSignal(controller.signal) : Promise.resolve({ data: [], error: null }),
         ])
         if (controller.signal.aborted) return
         if (p.error || e.error || s.error) throw new Error('listas')
         setPacientes(p.data || []); setEspecialistas(e.data || []); setServicios(s.data || [])
+        if (mascotasEnabled) {
+          if (m.error) { setMascotas([]); setErrorMascotas('No se pudieron cargar las mascotas. Verifica que la migración de Melissa Pets esté instalada.') }
+          else { setMascotas(m.data || []); setErrorMascotas('') }
+        }
       } catch { if (!controller.signal.aborted) setErrorListas('No se pudieron cargar los datos del formulario.') }
       finally { if (!controller.signal.aborted) setCargandoListas(false) }
     }
     cargarListas()
     return () => controller.abort()
-  }, [clinicaId, recarga])
+  }, [clinicaId, recarga, mascotasEnabled])
 
   async function crearCita(e) {
     e.preventDefault()
-    if (!pacienteId || !fecha || !hora || guardando) return
+    if (!pacienteId || !fecha || !hora || (mascotasEnabled && (!mascotaId || errorMascotas)) || guardando) return
     setGuardando(true); setError('')
     try {
       const { error: errorInsert } = await supabase.from('citas').insert({
         clinica_id: clinicaId,
         paciente_id: pacienteId,
+        ...(mascotasEnabled ? { mascota_id: mascotaId } : {}),
         especialista_id: especialistaId || null,
         fecha_hora: new Date(`${fecha}T${hora}:00`).toISOString(),
         estado: 'confirmada',
@@ -273,6 +282,10 @@ export function FormularioNuevaCita({ clinicaId, onCreada, inicial = {}, mascota
       <option value="" disabled>Selecciona un cliente</option>
       {pacientes.map(p => <option key={p.id} value={p.id}>{p.nombre}</option>)}
     </select></label>
+    {mascotasEnabled && <label>Mascota<select aria-label="Mascota" value={mascotaId} onChange={e => setMascotaId(e.target.value)} required disabled={!pacienteId || Boolean(errorMascotas)}>
+      <option value="">{pacienteId ? 'Selecciona la mascota' : 'Primero selecciona un cliente'}</option>
+      {mascotas.filter(m => m.propietario_paciente_id === pacienteId).map(m => <option key={m.id} value={m.id}>{m.nombre} · {m.especie}</option>)}
+    </select>{errorMascotas && <p role="alert" className="cal-aviso">{errorMascotas}</p>}{pacienteId && !errorMascotas && !mascotas.some(m => m.propietario_paciente_id === pacienteId) && <p className="cal-nota">Este cliente aún no tiene mascotas registradas. Regístrala en la sección Mascotas.</p>}</label>}
     <label>Profesional<select aria-label="Profesional" value={especialistaId} onChange={e => setEspecialistaId(e.target.value)}>
       <option value="">Sin especialista asignado</option>
       {especialistas.map(p => <option key={p.id} value={p.id}>{p.nombre}</option>)}
@@ -288,7 +301,7 @@ export function FormularioNuevaCita({ clinicaId, onCreada, inicial = {}, mascota
     {cargandoListas && <p role="status">Cargando clientes y servicios…</p>}
     {errorListas && <p role="alert">{errorListas} <button type="button" className="cal-boton" onClick={() => setRecarga(n => n + 1)}>Reintentar</button></p>}
     {error && <p role="alert" className="cal-aviso">{error}</p>}
-    <button type="submit" disabled={guardando || cargandoListas || Boolean(errorListas)} className="cal-boton cal-boton-principal">{guardando ? 'Agendando...' : 'Agendar cita'}</button>
+    <button type="submit" disabled={guardando || cargandoListas || Boolean(errorListas) || (mascotasEnabled && (!mascotaId || Boolean(errorMascotas)))} className="cal-boton cal-boton-principal">{guardando ? 'Agendando...' : 'Agendar cita'}</button>
   </form>
 }
 
