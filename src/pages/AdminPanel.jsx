@@ -145,6 +145,7 @@ export default function AdminPanel({ onCerrarSesion, esSuperAdmin, onIrAMelissa 
       </aside>
 
       <div className={`min-w-0 w-full sm:max-w-app mx-auto ${tab === 'citas' ? 'lg:max-w-none' : 'lg:max-w-3xl'} lg:mx-0 lg:flex-1 px-5 lg:px-10 pb-6 lg:pb-10 pt-[calc(env(safe-area-inset-top)+14px)] lg:pt-10 font-body`}>
+      {puedePrevisualizarPets && <button onClick={() => { setVistaPetsDemo(v => !v); setTab(vistaPetsDemo ? 'citas' : 'mascotas') }} className="lg:hidden w-full mb-4 rounded-xl px-3 py-3 text-left text-xs" style={{background:'var(--gradiente-fondo-oscuro)',color:'#fff'}}>{vistaPetsDemo ? '← Volver a Melissa Beauty' : '🐾 Previsualizar Melissa Pets'}</button>}
       {(tab === 'citas' || sinPlan(tabActual)) && <CabeceraAdmin nombre={primerNombre(perfil.nombre)} titulo={tabActual.label} plan={plan ? NOMBRE_PLAN[plan] || plan : null} />}
 
       {planCargado && sinPlan(tabActual) && <FuncionBloqueada funcion={tabActual.funcion} />}
