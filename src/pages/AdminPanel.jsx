@@ -278,7 +278,7 @@ export function FormularioNuevaCita({ clinicaId, onCreada, inicial = {}, mascota
   }
 
   return <form onSubmit={crearCita} className="cal-form">
-    <label>Cliente<select aria-label="Cliente" value={pacienteId} onChange={e => setPacienteId(e.target.value)} required>
+    <label>Cliente<select aria-label="Cliente" value={pacienteId} onChange={e => { setPacienteId(e.target.value); setMascotaId('') }} required>
       <option value="" disabled>Selecciona un cliente</option>
       {pacientes.map(p => <option key={p.id} value={p.id}>{p.nombre}</option>)}
     </select></label>
