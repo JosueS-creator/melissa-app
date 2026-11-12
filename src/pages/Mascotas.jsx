@@ -158,7 +158,7 @@ export default function Mascotas({ clinicaId, perfilId, modoDemo = false }) {
           <div><p className="text-xs text-ink/50">Expediente veterinario</p><h3 className="font-semibold">{seleccionada.nombre}</h3><p className="text-xs text-ink/60">{seleccionada.especie} · {seleccionada.raza || 'Raza no especificada'} · Tutor: {seleccionada.pacientes?.nombre}</p></div>
           <button onClick={() => setMostrarHistorial(false)} className="text-xs underline">Cerrar</button>
         </div>
-        <form onSubmit={guardarEntrada} className="rounded-xl p-3 space-y-2" style={{background:'var(--color-accent)'}}>
+        {!datosDemo && <form onSubmit={guardarEntrada} className="rounded-xl p-3 space-y-2" style={{background:'var(--color-accent)'}}>
           <p className="text-sm font-semibold">Registrar atención</p>
           <div className="grid grid-cols-2 gap-2">
             <select className="rounded-lg border p-2 text-sm bg-white" value={nuevo.tipo} onChange={e => setNuevo(v => ({...v,tipo:e.target.value}))}>{TIPOS_HISTORIAL.map(([v,l])=><option key={v} value={v}>{l}</option>)}</select>
@@ -171,7 +171,7 @@ export default function Mascotas({ clinicaId, perfilId, modoDemo = false }) {
             <input type="date" className="rounded-lg border p-2 text-sm" aria-label="Próximo control" value={nuevo.proxima_fecha} onChange={e => setNuevo(v => ({...v,proxima_fecha:e.target.value}))} />
           </div>
           <button disabled={guardando} className="w-full rounded-lg py-2.5 text-sm text-white disabled:opacity-50" style={{background:'var(--gradiente-primario)'}}>{guardando ? 'Guardando...' : 'Guardar en historial'}</button>
-        </form>
+        </form>}
         <div className="space-y-2">
           {historial.length === 0 && <p className="text-sm text-ink/50">Todavía no hay atenciones registradas.</p>}
           {historial.map(h => <article key={h.id} className="rounded-xl border border-ink/10 p-3">
