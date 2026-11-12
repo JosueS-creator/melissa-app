@@ -52,6 +52,27 @@ create index if not exists mascotas_propietario_idx
 create index if not exists mascotas_nombre_idx
   on public.mascotas (clinica_id, lower(nombre));
 
+-- Evita registrar una fecha de nacimiento futura.
+create or replace function public.validar_fecha_nacimiento_mascota()
+returns trigger
+language plpgsql
+set search_path = ''
+as $
+begin
+  if new.fecha_nacimiento is not null and new.fecha_nacimiento > current_date then
+    raise exception 'La fecha de nacimiento no puede estar en el futuro'
+      using errcode = '23514';
+  end if;
+  return new;
+end;
+$;
+
+drop trigger if exists mascotas_validar_fecha_nacimiento on public.mascotas;
+create trigger mascotas_validar_fecha_nacimiento
+before insert or update of fecha_nacimiento
+on public.mascotas for each row
+execute function public.validar_fecha_nacimiento_mascota();
+
 -- La mascota es opcional para no invalidar citas antiguas de Melissa Beauty.
 alter table public.citas add column if not exists mascota_id uuid;
 
@@ -153,8 +174,24 @@ returns trigger
 language plpgsql
 set search_path = ''
 as $$
-declare v_mascota_id uuid;
+declare
+  v_mascota_id uuid;
+  v_clinica_creador uuid;
 begin
+  if new.creado_por is not null then
+    select p.clinica_id into v_clinica_creador
+    from public.perfiles p
+    where p.id = new.creado_por;
+
+    if not found or (
+      v_clinica_creador is distinct from new.clinica_id
+      and not coalesce(public.es_super_admin_global(), false)
+    ) then
+      raise exception 'El usuario creador no pertenece a esta clínica'
+        using errcode = '23514';
+    end if;
+  end if;
+
   if new.cita_id is null then return new; end if;
 
   select c.mascota_id into v_mascota_id
@@ -174,7 +211,7 @@ $$;
 
 drop trigger if exists historial_vet_validar_cita on public.historial_veterinario;
 create trigger historial_vet_validar_cita
-before insert or update of cita_id, mascota_id, clinica_id
+before insert or update of cita_id, mascota_id, clinica_id, creado_por
 on public.historial_veterinario for each row
 execute function public.validar_cita_de_historial_veterinario();
 
