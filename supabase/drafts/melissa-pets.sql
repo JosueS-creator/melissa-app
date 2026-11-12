@@ -124,6 +124,20 @@ create policy historial_vet_admin_gestiona on public.historial_veterinario
   using (clinica_id = (select public.clinica_actual()) and coalesce((select public.es_admin_clinica()), false))
   with check (clinica_id = (select public.clinica_actual()) and coalesce((select public.es_admin_clinica()), false));
 
+drop policy if exists historial_vet_tutor_lee_suyo on public.historial_veterinario;
+create policy historial_vet_tutor_lee_suyo on public.historial_veterinario
+  for select to authenticated
+  using (
+    clinica_id = (select public.clinica_actual())
+    and exists (
+      select 1 from public.mascotas m
+      where m.id = historial_veterinario.mascota_id
+        and m.clinica_id = historial_veterinario.clinica_id
+        and m.propietario_paciente_id = (select public.paciente_actual())
+        and m.activo = true
+    )
+  );
+
 -- Temas de Melissa Pets: colores de referencia, personalizables por el negocio.
 insert into public.temas_base
   (id, nombre, color_primario_default, color_secundario_default, color_acento_default, descripcion)
