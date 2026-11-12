@@ -133,7 +133,7 @@ export default function Agenda({clinica}) {
   const quedanHorasHoy = HORAS_DISPONIBLES.some((h) => !esHoraPasada(diaSeleccionado, h))
 
   async function confirmarCita() {
-    if (!especialistaId || !horaEfectiva || !paciente) return
+    if (!especialistaId || !horaEfectiva || !paciente || (clinica?.tipo_negocio === 'veterinaria' && mascotas.length > 0 && !mascotaId)) return
     setEnviando(true)
     setError('')
 
