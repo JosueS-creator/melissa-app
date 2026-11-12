@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { ETIQUETA_NIVEL } from '../lib/fidelidad'
 import NivelBadge from '../components/NivelBadge'
+import { supabase } from '../lib/supabaseClient'
 import { obtenerCliente360, obtenerTimeline, formatearFecha, formatearMonto, textoDias } from '../lib/crm'
 
 const TIPOS_EVENTO = {
@@ -43,13 +44,15 @@ function valorEvento(e, moneda) {
   return String(e.valor)
 }
 
-export default function Cliente360({ pacienteId, clinicaId, onVolver, HistorialCliente }) {
+export default function Cliente360({ pacienteId, clinicaId, onVolver, HistorialCliente, mascotasEnabled = false }) {
   const [datos, setDatos] = useState(null)
   const [eventos, setEventos] = useState([])
   const [limite, setLimite] = useState(30)
   const [cargando, setCargando] = useState(true)
   const [error, setError] = useState('')
   const [mostrarHistorial, setMostrarHistorial] = useState(false)
+  const [mascotas, setMascotas] = useState([])
+  const [errorMascotas, setErrorMascotas] = useState('')
 
   useEffect(() => {
     let vigente = true
@@ -66,6 +69,19 @@ export default function Cliente360({ pacienteId, clinicaId, onVolver, HistorialC
       vigente = false
     }
   }, [pacienteId, limite])
+
+  useEffect(() => {
+    if (!mascotasEnabled || !pacienteId || !clinicaId) { setMascotas([]); return }
+    let vigente = true
+    supabase.from('mascotas').select('id,nombre,especie,raza,sexo,peso')
+      .eq('clinica_id', clinicaId).eq('propietario_paciente_id', pacienteId).eq('activo', true).order('nombre')
+      .then(({ data, error: fallo }) => {
+        if (!vigente) return
+        if (fallo) { setErrorMascotas('No se pudieron cargar las mascotas. Verifica que Melissa Pets esté instalado.'); setMascotas([]) }
+        else { setErrorMascotas(''); setMascotas(data || []) }
+      }).catch(() => { if (vigente) setErrorMascotas('No se pudieron cargar las mascotas.') })
+    return () => { vigente = false }
+  }, [mascotasEnabled, pacienteId, clinicaId])
 
   const volver = (
     <button onClick={onVolver} className="text-xs mb-4" style={{ color: 'var(--color-primary)' }}>‹ Volver a clientes</button>
@@ -104,6 +120,20 @@ export default function Cliente360({ pacienteId, clinicaId, onVolver, HistorialC
         <Fila etiqueta="Nacimiento">{paciente.fecha_nacimiento ? formatearFecha(paciente.fecha_nacimiento) : <Vacio>No registrada</Vacio>}</Fila>
       </Seccion>
 
+      {mascotasEnabled && <Seccion titulo="Mascotas">
+        {errorMascotas && <p role="alert" className="text-xs text-red-700">{errorMascotas}</p>}
+        {!errorMascotas && mascotas.length === 0 && <p className="text-sm"><Vacio>Este cliente todavía no tiene mascotas registradas.</Vacio></p>}
+        <div className="space-y-2">
+          {mascotas.map(m => <article key={m.id} className="flex items-center gap-3 rounded-xl p-3" style={{background:'var(--color-accent)'}}>
+            <span className="text-xl" aria-hidden="true">{m.especie === 'gato' ? '🐱' : m.especie === 'perro' ? '🐶' : '🐾'}</span>
+            <div className="min-w-0 flex-1">
+              <p className="text-sm font-semibold">{m.nombre}</p>
+              <p className="text-xs" style={{color:'var(--color-texto-secundario)'}}>{m.especie}{m.raza ? ` · ${m.raza}` : ''}{m.sexo ? ` · ${m.sexo}` : ''}</p>
+              {m.peso != null && <p className="text-xs" style={{color:'var(--color-texto-terciario)'}}>Peso: {m.peso} kg</p>}
+            </div>
+          </article>)}
+        </div>
+      </Seccion>}
       <Seccion titulo="Fidelización">
         <Fila etiqueta="Nivel">{ETIQUETA_NIVEL[fidelidad.nivel]}</Fila>
         <Fila etiqueta="Puntos actuales"><strong style={{ color: 'var(--color-primary)' }}>{puntos.toLocaleString()} pts</strong></Fila>
