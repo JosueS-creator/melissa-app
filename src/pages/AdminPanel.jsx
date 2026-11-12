@@ -3,6 +3,7 @@ import jsQR from 'jsqr'
 import { supabase } from '../lib/supabaseClient'
 import { obtenerPerfilActual } from '../lib/auth'
 import Personalizacion from './Personalizacion'
+import Mascotas from './Mascotas'
 import { PREFIJO_QR_CLIENTE } from './TarjetaVIP'
 import { descargarDatosClinica } from '../lib/exportarDatosClinica'
 import { useFunciones } from '../lib/FuncionesContext'
@@ -30,6 +31,7 @@ import { useConfigPuntos, nuevaClaveOperacion } from '../lib/puntos'
 const TABS = [
   { id: 'citas', label: 'Citas', funcion: 'agenda' },
   { id: 'pacientes', label: 'Clientes', funcion: 'clientes' },
+  { id: 'mascotas', label: 'Mascotas', funcion: 'clientes' },
   { id: 'reactivar', label: 'Por reactivar', funcion: 'reactivacion' },
   { id: 'canjes', label: 'Canjes', funcion: 'canjes' },
   { id: 'promociones', label: 'Promociones', funcion: 'promociones' },
@@ -48,6 +50,7 @@ const primerNombre = (n) => {
 export default function AdminPanel({ onCerrarSesion, esSuperAdmin, onIrAMelissa }) {
   const [perfil, setPerfil] = useState(null)
   const [nombreClinica, setNombreClinica] = useState('')
+  const [tipoNegocio, setTipoNegocio] = useState('clinica_estetica')
   const [cargando, setCargando] = useState(true)
   const [tab, setTab] = useState('citas')
   const [canjesPendientes, setCanjesPendientes] = useState(0)
@@ -57,15 +60,17 @@ export default function AdminPanel({ onCerrarSesion, esSuperAdmin, onIrAMelissa 
   const cerrarMas = useCallback(() => setMasAbierto(false), [])
   const { cargado: planCargado, plan, tiene } = useFunciones()
   const sinPlan = (t) => planCargado && !tiene(t.funcion)
-  const tabActual = TABS.find((t) => t.id === tab)
+  const tabsVisibles = tipoNegocio === 'veterinaria' ? TABS : TABS.filter((t) => t.id !== 'mascotas')
+  const tabActual = tabsVisibles.find((t) => t.id === tab)
   const mostrar = (id) => tab === id && !sinPlan(tabActual)
 
   useEffect(() => {
     obtenerPerfilActual().then(async (p) => {
       setPerfil(p)
       if (p?.clinica_id) {
-        const { data } = await supabase.from('clinicas').select('nombre').eq('id', p.clinica_id).single()
+        const { data } = await supabase.from('clinicas').select('nombre,tipo_negocio').eq('id', p.clinica_id).single()
         setNombreClinica(data?.nombre || '')
+        setTipoNegocio(data?.tipo_negocio || 'clinica_estetica')
       }
       setCargando(false)
     })
@@ -103,7 +108,7 @@ export default function AdminPanel({ onCerrarSesion, esSuperAdmin, onIrAMelissa 
         <p className="text-[11px] mb-6" style={{ color: 'rgba(254,250,248,.62)' }}>Vista operativa{plan ? ` · Plan ${NOMBRE_PLAN[plan] || plan}` : ''}</p>
 
         <nav className="flex flex-col gap-1 flex-1">
-          {TABS.map((t) => (
+          {tabsVisibles.map((t) => (
             <button
               key={t.id}
               onClick={() => setTab(t.id)}
@@ -141,6 +146,7 @@ export default function AdminPanel({ onCerrarSesion, esSuperAdmin, onIrAMelissa 
       {mostrar('citas') && <PanelCitas key={perfil.clinica_id} clinicaId={perfil.clinica_id} />}
       {/* El CRM recibe EscanerQR e HistorialCliente (definidos aquí) para reutilizarlos sin duplicar código. */}
       {mostrar('pacientes') && <SeccionAdmin titulo="Clientes" descripcion="Directorio y relación con tus clientes"><Crm clinicaId={perfil.clinica_id} HistorialCliente={HistorialCliente} EscanerQR={EscanerQR} onVerOportunidades={() => setTab('reactivar')} /></SeccionAdmin>}
+      {mostrar('mascotas') && <SeccionAdmin titulo="Mascotas" descripcion="Fichas y expedientes veterinarios"><Mascotas clinicaId={perfil.clinica_id} perfilId={perfil.id} /></SeccionAdmin>}
       {mostrar('reactivar') && <SeccionAdmin titulo="Por reactivar" descripcion="Oportunidades de seguimiento"><ClientesReactivar clinicaId={perfil.clinica_id} HistorialCliente={HistorialCliente} /></SeccionAdmin>}
       {mostrar('canjes') && <SeccionAdmin titulo="Canjes" descripcion="Solicitudes y recompensas"><Canjes onCambio={contarCanjesPendientes} /></SeccionAdmin>}
       {mostrar('promociones') && <SeccionAdmin titulo="Promociones" descripcion="Ofertas de tu clínica"><Promociones clinicaId={perfil.clinica_id} /></SeccionAdmin>}
@@ -168,7 +174,7 @@ export default function AdminPanel({ onCerrarSesion, esSuperAdmin, onIrAMelissa 
       <HojaMas
         abierta={masAbierto}
         onCerrar={cerrarMas}
-        tabs={TABS.filter((t) => !PRINCIPALES.includes(t.id))}
+        tabs={tabsVisibles.filter((t) => !PRINCIPALES.includes(t.id))}
         tab={tab}
         onSelect={(id) => {
           setTab(id)
