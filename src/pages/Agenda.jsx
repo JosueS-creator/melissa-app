@@ -317,7 +317,7 @@ export default function Agenda({clinica}) {
 
             <button
               onClick={confirmarCita}
-              disabled={!especialistaId || !horaEfectiva || enviando}
+              disabled={!especialistaId || !horaEfectiva || enviando || (clinica?.tipo_negocio === 'veterinaria' && mascotas.length > 0 && !mascotaId)}
               className="w-full rounded-[10px] py-3 text-white shadow-boton-primario disabled:opacity-50"
               style={{ background: 'var(--gradiente-primario)', font: "500 13px/1 var(--font-body)", letterSpacing: '0.04em' }}
             >
